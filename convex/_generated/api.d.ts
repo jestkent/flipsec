@@ -9,6 +9,8 @@
  */
 
 import type * as crawl from "../crawl.js";
+import type * as crons from "../crons.js";
+import type * as drills from "../drills.js";
 import type * as probe from "../probe.js";
 import type * as stories from "../stories.js";
 
@@ -20,6 +22,8 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   crawl: typeof crawl;
+  crons: typeof crons;
+  drills: typeof drills;
   probe: typeof probe;
   stories: typeof stories;
 }>;
