@@ -12,4 +12,12 @@ crons.interval(
   { limit: 15 },
 );
 
+// Daily drill, per PLAN.md section 6. UTC, so 7am Pacific is 14:00 UTC.
+crons.cron(
+  "send daily drill",
+  "0 14 * * *",
+  internal.email.sendDailyDrill,
+  {},
+);
+
 export default crons;

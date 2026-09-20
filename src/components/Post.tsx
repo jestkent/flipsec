@@ -151,7 +151,7 @@ export default function Post({
               aria-expanded={flipped}
               className="text-sm font-semibold text-neutral-900 hover:text-neutral-600"
             >
-              ↻ How this works
+              ↻ Flip
             </button>
             <a
               href={story.url}

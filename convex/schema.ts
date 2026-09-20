@@ -64,5 +64,11 @@ export default defineSchema({
     email: v.string(),
     userId: v.optional(v.string()),
     active: v.boolean(),
-  }).index("by_email", ["email"]),
+    // Which drill went out last, so an emailed reply can be graded against
+    // the right question without the reader quoting anything back.
+    lastDrillId: v.optional(v.id("drills")),
+    lastStoryId: v.optional(v.id("stories")),
+    lastSentAt: v.optional(v.number()),
+  }).index("by_email", ["email"])
+    .index("by_active", ["active"]),
 });

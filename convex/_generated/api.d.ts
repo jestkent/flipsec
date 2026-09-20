@@ -12,10 +12,13 @@ import type * as attempts from "../attempts.js";
 import type * as crawl from "../crawl.js";
 import type * as crons from "../crons.js";
 import type * as drills from "../drills.js";
+import type * as email from "../email.js";
+import type * as http from "../http.js";
 import type * as lessons from "../lessons.js";
 import type * as probe from "../probe.js";
 import type * as questions from "../questions.js";
 import type * as stories from "../stories.js";
+import type * as subscribers from "../subscribers.js";
 
 import type {
   ApiFromModules,
@@ -28,10 +31,13 @@ declare const fullApi: ApiFromModules<{
   crawl: typeof crawl;
   crons: typeof crons;
   drills: typeof drills;
+  email: typeof email;
+  http: typeof http;
   lessons: typeof lessons;
   probe: typeof probe;
   questions: typeof questions;
   stories: typeof stories;
+  subscribers: typeof subscribers;
 }>;
 
 /**

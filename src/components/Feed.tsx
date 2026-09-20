@@ -1,6 +1,7 @@
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import Post from "./Post";
+import Subscribe from "./Subscribe";
 
 // No accounts yet. PLAN.md section 15 keeps accounts out of the MVP, so a
 // reader is a random id kept in this browser.
@@ -36,6 +37,7 @@ export default function Feed() {
 
   return (
     <div className="flex flex-col gap-6">
+      <Subscribe userId={userId} />
       {stories.map((story) => (
         <Post key={story._id} story={story} userId={userId} />
       ))}
