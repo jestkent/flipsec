@@ -12,7 +12,7 @@
 - **Auth:** none
 - **AI models:** gpt-4o-mini
 - **Started:** 2026-09-20T17:35:41Z
-- **Last updated:** 2026-09-20T21:53:12Z
+- **Last updated:** 2026-09-20T22:32:20Z
 
 ## Log
 
@@ -129,3 +129,40 @@ too: backend guidelines, `AGENTS.md`, a managed section appended to
 `CLAUDE.md`, the Convex agent skills, and `skills-lock.json`. The hand-written
 parts of `CLAUDE.md` were left intact (`convex/_generated/ai/guidelines.md`,
 `skills-lock.json`, `.claude/skills/`).
+
+### 2026-09-20 - 48ed8c6
+Fixed the ask box refusing nearly every question, including its own placeholder.
+Two causes: the model was handed only the sixty word summary and told it was all
+it knew, and the prompt made refusing the safe default. The internal query now
+joins the drill so the model gets the stages, the red flags and the illusion
+pairs, and the prompt names refusing as the rare exception. Reader text is still
+treated as a question and never an instruction (`convex/questions.ts`).
+
+### 2026-09-20 - b9f3499
+Added an About page: what the app is, who it is for, where the stories come from
+with the CC BY-SA attribution the AI Incident Database requires, and how it is
+built. Two views held in component state rather than adding a router for one
+link (`src/App.tsx`, `src/components/About.tsx`).
+
+### 2026-09-20 - b2eeade
+Added the builder's own reason for making it, in first person and limited to
+what he actually said: he teaches Internet Safety to 6th through 8th graders and
+could not find material about the scams his students were meeting
+(`src/components/About.tsx`).
+
+### 2026-09-20 - 2ef7e0b
+Widened the audience past students, at the owner's direction. The copy now
+opens on a grandparent who got a call in a voice they know, and says plainly
+that the 7th grade reading level is not the audience. The accessibility change
+matters more than the copy: body text went from 14px to 16px and every muted
+grey moved one step darker across the feed, the lesson, both panels, the signup
+and the About page, because small grey type does not serve the readers this is
+now claiming to be for (`src/components/About.tsx`, `Subscribe.tsx`,
+`Post.tsx`, `LessonBack.tsx`, `Illusion.tsx`, `ScamFlow.tsx`).
+
+### 2026-09-20 - docs pass
+Brought the written record back in line with the app: the README still described
+the flip as opening a drill and listed only two of the three sources, which left
+the AI Incident Database's CC BY-SA attribution off the repo's front page. The
+project guide gained the type-size floor and the audience note so neither gets
+undone by a later change (`README.md`, `CLAUDE.md`).

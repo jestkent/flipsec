@@ -59,11 +59,22 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
 - Wrap every `localStorage` call in try/catch. An unguarded throw in a private
   window renders the feed blank.
 - DOM ids inside a repeated card need `useId`, or two posts of one tactic clash.
+- Body copy is 16px (`text-base`), never 14px, and muted text stops at
+  `neutral-500` on white. Readers include older people, so small grey type is a
+  correctness problem here, not a taste one.
+- Two views held in `App.tsx` state, feed and About. A router for one link would
+  not earn itself.
 
 ## Voice
 
 Plain language at a 7th grade reading level. Sentence case, plain verbs, no
 jargon. If a 7th grader would not say the word, it does not go on the post.
+
+The reading level is not the audience. This is written for anyone who is not a
+security expert, and the people these scams take the most from are usually older
+and were never the reader the usual advice imagined. Plain words serve both. Keep
+school vocabulary out of the app: readers are not marked, graded, or set
+homework.
 
 ## Spec
 
