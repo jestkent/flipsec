@@ -121,6 +121,9 @@ export const processStory = internalAction({
 
     const completion = await openai.chat.completions.create({
       model: MODEL,
+      // Classification should not change between runs. Dev and prod gave the
+      // same story different tactics at the default temperature.
+      temperature: 0,
       messages: [
         { role: "system", content: PROCESS_PROMPT },
         {
@@ -344,6 +347,7 @@ export const reclassifyTactics = internalAction({
     for (const story of stories) {
       const completion = await openai.chat.completions.create({
         model: MODEL,
+        temperature: 0,
         messages: [
           { role: "system", content: PROCESS_PROMPT },
           {
