@@ -7,19 +7,22 @@ flips into a drill built from that exact story.
 
 ## What it does
 
-FlipSec crawls government consumer-protection advisories every six hours and turns
-each one into a short, plain-language post about an AI scam that is hitting real
-people. Flip the post and it becomes a practice question built from that same
-story, so you practice spotting the thing that actually just happened.
+FlipSec crawls government advisories every six hours and turns each one into a
+short, plain-language post about an AI scam that is hitting real people. Flip the
+post and it becomes a practice question built from that same story, then a short
+lesson on how the scam works, so you practice spotting what actually just
+happened.
 
 ## Built with
 
-Convex, Firecrawl, OpenAI, AgentMail.
+Convex for the backend and the live feed, Firecrawl for the crawl, OpenAI for
+the summaries, drills and lessons. AgentMail is planned and not built yet.
 
 ## Sources and content
 
 FlipSec publishes original summaries and links to sources. It does not republish
-article text. Primary sources are public-domain government advisories.
+article text. Primary sources are public-domain government advisories: FBI IC3 and FTC
+consumer alerts.
 
 ## Local setup
 
