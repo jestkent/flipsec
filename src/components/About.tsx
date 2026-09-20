@@ -104,6 +104,23 @@ export default function About({ onBack }: { onBack: () => void }) {
         </p>
       </Block>
 
+      {/* First person, and only what the builder actually said. No invented
+          biography, no employer, no location. */}
+      <Block title="Why I built it">
+        <p className="text-sm leading-relaxed text-neutral-600">
+          I teach Internet Safety to 6th through 8th graders. Every year I go
+          looking for something to show them about the scams they are actually
+          running into, and every year I find the same thing: advice written for
+          adults in an office, about tricks from five years ago.
+        </p>
+        <p className="text-sm leading-relaxed text-neutral-600">
+          So I wrote this for my students. If a 7th grader would not say the
+          word, it does not go on the post. That is the rule the whole thing is
+          built on.
+        </p>
+        <p className="text-sm font-medium text-neutral-900">— JKA</p>
+      </Block>
+
       <Block title="How it is built">
         <p className="text-sm leading-relaxed text-neutral-600">
           Firecrawl reads the sources every six hours. OpenAI writes the
