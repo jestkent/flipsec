@@ -64,6 +64,12 @@ export default function Post({
   const [sizes, setSizes] = useState({ front: 0, back: 0 });
   const [imageFailed, setImageFailed] = useState(false);
 
+  // These wrap the contents of each face. The faces themselves are absolutely
+  // positioned at inset 0, so their boxes are whatever height this component
+  // sets and they never react to their own content. A ResizeObserver on a
+  // face therefore never fires. These inner wrappers sit in normal flow, so
+  // their height is the content height and the observer fires when, say, the
+  // tutor lesson arrives.
   const frontRef = useRef<HTMLDivElement>(null);
   const backRef = useRef<HTMLDivElement>(null);
   const artId = useId();
@@ -87,8 +93,8 @@ export default function Post({
   // height. Measure each one separately.
   useLayoutEffect(() => {
     function measure() {
-      const front = frontRef.current?.scrollHeight ?? 0;
-      const back = backRef.current?.scrollHeight ?? 0;
+      const front = frontRef.current?.offsetHeight ?? 0;
+      const back = backRef.current?.offsetHeight ?? 0;
       setSizes((prev) =>
         prev.front === front && prev.back === back ? prev : { front, back },
       );
@@ -142,89 +148,89 @@ export default function Post({
       >
         {/* The whole front is the control. The badge is the accessible name
             and the keyboard path; this click target is the convenience. */}
-        <div
-          ref={frontRef}
-          onClick={flip}
-          className="face face-front flex cursor-pointer flex-col"
-        >
+        <div onClick={flip} className="face face-front cursor-pointer">
           <FlipBadge flipped={flipped} onFlip={flip} />
 
-          <div className="h-40 w-full shrink-0 overflow-hidden border-b border-neutral-100 bg-neutral-50">
-            {showArt ? (
-              <TacticArt tactic={tactic} uid={artId} />
-            ) : (
-              <img
-                src={story.image}
-                alt=""
-                loading="lazy"
-                onError={() => setImageFailed(true)}
-                className="h-full w-full object-cover"
-              />
-            )}
-          </div>
-
-          <div className="flex flex-1 flex-col gap-4 p-6">
-            <header className="flex items-center gap-2">
-              {story.sourceIcon && (
+          <div ref={frontRef} className="flex flex-col">
+            <div className="h-40 w-full shrink-0 overflow-hidden border-b border-neutral-100 bg-neutral-50">
+              {showArt ? (
+                <TacticArt tactic={tactic} uid={artId} />
+              ) : (
                 <img
-                  src={story.sourceIcon}
+                  src={story.image}
                   alt=""
-                  width={20}
-                  height={20}
-                  className="rounded"
+                  loading="lazy"
+                  onError={() => setImageFailed(true)}
+                  className="h-full w-full object-cover"
                 />
               )}
-              <span className="text-sm font-semibold text-neutral-900">
-                {story.source}
-              </span>
-              <span className="text-sm text-neutral-400">
-                · {timeAgo(story.publishedAt)}
-              </span>
-            </header>
+            </div>
 
-            <p className="text-lg leading-snug font-medium text-neutral-900">
-              {story.summary}
-            </p>
+            <div className="flex flex-1 flex-col gap-4 p-6">
+              <header className="flex items-center gap-2">
+                {story.sourceIcon && (
+                  <img
+                    src={story.sourceIcon}
+                    alt=""
+                    width={20}
+                    height={20}
+                    className="rounded"
+                  />
+                )}
+                <span className="text-sm font-semibold text-neutral-900">
+                  {story.source}
+                </span>
+                <span className="text-sm text-neutral-400">
+                  · {timeAgo(story.publishedAt)}
+                </span>
+              </header>
 
-            {/* Only the tactic stays on the front. The red flags belong with
+              <p className="text-lg leading-snug font-medium text-neutral-900">
+                {story.summary}
+              </p>
+
+              {/* Only the tactic stays on the front. The red flags belong with
                 the explanation, so they live on the lesson. */}
-            <span
-              className={`self-start rounded-full px-2.5 py-1 text-xs font-medium ${
-                TACTIC_STYLE[tactic] ?? TACTIC_STYLE.other
-              }`}
-            >
-              {tactic}
-            </span>
-
-            <footer className="mt-auto flex items-center justify-between pt-1">
-              <span className="text-sm font-semibold text-neutral-900">
-                ↻ See how this works
-              </span>
-              <a
-                href={story.url}
-                target="_blank"
-                rel="noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="text-sm text-neutral-400 hover:text-neutral-900"
+              <span
+                className={`self-start rounded-full px-2.5 py-1 text-xs font-medium ${
+                  TACTIC_STYLE[tactic] ?? TACTIC_STYLE.other
+                }`}
               >
-                ↗ Source
-              </a>
-            </footer>
+                {tactic}
+              </span>
+
+              <footer className="mt-auto flex items-center justify-between pt-1">
+                <span className="text-sm font-semibold text-neutral-900">
+                  ↻ See how this works
+                </span>
+                <a
+                  href={story.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-sm text-neutral-400 hover:text-neutral-900"
+                >
+                  ↗ Source
+                </a>
+              </footer>
+            </div>
           </div>
         </div>
 
         {/* The back holds inputs and buttons, so only the badge and the
             explicit link flip it back. */}
-        <div ref={backRef} className="face face-back">
+        <div className="face face-back">
           <FlipBadge flipped={flipped} onFlip={flip} />
-          <LessonBack
-            drill={drill}
-            storyId={story._id}
-            tactic={tactic}
-            redFlags={story.redFlags ?? []}
-            userId={userId}
-            onBack={flip}
-          />
+          <div ref={backRef}>
+            <LessonBack
+              drill={drill}
+              storyId={story._id}
+              tactic={tactic}
+              redFlags={story.redFlags ?? []}
+              userId={userId}
+              onBack={flip}
+            />
+          </div>
         </div>
       </div>
     </article>

@@ -50,6 +50,10 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
 - The card is the height of the face being shown, swapped 260ms into the 520ms
   rotation while it is edge on. Locking to the taller face, as PLAN.md section 7
   says, makes every card as tall as its own lesson. Only `transform` animates.
+- Measure a content-sized wrapper inside each face, never the face. A face is
+  `position: absolute; inset: 0`, so its box is whatever height we set and a
+  `ResizeObserver` on it never fires. Watching the face meant the card kept its
+  pre-lesson height and clipped the tutor text.
 - Keep the last loaded drill when flipping back; the query goes to `"skip"` and
   the loading state is visible mid-rotation.
 - Wrap every `localStorage` call in try/catch. An unguarded throw in a private
