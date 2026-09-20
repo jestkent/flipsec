@@ -62,7 +62,7 @@ const PROCESS_SCHEMA = {
     "aiRelated",
     "isScam",
     "everydayPerson",
-    "classroomSafe",
+    "unsafeTopic",
     "summary",
     "redFlags",
     "tactic",
@@ -78,10 +78,11 @@ const PROCESS_SCHEMA = {
       description:
         "True if this is a trick aimed at a person that a reader could learn to recognise. False for accidents, bias, bad decisions by a system, or misuse by an insider.",
     },
-    classroomSafe: {
-      type: "boolean",
+    unsafeTopic: {
+      type: "string",
+      enum: ["none", "sexual", "childAbuse", "selfHarm", "violence"],
       description:
-        "Almost always true. Set false ONLY when the subject matter itself is sexual content, nude or intimate images, child abuse, suicide, self harm, or graphic violence. Fraud, impersonation, theft and hacking are all safe.",
+        "Name the topic that makes this unfit for a middle school screen, or none. Crime, police, fraud and stolen money are none.",
     },
     everydayPerson: {
       type: "boolean",
@@ -118,8 +119,11 @@ Rules you must follow:
 - Say what happened and how the trick works. Do not give advice or tell the reader what to do.
 - Red flags are the signs that give the scam away, not instructions. Two to four of them, four words maximum each, lowercase.
 - Set aiRelated true only when the story says AI was actually used. A deepfake video, a cloned voice, a message or website a model produced, a chatbot. If the story never shows AI doing anything, set it false, no matter how modern or serious the scam is. Ordinary phishing with no AI in it is false.
-- classroomSafe is true for almost every scam. Set it false ONLY when the subject of the story is itself one of these: sexual content, nude or intimate images of anyone, child sexual abuse, suicide, self harm, or graphic violence. Money being stolen, people being lied to, accounts being broken into, fake officials, fake videos and fake voices are all fine. A story is not unsafe just because someone was hurt or frightened, or because a crime was serious. Ask only whether the topic itself is one a teacher could not name out loud to a class.
-- Set isScam true only if this is a trick aimed at a person, something a reader could learn to see coming. Set it false when the story is about a system making a mistake, unfair treatment by software, a staff member misusing access, or a company behaving badly. Those matter, but a reader cannot spot them.
+- unsafeTopic asks you to NAME what is unfit for a middle school screen, not to judge how serious the story is. If you cannot name one of the four, the answer is none.
+- Answer none for: fraud of any size, scams, impersonation, fake police or fake FBI agents, stolen money however large, hacked accounts, phishing, fake websites, deepfaked public figures, cloned voices, arrests, court cases, and anything involving crime in general. These are the normal subject matter of this app and they are all fine.
+- Answer sexual for sexual content or nude or intimate images of anyone. Answer childAbuse for child sexual abuse material. Answer selfHarm for suicide or self harm. Answer violence for violence, threats of violence, bomb threats, swatting, weapons, terrorism, or a person being killed or badly hurt.
+- Set isScam true only if someone is tricked into handing over money, information, access or trust, and a reader could learn to see that trick coming.
+- Set it false for a system making a mistake, unfair treatment by software, a staff member misusing access, a company behaving badly, harassment, hoaxes or threats aimed at a school or an organisation, and anything where there is no trick for the reader to spot.
 - Set everydayPerson true only if this is a scam a 12 year old or their parent could actually meet, on their own phone, their own email, or their own social media, in their own life.
 - Set it false if telling the story needs any of these words: token, credential, kit, tool, exploit, server, network, endpoint, admin, enterprise, infrastructure, or the name of a piece of hacking software. Those stories are written for IT staff, and FlipSec is not for IT staff.
 - Set it false when the victim is a company, a government network, a utility, or the people who run them, however serious the story is.
@@ -173,14 +177,14 @@ export const processStory = internalAction({
       aiRelated: boolean;
       isScam: boolean;
       everydayPerson: boolean;
-      classroomSafe: boolean;
+      unsafeTopic: string;
       summary: string;
       redFlags: string[];
       tactic: string;
     };
 
     console.log(
-      `${args.title} -> ai=${result.aiRelated} scam=${result.isScam} everyday=${result.everydayPerson} safe=${result.classroomSafe}`,
+      `${args.title} -> ai=${result.aiRelated} scam=${result.isScam} everyday=${result.everydayPerson} unsafe=${result.unsafeTopic}`,
     );
 
     await ctx.scheduler.runAfter(0, internal.stories.saveProcessed, {
@@ -188,7 +192,7 @@ export const processStory = internalAction({
       aiRelated: result.aiRelated,
       isScam: result.isScam,
       everydayPerson: result.everydayPerson,
-      classroomSafe: result.classroomSafe,
+      classroomSafe: result.unsafeTopic === "none",
       summary: result.summary,
       redFlags: result.redFlags,
       tactic: result.tactic,
@@ -464,12 +468,15 @@ export const unpublish = internalMutation({
 const GATES_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["aiRelated", "isScam", "everydayPerson", "classroomSafe"],
+  required: ["aiRelated", "isScam", "everydayPerson", "unsafeTopic"],
   properties: {
     aiRelated: { type: "boolean" },
     isScam: { type: "boolean" },
     everydayPerson: { type: "boolean" },
-    classroomSafe: { type: "boolean" },
+    unsafeTopic: {
+      type: "string",
+      enum: ["none", "sexual", "childAbuse", "selfHarm", "violence"],
+    },
   },
 } as const;
 
@@ -509,11 +516,18 @@ export const recheckGates = internalAction({
       const raw = completion.choices[0]?.message?.content;
       if (!raw) continue;
 
-      const gates = JSON.parse(raw) as {
+      const judged = JSON.parse(raw) as {
         aiRelated: boolean;
         isScam: boolean;
         everydayPerson: boolean;
-        classroomSafe: boolean;
+        unsafeTopic: string;
+      };
+
+      const gates = {
+        aiRelated: judged.aiRelated,
+        isScam: judged.isScam,
+        everydayPerson: judged.everydayPerson,
+        [`unsafe:${judged.unsafeTopic}`]: judged.unsafeTopic === "none",
       };
 
       const failed = Object.entries(gates)
