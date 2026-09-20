@@ -1,1 +1,72 @@
 @import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* The flip. PLAN.md section 7 is the spec for everything in this block. */
+
+/* Perspective belongs on the parent, not the rotating element. On the element
+   itself the projection flattens and the effect reads cheap. */
+.post {
+  perspective: 1400px;
+}
+
+.post-inner {
+  position: relative;
+  transform-style: preserve-3d;
+  /* Leaves fast, settles slow. A symmetric ease reads mechanical. */
+  transition: transform 520ms cubic-bezier(0.2, 0.75, 0.3, 1),
+    box-shadow 520ms cubic-bezier(0.2, 0.75, 0.3, 1);
+}
+
+.post-inner.flipped {
+  transform: rotateY(180deg);
+}
+
+/* will-change costs memory, so it is only on while a post is actually
+   rotating. Feed.tsx adds and removes this class around the transition. */
+.post-inner.flipping {
+  will-change: transform;
+  /* The shadow lifting at the midpoint sells the third dimension more than
+     the rotation does on its own. */
+  box-shadow: 0 22px 50px -12px rgb(15 23 42 / 0.28);
+}
+
+.face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  overflow: hidden;
+}
+
+.face-back {
+  transform: rotateY(180deg);
+}
+
+/* With reduced motion the faces cross-fade instead of rotating. */
+@media (prefers-reduced-motion: reduce) {
+  .post-inner,
+  .post-inner.flipped {
+    transition: none;
+    transform: none;
+  }
+
+  .face {
+    transition: opacity 180ms linear;
+  }
+
+  .face-back {
+    transform: none;
+    opacity: 0;
+  }
+
+  .post-inner.flipped .face-front {
+    opacity: 0;
+  }
+
+  .post-inner.flipped .face-back {
+    opacity: 1;
+  }
+}
