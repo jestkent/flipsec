@@ -25,6 +25,32 @@ function timeAgo(ms: number | undefined): string {
   return `${Math.round(hours / 24)}d`;
 }
 
+// The badge sits on both faces so the way back is in the same place as the
+// way in. It is a real button, which is what makes the flip keyboard
+// reachable, per PLAN.md section 7.
+function FlipBadge({
+  flipped,
+  onFlip,
+}: {
+  flipped: boolean;
+  onFlip: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onFlip();
+      }}
+      aria-expanded={flipped}
+      aria-label={flipped ? "Back to the story" : "See how this scam works"}
+      className="absolute top-3 right-3 z-10 grid h-11 w-11 place-items-center rounded-full bg-white/95 text-lg text-neutral-900 shadow-md ring-1 ring-neutral-900/10 backdrop-blur transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-neutral-900"
+    >
+      <span aria-hidden>↻</span>
+    </button>
+  );
+}
+
 export default function Post({
   story,
   userId,
@@ -114,7 +140,15 @@ export default function Post({
         ].join(" ")}
         style={{ height }}
       >
-        <div ref={frontRef} className="face face-front flex flex-col">
+        {/* The whole front is the control. The badge is the accessible name
+            and the keyboard path; this click target is the convenience. */}
+        <div
+          ref={frontRef}
+          onClick={flip}
+          className="face face-front flex cursor-pointer flex-col"
+        >
+          <FlipBadge flipped={flipped} onFlip={flip} />
+
           <div className="h-40 w-full shrink-0 overflow-hidden border-b border-neutral-100 bg-neutral-50">
             {showArt ? (
               <TacticArt tactic={tactic} uid={artId} />
@@ -130,72 +164,64 @@ export default function Post({
           </div>
 
           <div className="flex flex-1 flex-col gap-4 p-6">
-          <header className="flex items-center gap-2">
-            {story.sourceIcon && (
-              <img
-                src={story.sourceIcon}
-                alt=""
-                width={20}
-                height={20}
-                className="rounded"
-              />
-            )}
-            <span className="text-sm font-semibold text-neutral-900">
-              {story.source}
-            </span>
-            <span className="text-sm text-neutral-400">
-              · {timeAgo(story.publishedAt)}
-            </span>
-          </header>
+            <header className="flex items-center gap-2">
+              {story.sourceIcon && (
+                <img
+                  src={story.sourceIcon}
+                  alt=""
+                  width={20}
+                  height={20}
+                  className="rounded"
+                />
+              )}
+              <span className="text-sm font-semibold text-neutral-900">
+                {story.source}
+              </span>
+              <span className="text-sm text-neutral-400">
+                · {timeAgo(story.publishedAt)}
+              </span>
+            </header>
 
-          <p className="text-lg leading-snug font-medium text-neutral-900">
-            {story.summary}
-          </p>
+            <p className="text-lg leading-snug font-medium text-neutral-900">
+              {story.summary}
+            </p>
 
-          <div className="flex flex-wrap gap-2">
+            {/* Only the tactic stays on the front. The red flags belong with
+                the explanation, so they live on the lesson. */}
             <span
-              className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+              className={`self-start rounded-full px-2.5 py-1 text-xs font-medium ${
                 TACTIC_STYLE[tactic] ?? TACTIC_STYLE.other
               }`}
             >
               {tactic}
             </span>
-            {story.redFlags?.map((flag) => (
-              <span
-                key={flag}
-                className="rounded-full bg-neutral-100 px-2.5 py-1 text-xs text-neutral-600"
-              >
-                {flag}
-              </span>
-            ))}
-          </div>
 
-          <footer className="mt-auto flex items-center gap-5 pt-2">
-            <button
-              type="button"
-              onClick={flip}
-              aria-expanded={flipped}
-              className="text-sm font-semibold text-neutral-900 hover:text-neutral-600"
-            >
-              ↻ Flip
-            </button>
-            <a
-              href={story.url}
-              target="_blank"
-              rel="noreferrer"
-              className="text-sm text-neutral-500 hover:text-neutral-900"
-            >
-              ↗ Source
-            </a>
-          </footer>
+            <footer className="mt-auto flex items-center justify-between pt-1">
+              <span className="text-sm font-semibold text-neutral-900">
+                ↻ See how this works
+              </span>
+              <a
+                href={story.url}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="text-sm text-neutral-400 hover:text-neutral-900"
+              >
+                ↗ Source
+              </a>
+            </footer>
           </div>
         </div>
 
+        {/* The back holds inputs and buttons, so only the badge and the
+            explicit link flip it back. */}
         <div ref={backRef} className="face face-back">
+          <FlipBadge flipped={flipped} onFlip={flip} />
           <LessonBack
             drill={drill}
             storyId={story._id}
             tactic={tactic}
+            redFlags={story.redFlags ?? []}
             userId={userId}
             onBack={flip}
           />

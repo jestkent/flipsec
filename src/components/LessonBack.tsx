@@ -19,12 +19,14 @@ export default function LessonBack({
   drill,
   storyId,
   tactic,
+  redFlags,
   userId,
   onBack,
 }: {
   drill: Drill | null | undefined;
   storyId: Id<"stories">;
   tactic: string;
+  redFlags: string[];
   userId: string;
   onBack: () => void;
 }) {
@@ -101,6 +103,26 @@ export default function LessonBack({
       </p>
 
       <ScamFlow steps={drill.steps} tactic={tactic} />
+
+      {/* Moved off the front of the post. They read better next to the
+          explanation than as a wall of chips above the summary. */}
+      {redFlags.length > 0 && (
+        <div>
+          <p className="text-xs font-semibold tracking-wider text-neutral-400 uppercase">
+            What gives it away
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {redFlags.map((flag) => (
+              <span
+                key={flag}
+                className="rounded-full bg-neutral-100 px-2.5 py-1 text-xs text-neutral-600"
+              >
+                {flag}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {drill.whyItWorks && (
         <div className="rounded-xl bg-neutral-50 p-4">
