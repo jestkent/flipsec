@@ -23,9 +23,9 @@ function stripBoilerplate(markdown: string): string {
   return (heading === -1 ? markdown : markdown.slice(heading + 1)).trim();
 }
 
-// Firecrawl's free tier allows about 13 requests a minute. Space the article
-// scrapes out so a long crawl does not lose its tail to a 429.
-const SCRAPE_DELAY_MS = 6000;
+// consumer.ftc.gov sets "Crawl-delay: 10" in robots.txt, and Firecrawl's free
+// tier allows about 13 requests a minute. 10s satisfies both.
+const SCRAPE_DELAY_MS = 10000;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 

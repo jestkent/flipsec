@@ -9,6 +9,7 @@
  */
 
 import type * as crawl from "../crawl.js";
+import type * as probe from "../probe.js";
 import type * as stories from "../stories.js";
 
 import type {
@@ -19,6 +20,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   crawl: typeof crawl;
+  probe: typeof probe;
   stories: typeof stories;
 }>;
 
