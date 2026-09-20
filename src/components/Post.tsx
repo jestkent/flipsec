@@ -3,6 +3,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Doc } from "../../convex/_generated/dataModel";
 import DrillBack from "./DrillBack";
+import TacticArt from "./TacticArt";
 
 type Story = Omit<Doc<"stories">, "rawText">;
 
@@ -88,7 +89,21 @@ export default function Post({
         ].join(" ")}
         style={{ height }}
       >
-        <div ref={frontRef} className="face face-front flex flex-col gap-4 p-6">
+        <div ref={frontRef} className="face face-front flex flex-col">
+          <div className="h-40 w-full shrink-0 overflow-hidden border-b border-neutral-100 bg-neutral-50">
+            {story.image ? (
+              <img
+                src={story.image}
+                alt=""
+                loading="lazy"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <TacticArt tactic={tactic} />
+            )}
+          </div>
+
+          <div className="flex flex-1 flex-col gap-4 p-6">
           <header className="flex items-center gap-2">
             {story.sourceIcon && (
               <img
@@ -147,10 +162,16 @@ export default function Post({
               ↗ Source
             </a>
           </footer>
+          </div>
         </div>
 
         <div ref={backRef} className="face face-back">
-          <DrillBack drill={drill} userId={userId} onBack={flip} />
+          <DrillBack
+            drill={drill}
+            storyId={story._id}
+            userId={userId}
+            onBack={flip}
+          />
         </div>
       </div>
     </article>

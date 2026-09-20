@@ -7,6 +7,7 @@ export default defineSchema({
     title: v.string(),
     source: v.string(),
     sourceIcon: v.optional(v.string()),
+    image: v.optional(v.string()),    // og:image from the source, when it has one
     rawText: v.optional(v.string()),  // cleared after processing
     summary: v.optional(v.string()),
     redFlags: v.optional(v.array(v.string())),
@@ -25,6 +26,7 @@ export default defineSchema({
     choices: v.array(v.string()),
     correct: v.number(),
     explanation: v.string(),
+    steps: v.optional(v.array(v.string())),  // how the scam works, shown after answering
   }).index("by_story", ["storyId"]),
 
   attempts: defineTable({
@@ -38,6 +40,16 @@ export default defineSchema({
   })
     .index("by_user", ["userId"])
     .index("by_user_drill", ["userId", "drillId"]),
+
+  // Reader questions about a post, answered by OpenAI with that post as the
+  // only context. Stored so the hourly rate limit has something to count.
+  questions: defineTable({
+    userId: v.string(),
+    storyId: v.id("stories"),
+    question: v.string(),
+    answer: v.string(),
+    createdAt: v.number(),
+  }).index("by_user_time", ["userId", "createdAt"]),
 
   subscribers: defineTable({
     email: v.string(),

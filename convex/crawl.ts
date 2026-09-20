@@ -3,6 +3,7 @@
 import FirecrawlApp from "@mendable/firecrawl-js";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
 import { internalAction } from "./_generated/server";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -122,6 +123,9 @@ export const crawlSources = internalAction({
           });
 
           const rawText = stripBoilerplate(article.markdown ?? "");
+          // FTC publishes a purpose-made 1200x630 card per alert. IC3 does
+          // not, and those posts fall back to tactic art in the feed.
+          const image = article.metadata?.ogImage ?? undefined;
           if (rawText.length < 200) {
             console.warn(`skipping ${alert.url}, only ${rawText.length} chars`);
             failed++;
@@ -133,6 +137,7 @@ export const crawlSources = internalAction({
             title: alert.title,
             source: source.name,
             sourceIcon: source.icon,
+            image,
             rawText,
           });
 
@@ -147,5 +152,43 @@ export const crawlSources = internalAction({
 
     console.log(`crawl done. found ${found}, scraped ${scraped}, failed ${failed}`);
     return { found, scraped, failed };
+  },
+});
+
+// Re-scrapes published stories that have no picture and patches in whatever
+// og:image the source carries. Sources without one keep the tactic art.
+export const backfillImages = internalAction({
+  args: {},
+  handler: async (ctx): Promise<{ checked: number; patched: number }> => {
+    const apiKey = process.env.FIRECRAWL_API_KEY;
+    if (!apiKey) throw new Error("FIRECRAWL_API_KEY is not set");
+
+    const firecrawl = new FirecrawlApp({ apiKey });
+    const missing: Array<{ storyId: Id<"stories">; url: string }> =
+      await ctx.runQuery(internal.stories.listMissingImages, {});
+
+    let patched = 0;
+    for (const [i, story] of missing.entries()) {
+      if (i > 0) await sleep(10000);
+      try {
+        const page = await firecrawl.scrape(story.url, {
+          formats: ["markdown"],
+          onlyMainContent: true,
+        });
+        const image = page.metadata?.ogImage;
+        if (!image) continue;
+
+        await ctx.runMutation(internal.stories.setImage, {
+          storyId: story.storyId,
+          image,
+        });
+        patched++;
+      } catch (error) {
+        console.error(`image backfill failed for ${story.url}`, error);
+      }
+    }
+
+    console.log(`image backfill: ${patched} of ${missing.length}`);
+    return { checked: missing.length, patched };
   },
 });
