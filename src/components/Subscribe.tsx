@@ -23,20 +23,20 @@ export default function Subscribe({ userId }: { userId: string }) {
 
   if (state === "done") {
     return (
-      <p className="rounded-2xl border border-neutral-200 bg-white px-5 py-4 text-sm text-neutral-600">
-        You are on the list. One drill lands in your inbox each morning. Reply to
-        it however you like and you will get marked.
+      <p className="rounded-2xl border border-neutral-200 bg-white px-5 py-4 text-base text-neutral-700">
+        You are on the list. One lands in your inbox each morning. Reply
+        however you like and I will tell you how you did.
       </p>
     );
   }
 
   return (
     <div className="rounded-2xl border border-neutral-200 bg-white px-5 py-4">
-      <p className="text-sm font-medium text-neutral-900">
+      <p className="text-base font-medium text-neutral-900">
         Get one drill a day
       </p>
-      <p className="mt-0.5 text-sm text-neutral-500">
-        Reply to the email in your own words. You will get marked.
+      <p className="mt-0.5 text-base text-neutral-600">
+        Reply in your own words and I will tell you how you did.
       </p>
       <div className="mt-3 flex gap-2">
         <input

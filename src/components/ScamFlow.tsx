@@ -59,12 +59,12 @@ export default function ScamFlow({
 
             <div className={last ? "pb-0" : "pb-5"}>
               <p
-                className="text-[11px] font-semibold tracking-wider uppercase"
+                className="text-xs font-semibold tracking-wider uppercase"
                 style={{ color: tint }}
               >
                 {stage.label}
               </p>
-              <p className="mt-0.5 text-sm leading-relaxed text-neutral-700">
+              <p className="mt-0.5 text-base leading-relaxed text-neutral-700">
                 {step}
               </p>
             </div>

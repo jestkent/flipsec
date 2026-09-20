@@ -100,7 +100,7 @@ export default function LessonBack({
 
   return (
     <div className="flex flex-col gap-5 p-6">
-      <p className="text-xs font-semibold tracking-widest text-neutral-400 uppercase">
+      <p className="text-xs font-semibold tracking-widest text-neutral-500 uppercase">
         How this works
       </p>
 
@@ -110,7 +110,7 @@ export default function LessonBack({
           explanation than as a wall of chips above the summary. */}
       {redFlags.length > 0 && (
         <div>
-          <p className="text-xs font-semibold tracking-wider text-neutral-400 uppercase">
+          <p className="text-xs font-semibold tracking-wider text-neutral-500 uppercase">
             What gives it away
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
@@ -128,12 +128,12 @@ export default function LessonBack({
 
       {(drill.illusion.length > 0 || drill.whyItWorks) && (
         <div className="flex flex-col gap-3">
-          <p className="text-xs font-semibold tracking-wider text-neutral-400 uppercase">
+          <p className="text-xs font-semibold tracking-wider text-neutral-500 uppercase">
             Why it works
           </p>
           <Illusion pairs={drill.illusion} tactic={tactic} />
           {drill.whyItWorks && (
-            <p className="text-sm leading-relaxed text-neutral-600">
+            <p className="text-base leading-relaxed text-neutral-700">
               {drill.whyItWorks}
             </p>
           )}
@@ -153,7 +153,7 @@ export default function LessonBack({
       ) : (
         <div className="flex flex-col gap-3 border-l-2 border-neutral-900 pl-4">
           {lesson.split(/\n\n+/).map((para) => (
-            <p key={para} className="text-sm leading-relaxed text-neutral-700">
+            <p key={para} className="text-base leading-relaxed text-neutral-700">
               {para}
             </p>
           ))}
@@ -189,7 +189,7 @@ export default function LessonBack({
           </button>
         </div>
         {answer !== null && (
-          <p className="mt-3 text-sm leading-relaxed text-neutral-700">
+          <p className="mt-3 text-base leading-relaxed text-neutral-700">
             {answer}
           </p>
         )}
@@ -239,7 +239,7 @@ export default function LessonBack({
             </div>
 
             {result !== null && (
-              <p className="text-sm leading-relaxed text-neutral-600">
+              <p className="text-base leading-relaxed text-neutral-700">
                 <span className="font-semibold text-neutral-900">
                   {result.correct ? "That's the one. " : "Not quite. "}
                 </span>

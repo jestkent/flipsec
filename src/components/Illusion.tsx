@@ -23,12 +23,12 @@ export default function Illusion({
   return (
     <div className="overflow-hidden rounded-xl border border-neutral-200">
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-3 border-b border-neutral-200 bg-neutral-50 px-4 py-2">
-        <p className="text-[10px] font-semibold tracking-wider text-neutral-500 uppercase">
+        <p className="text-[11px] font-semibold tracking-wider text-neutral-600 uppercase">
           What you saw
         </p>
         <span className="w-4" />
         <p
-          className="text-[10px] font-semibold tracking-wider uppercase"
+          className="text-[11px] font-semibold tracking-wider uppercase"
           style={{ color: tint }}
         >
           What was real
@@ -42,12 +42,12 @@ export default function Illusion({
             i > 0 ? "border-t border-neutral-100" : ""
           }`}
         >
-          <p className="text-sm leading-snug text-neutral-500">{pair.seen}</p>
+          <p className="text-base leading-snug text-neutral-600">{pair.seen}</p>
           <span className="w-4 text-center text-neutral-300" aria-hidden>
             →
           </span>
           <p
-            className="text-sm leading-snug font-medium"
+            className="text-base leading-snug font-medium"
             style={{ color: tint }}
           >
             {pair.real}

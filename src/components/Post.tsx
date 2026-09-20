@@ -180,7 +180,7 @@ export default function Post({
                 <span className="text-sm font-semibold text-neutral-900">
                   {story.source}
                 </span>
-                <span className="text-sm text-neutral-400">
+                <span className="text-sm text-neutral-500">
                   · {timeAgo(story.publishedAt)}
                 </span>
               </header>
@@ -208,7 +208,7 @@ export default function Post({
                   target="_blank"
                   rel="noreferrer"
                   onClick={(e) => e.stopPropagation()}
-                  className="text-sm text-neutral-400 hover:text-neutral-900"
+                  className="text-sm text-neutral-500 hover:text-neutral-900"
                 >
                   ↗ Source
                 </a>
