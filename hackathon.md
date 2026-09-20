@@ -12,7 +12,7 @@
 - **Auth:** none
 - **AI models:** gpt-4o-mini
 - **Started:** 2026-09-20T17:35:41Z
-- **Last updated:** 2026-09-20T21:43:13Z
+- **Last updated:** 2026-09-20T21:53:12Z
 
 ## Log
 
@@ -114,7 +114,18 @@ believed against what was actually happening, drawn from structured model output
 rather than a generated image (`src/components/Post.tsx`,
 `src/components/Illusion.tsx`, `convex/drills.ts`).
 
-### 2026-09-20 - working tree
+### 2026-09-20 - 992f71e
 Installed the Convex hackathon skill into the project and rewrote this log in its
 documented format, replacing a hand-written version
 (`.claude/skills/convex-hackathon-skill/`).
+
+### 2026-09-20 - ac3974d
+Completed the Convex integration that the hackathon setup prompt calls for and
+that had been missed until now. Installed the official Convex plugin at user
+scope, which carries the Convex agent skills and the Convex MCP server, and
+verified it through the plugin listing rather than the install exit code. This
+project qualifies as a Convex project, so its managed AI files are installed
+too: backend guidelines, `AGENTS.md`, a managed section appended to
+`CLAUDE.md`, the Convex agent skills, and `skills-lock.json`. The hand-written
+parts of `CLAUDE.md` were left intact (`convex/_generated/ai/guidelines.md`,
+`skills-lock.json`, `.claude/skills/`).
