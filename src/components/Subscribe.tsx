@@ -2,18 +2,46 @@ import { useMutation } from "convex/react";
 import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 
-export default function Subscribe({ userId }: { userId: string }) {
+// What the reader is signing up for, per feed. Signing up from a tab asks for
+// that tab; signing up from two tabs gets both in one email, not two.
+const PITCH: Record<string, { title: string; line: string; done: string }> = {
+  scam: {
+    title: "Get one drill a day",
+    line: "Reply in your own words and I will tell you how you did.",
+    done: "One lands in your inbox each morning. Reply however you like and I will tell you how you did.",
+  },
+  course: {
+    title: "Get a free AI course each morning",
+    line: "One course, what it teaches, and where to start.",
+    done: "One course lands in your inbox each morning.",
+  },
+  job: {
+    title: "Get a remote AI job each morning",
+    line: "One opening, what they want, and how to apply.",
+    done: "One opening lands in your inbox each morning.",
+  },
+};
+
+export default function Subscribe({
+  userId,
+  kind = "scam",
+}: {
+  userId: string;
+  kind?: string;
+}) {
   const subscribe = useMutation(api.subscribers.subscribe);
   const [email, setEmail] = useState("");
   const [state, setState] = useState<"idle" | "sending" | "done" | "error">(
     "idle",
   );
 
+  const pitch = PITCH[kind] ?? PITCH.scam;
+
   async function signUp() {
     if (!email.includes("@") || state === "sending") return;
     setState("sending");
     try {
-      await subscribe({ email, userId });
+      await subscribe({ email, userId, kinds: [kind] });
       setState("done");
       setEmail("");
     } catch {
@@ -24,20 +52,15 @@ export default function Subscribe({ userId }: { userId: string }) {
   if (state === "done") {
     return (
       <p className="rounded-2xl border border-neutral-200 bg-white px-5 py-4 text-base text-neutral-700">
-        You are on the list. One lands in your inbox each morning. Reply
-        however you like and I will tell you how you did.
+        You are on the list. {pitch.done}
       </p>
     );
   }
 
   return (
     <div className="rounded-2xl border border-neutral-200 bg-white px-5 py-4">
-      <p className="text-base font-medium text-neutral-900">
-        Get one drill a day
-      </p>
-      <p className="mt-0.5 text-base text-neutral-600">
-        Reply in your own words and I will tell you how you did.
-      </p>
+      <p className="text-base font-medium text-neutral-900">{pitch.title}</p>
+      <p className="mt-0.5 text-base text-neutral-600">{pitch.line}</p>
       <div className="mt-3 flex gap-2">
         <input
           type="email"
@@ -47,7 +70,7 @@ export default function Subscribe({ userId }: { userId: string }) {
             if (e.key === "Enter") void signUp();
           }}
           placeholder="you@example.com"
-          className="min-w-0 flex-1 rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-neutral-400"
+          className="min-w-0 flex-1 rounded-lg border border-neutral-200 px-3 py-2 text-base outline-none focus:border-neutral-400"
         />
         <button
           type="button"

@@ -89,6 +89,10 @@ export default defineSchema({
     lastDrillId: v.optional(v.id("drills")),
     lastStoryId: v.optional(v.id("stories")),
     lastSentAt: v.optional(v.number()),
+    // Which feeds this reader wants in the daily email. Absent means ["scam"],
+    // which is what everyone who signed up before the other two feeds existed
+    // actually asked for.
+    kinds: v.optional(v.array(v.string())),
   }).index("by_email", ["email"])
     .index("by_active", ["active"]),
 });

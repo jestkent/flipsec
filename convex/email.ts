@@ -42,7 +42,7 @@ async function sendMessage(to: string, subject: string, text: string) {
   return (await response.json()) as { message_id?: string };
 }
 
-function drillEmail(drill: {
+function drillSection(drill: {
   prompt: string;
   choices: string[];
   source: string;
@@ -61,42 +61,117 @@ ${options}
 Just hit reply and tell me which one, in your own words. I will tell you how you did.
 
 This one came from ${drill.source}:
-${drill.url}
+${drill.url}`;
+}
 
-— FlipSec`;
+type Card = {
+  title: string;
+  summary: string;
+  url: string;
+  source: string;
+  company?: string;
+  locationChip?: string;
+  firstStep?: string;
+  timeCommitment?: string;
+};
+
+function courseSection(card: Card): string {
+  const time = card.timeCommitment ? ` Takes ${card.timeCommitment}.` : "";
+  const start = card.firstStep ? `\n\nHow to start: ${card.firstStep}${time}` : "";
+
+  return `A free course worth a look.
+
+${card.title}
+${card.summary}${start}
+
+${card.url}`;
+}
+
+function jobSection(card: Card): string {
+  const where = [card.company, card.locationChip].filter(Boolean).join(" · ");
+
+  return `A remote AI job that opened up.
+
+${card.title}${where ? `\n${where}` : ""}
+${card.summary}
+
+Listed on ${card.source}:
+${card.url}`;
+}
+
+// One email a day per reader, carrying a section per feed they asked for.
+// Two feeds do not mean two emails.
+function dailyEmail(sections: string[]): string {
+  return `${sections.join("\n\n———\n\n")}
+
+— FlipSec
+https://hallowed-nightingale-322.convex.site`;
 }
 
 export const sendDailyDrill = internalAction({
   args: {},
   handler: async (ctx): Promise<{ sent: number; failed: number }> => {
+    // Fetched once for everybody, not once per reader.
     const drill = await ctx.runQuery(internal.subscribers.pickTodaysDrill, {});
-    if (drill === null) {
-      console.warn("no drill available to send");
+    const course: Card | null = await ctx.runQuery(
+      internal.subscribers.pickTodaysCard,
+      { kind: "course" },
+    );
+    const job: Card | null = await ctx.runQuery(
+      internal.subscribers.pickTodaysCard,
+      { kind: "job" },
+    );
+
+    if (drill === null && course === null && job === null) {
+      console.warn("nothing available to send");
       return { sent: 0, failed: 0 };
     }
 
     const subscribers: Array<{
       subscriberId: Id<"subscribers">;
       email: string;
+      kinds: string[];
     }> = await ctx.runQuery(internal.subscribers.listActive, {});
 
-    const text = drillEmail(drill);
     let sent = 0;
     let failed = 0;
 
     for (const subscriber of subscribers) {
-      try {
-        await sendMessage(
-          subscriber.email,
-          "Spot the scam — today's drill",
-          text,
-        );
+      // Sections in feed order, and only the feeds this reader asked for.
+      const wants = subscriber.kinds;
+      const sections: string[] = [];
+      if (wants.includes("scam") && drill !== null) {
+        sections.push(drillSection(drill));
+      }
+      if (wants.includes("course") && course !== null) {
+        sections.push(courseSection(course));
+      }
+      if (wants.includes("job") && job !== null) {
+        sections.push(jobSection(job));
+      }
 
-        await ctx.runMutation(internal.subscribers.markSent, {
-          subscriberId: subscriber.subscriberId,
-          drillId: drill.drillId,
-          storyId: drill.storyId,
-        });
+      if (sections.length === 0) continue;
+
+      // The drill is the only part anyone can reply to, so it sets the
+      // subject when it is there.
+      const subject =
+        wants.includes("scam") && drill !== null
+          ? "Spot the scam — today's drill"
+          : "Today from FlipSec";
+
+      try {
+        await sendMessage(subscriber.email, subject, dailyEmail(sections));
+
+        // Only the scam drill is gradeable, so only that records a target.
+        // A reply from a courses-only reader finds no drill and saveReply
+        // logs and drops it, which is the intended behaviour.
+        if (wants.includes("scam") && drill !== null) {
+          await ctx.runMutation(internal.subscribers.markSent, {
+            subscriberId: subscriber.subscriberId,
+            drillId: drill.drillId,
+            storyId: drill.storyId,
+          });
+        }
         sent++;
       } catch (error) {
         failed++;
@@ -104,7 +179,7 @@ export const sendDailyDrill = internalAction({
       }
     }
 
-    console.log(`daily drill: sent ${sent}, failed ${failed}`);
+    console.log(`daily send: sent ${sent}, failed ${failed}`);
     return { sent, failed };
   },
 });
@@ -134,7 +209,7 @@ export const sendTestDrill = internalAction({
     await sendMessage(
       email,
       "Spot the scam — today's drill",
-      drillEmail(drill),
+      dailyEmail([drillSection(drill)]),
     );
 
     await ctx.runMutation(internal.subscribers.markSent, {

@@ -7,6 +7,15 @@ const ART: Record<string, { from: string; to: string; glyph: string }> = {
   phishing: { from: "#e0f2fe", to: "#bae6fd", glyph: "M3 7h18v12H3zM3 7l9 7 9-7" },
   injection: { from: "#ccfbf1", to: "#99f6e4", glyph: "M8 6 3 12l5 6M16 6l5 6-5 6M13 4l-2 16" },
   other: { from: "#f5f5f5", to: "#e5e5e5", glyph: "M12 3v10M12 17v.01M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z" },
+
+  // The Learn AI and Jobs feeds put a different word in the chip: a course
+  // level, or where the work can be done. Same art, so a tab that has no
+  // pictures from its source still has a feed rather than a list of grey
+  // rectangles. An open book for a course, a horizon for a remote job.
+  beginner: { from: "#dcfce7", to: "#bbf7d0", glyph: "M12 7v13M12 7a5 5 0 0 0-5-3H3v13h4a5 5 0 0 1 5 3M12 7a5 5 0 0 1 5-3h4v13h-4a5 5 0 0 0-5 3" },
+  intermediate: { from: "#e0e7ff", to: "#c7d2fe", glyph: "M12 7v13M12 7a5 5 0 0 0-5-3H3v13h4a5 5 0 0 1 5 3M12 7a5 5 0 0 1 5-3h4v13h-4a5 5 0 0 0-5 3" },
+  advanced: { from: "#ffe4e6", to: "#fecdd3", glyph: "M12 7v13M12 7a5 5 0 0 0-5-3H3v13h4a5 5 0 0 1 5 3M12 7a5 5 0 0 1 5-3h4v13h-4a5 5 0 0 0-5 3" },
+  remote: { from: "#cffafe", to: "#a5f3fc", glyph: "M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z" },
 };
 
 export default function TacticArt({

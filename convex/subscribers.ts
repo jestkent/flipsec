@@ -3,13 +3,31 @@ import { internalMutation, internalQuery, mutation } from "./_generated/server";
 
 // Public: a reader gives their address on the site. Deduped on by_email so
 // signing up twice reactivates rather than creating a second row.
+const FEEDS = ["scam", "course", "job"];
+
+// Whatever the browser sent, reduced to known feeds. A caller can put any
+// string in a public mutation's array, and an unknown kind would sit in the
+// row forever producing an empty section in every email.
+function cleanKinds(kinds: string[] | undefined): string[] {
+  if (!kinds || kinds.length === 0) return ["scam"];
+  const kept = FEEDS.filter((feed) => kinds.includes(feed));
+  return kept.length > 0 ? kept : ["scam"];
+}
+
 export const subscribe = mutation({
-  args: { email: v.string(), userId: v.optional(v.string()) },
+  args: {
+    email: v.string(),
+    userId: v.optional(v.string()),
+    // Which feeds to send. Signing up from a tab asks for that tab.
+    kinds: v.optional(v.array(v.string())),
+  },
   handler: async (ctx, args) => {
     const email = args.email.trim().toLowerCase();
     if (!email.includes("@") || email.length > 200) {
       throw new Error("that does not look like an email address");
     }
+
+    const kinds = cleanKinds(args.kinds);
 
     const existing = await ctx.db
       .query("subscribers")
@@ -17,7 +35,10 @@ export const subscribe = mutation({
       .unique();
 
     if (existing !== null) {
-      if (!existing.active) await ctx.db.patch(existing._id, { active: true });
+      // Signing up again from a different tab adds that feed rather than
+      // replacing what they already asked for.
+      const merged = cleanKinds([...(existing.kinds ?? ["scam"]), ...kinds]);
+      await ctx.db.patch(existing._id, { active: true, kinds: merged });
       return { already: true };
     }
 
@@ -25,6 +46,7 @@ export const subscribe = mutation({
       email,
       userId: args.userId,
       active: true,
+      kinds,
     });
     return { already: false };
   },
@@ -38,7 +60,48 @@ export const listActive = internalQuery({
       .withIndex("by_active", (q) => q.eq("active", true))
       .take(200);
 
-    return subs.map((s) => ({ subscriberId: s._id, email: s.email }));
+    return subs.map((s) => ({
+      subscriberId: s._id,
+      email: s.email,
+      kinds: s.kinds ?? ["scam"],
+    }));
+  },
+});
+
+// The newest published card in a feed that is not the scam feed, for the
+// daily email. Courses and jobs carry their whole back on the row, so there
+// is no second table to join.
+export const pickTodaysCard = internalQuery({
+  args: { kind: v.string() },
+  handler: async (ctx, args) => {
+    const rows = await ctx.db
+      .query("stories")
+      .withIndex("by_kind_published", (q) =>
+        q.eq("kind", args.kind).eq("status", "published"),
+      )
+      .order("desc")
+      .take(1);
+
+    const row = rows[0];
+    if (row === undefined) return null;
+
+    const back = (row.back ?? {}) as {
+      company?: string;
+      locationChip?: string;
+      firstStep?: string;
+      timeCommitment?: string;
+    };
+
+    return {
+      title: row.title,
+      summary: row.summary ?? "",
+      url: row.url,
+      source: row.source,
+      company: back.company,
+      locationChip: back.locationChip,
+      firstStep: back.firstStep,
+      timeCommitment: back.timeCommitment,
+    };
   },
 });
 

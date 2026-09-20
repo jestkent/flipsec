@@ -2,18 +2,39 @@ import { useQuery } from "convex/react";
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Doc } from "../../convex/_generated/dataModel";
+import CourseBack from "./CourseBack";
+import JobBack from "./JobBack";
 import LessonBack from "./LessonBack";
 import TacticArt from "./TacticArt";
 
 type Story = Omit<Doc<"stories">, "rawText">;
 
-// The one place colour carries meaning, per PLAN.md section 16.
+// The one place colour carries meaning, per PLAN.md section 16. The last four
+// are the other two feeds: a course level, and where a job can be done.
 const TACTIC_STYLE: Record<string, string> = {
   deepfake: "bg-violet-50 text-violet-700",
   voice: "bg-amber-50 text-amber-700",
   phishing: "bg-sky-50 text-sky-700",
   injection: "bg-teal-50 text-teal-700",
   other: "bg-neutral-100 text-neutral-600",
+  beginner: "bg-emerald-50 text-emerald-700",
+  intermediate: "bg-indigo-50 text-indigo-700",
+  advanced: "bg-rose-50 text-rose-700",
+  remote: "bg-cyan-50 text-cyan-700",
+};
+
+// What the flip promises, per feed. The card says what is behind it rather
+// than just offering to turn over.
+const FLIP_LABEL: Record<string, string> = {
+  scam: "See how this works",
+  course: "What you will learn",
+  job: "What they want",
+};
+
+const BACK_LABEL: Record<string, string> = {
+  scam: "Back to the story",
+  course: "Back to the course",
+  job: "Back to the job",
 };
 
 function timeAgo(ms: number | undefined): string {
@@ -30,9 +51,11 @@ function timeAgo(ms: number | undefined): string {
 // reachable, per PLAN.md section 7.
 function FlipBadge({
   flipped,
+  kind,
   onFlip,
 }: {
   flipped: boolean;
+  kind: string;
   onFlip: () => void;
 }) {
   return (
@@ -43,7 +66,11 @@ function FlipBadge({
         onFlip();
       }}
       aria-expanded={flipped}
-      aria-label={flipped ? "Back to the story" : "See how this scam works"}
+      aria-label={
+        flipped
+          ? (BACK_LABEL[kind] ?? BACK_LABEL.scam)
+          : (FLIP_LABEL[kind] ?? FLIP_LABEL.scam)
+      }
       className="absolute top-3 right-3 z-10 grid h-11 w-11 place-items-center rounded-full bg-white/95 text-lg text-neutral-900 shadow-md ring-1 ring-neutral-900/10 backdrop-blur transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-neutral-900"
     >
       <span aria-hidden>↻</span>
@@ -74,11 +101,16 @@ export default function Post({
   const backRef = useRef<HTMLDivElement>(null);
   const artId = useId();
 
+  const kind = story.kind ?? "scam";
+
   // Only load the drill once the reader actually flips. Loading one per post
   // would open a subscription for every card in the feed.
+  //
+  // Courses and jobs carry their whole back on the story row, so they never
+  // open this subscription at all.
   const liveDrill = useQuery(
     api.drills.drillForStory,
-    flipped ? { storyId: story._id } : "skip",
+    flipped && kind === "scam" ? { storyId: story._id } : "skip",
   );
 
   // Flipping back sets the query to "skip", which makes liveDrill undefined
@@ -149,7 +181,7 @@ export default function Post({
         {/* The whole front is the control. The badge is the accessible name
             and the keyboard path; this click target is the convenience. */}
         <div onClick={flip} className="face face-front cursor-pointer">
-          <FlipBadge flipped={flipped} onFlip={flip} />
+          <FlipBadge flipped={flipped} kind={kind} onFlip={flip} />
 
           <div ref={frontRef} className="flex flex-col">
             <div className="h-40 w-full shrink-0 overflow-hidden border-b border-neutral-100 bg-neutral-50">
@@ -185,9 +217,24 @@ export default function Post({
                 </span>
               </header>
 
-              <p className="text-lg leading-snug font-medium text-neutral-900">
-                {story.summary}
-              </p>
+              {/* A scam post leads with what happened, so the headline would
+                  only repeat the summary. A course and a job are named things
+                  a reader is deciding between, so those two lead with the
+                  name and the summary explains it. */}
+              {kind === "scam" ? (
+                <p className="text-lg leading-snug font-medium text-neutral-900">
+                  {story.summary}
+                </p>
+              ) : (
+                <div className="flex flex-col gap-1.5">
+                  <p className="text-lg leading-snug font-semibold text-neutral-900">
+                    {story.title}
+                  </p>
+                  <p className="text-base leading-relaxed text-neutral-700">
+                    {story.summary}
+                  </p>
+                </div>
+              )}
 
               {/* Only the tactic stays on the front. The red flags belong with
                 the explanation, so they live on the lesson. */}
@@ -201,7 +248,7 @@ export default function Post({
 
               <footer className="mt-auto flex items-center justify-between pt-1">
                 <span className="text-sm font-semibold text-neutral-900">
-                  ↻ See how this works
+                  ↻ {FLIP_LABEL[kind] ?? FLIP_LABEL.scam}
                 </span>
                 <a
                   href={story.url}
@@ -220,16 +267,25 @@ export default function Post({
         {/* The back holds inputs and buttons, so only the badge and the
             explicit link flip it back. */}
         <div className="face face-back">
-          <FlipBadge flipped={flipped} onFlip={flip} />
+          <FlipBadge flipped={flipped} kind={kind} onFlip={flip} />
+          {/* One flip, three backs. The rotation, the height measuring and
+              the reduced-motion handling above are shared; only what is
+              printed on the far face changes. */}
           <div ref={backRef}>
-            <LessonBack
-              drill={drill}
-              storyId={story._id}
-              tactic={tactic}
-              redFlags={story.redFlags ?? []}
-              userId={userId}
-              onBack={flip}
-            />
+            {kind === "course" ? (
+              <CourseBack back={story.back} url={story.url} onBack={flip} />
+            ) : kind === "job" ? (
+              <JobBack back={story.back} url={story.url} onBack={flip} />
+            ) : (
+              <LessonBack
+                drill={drill}
+                storyId={story._id}
+                tactic={tactic}
+                redFlags={story.redFlags ?? []}
+                userId={userId}
+                onBack={flip}
+              />
+            )}
           </div>
         </div>
       </div>
