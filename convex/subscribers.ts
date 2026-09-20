@@ -107,3 +107,28 @@ export const ensure = internalMutation({
     });
   },
 });
+
+// Removes an address entirely, along with anything it answered. Used when
+// someone asks to be taken off, or when the wrong address was added.
+export const forget = internalMutation({
+  args: { email: v.string() },
+  handler: async (ctx, args) => {
+    const email = args.email.trim().toLowerCase();
+    const subscriber = await ctx.db
+      .query("subscribers")
+      .withIndex("by_email", (q) => q.eq("email", email))
+      .unique();
+
+    if (subscriber === null) return { removed: false, attempts: 0 };
+
+    const attempts = await ctx.db
+      .query("attempts")
+      .withIndex("by_user", (q) => q.eq("userId", email))
+      .take(200);
+
+    for (const attempt of attempts) await ctx.db.delete(attempt._id);
+    await ctx.db.delete(subscriber._id);
+
+    return { removed: true, attempts: attempts.length };
+  },
+});
