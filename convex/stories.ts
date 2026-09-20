@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import OpenAI from "openai";
 import { internal } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
 import {
   internalAction,
   internalMutation,
@@ -76,6 +77,8 @@ const PROCESS_SCHEMA = {
     tactic: {
       type: "string",
       enum: ["phishing", "deepfake", "voice", "injection", "other"],
+      description:
+        "The trick the scam leans on most. Work down the list in TACTIC_GUIDE and take the first that fits.",
     },
   },
 } as const;
@@ -92,7 +95,17 @@ Rules you must follow:
 - Say what happened and how the trick works. Do not give advice or tell the reader what to do.
 - Red flags are the signs that give the scam away, not instructions. Two to four of them, four words maximum each, lowercase.
 - Set aiRelated true only when AI is genuinely part of the scam. A plain scam with no AI in it gets false, even if it is a serious scam.
-- Pick the tactic that fits best: deepfake for fake video or images, voice for cloned voices, phishing for fake messages or websites, injection for attacks on AI systems themselves, other for anything else.`;
+
+Pick the tactic by working down this list and taking the FIRST one that fits:
+1. deepfake - fake video or images of a real person. AI-generated faces, fake officials, fake executives on a video call, fake promotional clips.
+2. voice - a cloned or synthetic voice on a phone call or voicemail.
+3. injection - an attack aimed at an AI system itself, such as hidden instructions buried in text a model reads.
+4. phishing - fake messages, texts, emails or websites built to get information, money or a login code.
+5. other - ONLY when none of the four above fit at all.
+
+Two things to get right:
+- A scam usually uses several tricks at once. Do not fall back to other because of that. Pick the one it leans on hardest, working down the list in order.
+- If aiRelated is true, other is almost always the wrong answer. AI shows up as fake video, a fake voice, or a message a model wrote. One of the first four will fit.`;
 
 export const processStory = internalAction({
   args: {
@@ -272,5 +285,92 @@ export const setImage = internalMutation({
   args: { storyId: v.id("stories"), image: v.string() },
   handler: async (ctx, args) => {
     await ctx.db.patch(args.storyId, { image: args.image });
+  },
+});
+
+export const listForReclassify = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const published = await ctx.db
+      .query("stories")
+      .withIndex("by_status", (q) => q.eq("status", "published"))
+      .take(50);
+
+    return published.map((s) => ({
+      storyId: s._id,
+      title: s.title,
+      summary: s.summary ?? "",
+      tactic: s.tactic ?? "other",
+    }));
+  },
+});
+
+export const setTactic = internalMutation({
+  args: { storyId: v.id("stories"), tactic: v.string() },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.storyId, { tactic: args.tactic });
+  },
+});
+
+const TACTIC_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["tactic"],
+  properties: {
+    tactic: {
+      type: "string",
+      enum: ["phishing", "deepfake", "voice", "injection", "other"],
+    },
+  },
+} as const;
+
+// rawText is gone by the time a story is published, so this reclassifies from
+// the summary. That is enough: the summary already names the trick.
+export const reclassifyTactics = internalAction({
+  args: {},
+  handler: async (ctx): Promise<{ checked: number; changed: number }> => {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) throw new Error("OPENAI_API_KEY is not set in Convex env vars");
+
+    const openai = new OpenAI({ apiKey });
+    const stories: Array<{
+      storyId: Id<"stories">;
+      title: string;
+      summary: string;
+      tactic: string;
+    }> = await ctx.runQuery(internal.stories.listForReclassify, {});
+
+    let changed = 0;
+    for (const story of stories) {
+      const completion = await openai.chat.completions.create({
+        model: MODEL,
+        messages: [
+          { role: "system", content: PROCESS_PROMPT },
+          {
+            role: "user",
+            content: `Classify the tactic only.\n\nHeadline: ${story.title}\n\nPost: ${story.summary}`,
+          },
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: { name: "tactic", strict: true, schema: TACTIC_SCHEMA },
+        },
+      });
+
+      const raw = completion.choices[0]?.message?.content;
+      if (!raw) continue;
+
+      const { tactic } = JSON.parse(raw) as { tactic: string };
+      if (tactic === story.tactic) continue;
+
+      console.log(`${story.title.slice(0, 45)}: ${story.tactic} -> ${tactic}`);
+      await ctx.runMutation(internal.stories.setTactic, {
+        storyId: story.storyId,
+        tactic,
+      });
+      changed++;
+    }
+
+    return { checked: stories.length, changed };
   },
 });
