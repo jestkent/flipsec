@@ -14,11 +14,15 @@
 ## What it is
 
 A scrolling feed that reads like social media and carries real alerts about AI
-being used against people. Every post flips. On the back is a drill built from
-that exact story, then a three-step lesson on how the scam runs, then a box where
-you can ask follow-up questions about it.
+being used against people. Every post flips.
 
-The drill is always about the post you just read, so the context is already in
+On the back is a lesson built from that exact story: a diagram of the three
+stages of the scam, a note on why a careful person still falls for it, a button
+that writes you a tutor-style explanation with an everyday comparison, and a box
+where you can ask it anything about that scam. Underneath, if you want it, a
+practice question.
+
+The lesson is always about the post you just read, so the context is already in
 your head. No setup, no curriculum, no login wall.
 
 ## Who it is for
@@ -42,9 +46,9 @@ around threats from five years ago.
   browser with no refresh and no polling.
 - **The scheduler** chains the entire content pipeline. A cron fires a crawl, the
   crawl schedules a mutation, that mutation schedules an AI action, which
-  schedules another mutation, which schedules drill generation. Each link is
-  independently retryable.
-- **A cron** re-crawls every six hours.
+  schedules another mutation, which schedules lesson generation. A reply that
+  arrives by email enters the same way. Each link is independently retryable.
+- **Two crons**: re-crawl every six hours, send the daily drill email.
 - **Mutations** are transactions: they record attempts, dedupe stories on URL and
   enforce the rate limit on reader questions.
 - **Indexes** on every lookup. Seven of them, no table scans anywhere.
@@ -60,8 +64,9 @@ Crawl spacing honours each site's `robots.txt`.
 **OpenAI** turns crawled government prose into something a 7th grader reads.
 Every story gets one structured call that returns a summary in original phrasing,
 the red flags, the tactic, and a judgment on whether AI is genuinely part of the
-scam. A second call writes the drill, its three plausible choices, the
-explanation and the lesson steps. A third answers reader questions, scoped to the
+scam. A second call writes the three lesson steps, why the scam works, and a
+practice question with three plausible choices. A third writes the tutor lesson
+on demand, cached so a story is never taught twice. A third answers reader questions, scoped to the
 post in front of them.
 
 **AgentMail** closes the loop, in both directions. A cron sends one drill a day
@@ -85,8 +90,14 @@ CRON (6h) -> crawlSources (internalAction, Firecrawl)
                               -> makeDrill (internalAction, OpenAI)
                                    -> saveDrill (mutation)
 
+CRON (daily) -> sendDailyDrill (internalAction, AgentMail)
+AgentMail inbound -> POST /api/agentmail-inbound (httpAction)
+                      -> saveReply (mutation)
+                           -> gradeReply (internalAction, OpenAI)
+                                -> saveGrade (mutation)
+
 FEED   -- useQuery(listPublished)  --> live
-DRILL  -- useQuery(drillForStory)  --> live, loaded only on flip
+LESSON -- useQuery(drillForStory)  --> live, loaded only on flip
 ```
 
 One rule governs all of it: **actions do network calls and never touch the
@@ -94,9 +105,9 @@ database.** They reach it by scheduling mutations. Mutations are transactions an
 never fetch. Where a mutation already holds the data an action needs, it passes it
 straight in, so no action ever reads a row.
 
-20 Convex functions. Every AI and crawl function is internal and cannot be called
-from a browser. The only two public write paths are answering a drill and asking
-a question, and both are capped.
+41 Convex functions. Every AI and crawl function is internal and cannot be called
+from a browser. Public write paths are limited to answering a practice question,
+asking about a post, requesting a lesson and subscribing, and they are capped.
 
 ## The flip
 
@@ -120,14 +131,19 @@ month. The summarisation prompt explicitly forbids reusing any phrase from the
 source. Raw crawled text is deleted from the database the moment a story is
 processed, and the feed query strips it again on the way out.
 
-An AI-relatedness test runs inside the same OpenAI call as the summary. Stories
-that turn out not to involve AI are marked failed and never reach the feed. The
-filter is deliberately strict, which keeps the feed small and on-topic rather
-than large and generic.
+Two gates run inside the same OpenAI call as the summary. One asks whether AI is
+genuinely part of the scam. The other asks whether an ordinary person could meet
+it on their own phone: a story that needs the words token, kit, server or admin
+to tell is written for IT staff, and FlipSec is not for IT staff. A story has to
+pass both to publish.
 
 ## Status
 
 - Live at a public URL, no invite needed
-- Crawl, AI pipeline, feed, flip, drill, lesson and ask-AI all working end to end
-- Currently 26 stories crawled, 4 published, 4 drills, on the production deployment
+- Crawl, AI pipeline, feed, flip, lesson, ask-AI and the two-way email loop all
+  working end to end against live services
+- The feed is deliberately small. Two gates run inside the one OpenAI call that
+  writes each summary: is AI actually part of this, and could this land on a
+  12 year old's own phone. Most government advisories fail one or the other, and
+  the ones that fail are dropped rather than padded into the feed.
 - Not built, and out of scope by choice: accounts, reactions, streaks
