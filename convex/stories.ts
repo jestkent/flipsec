@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import OpenAI from "openai";
 import { internal } from "./_generated/api";
-import { internalAction, internalMutation } from "./_generated/server";
+import { internalAction, internalMutation, query } from "./_generated/server";
 
 const MODEL = "gpt-4o-mini";
 
@@ -193,5 +193,23 @@ export const reprocessRaw = internalMutation({
     }
 
     return { found: stuck.length, queued };
+  },
+});
+
+// The feed. Newest published story first, walked through the by_published
+// index so the sync engine reruns this for every client the moment a crawl
+// publishes something new.
+export const listPublished = query({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const stories = await ctx.db
+      .query("stories")
+      .withIndex("by_published", (q) => q.eq("status", "published"))
+      .order("desc")
+      .take(args.limit ?? 30);
+
+    // rawText is never sent to a client. It is cleared on publish, but this
+    // strips it explicitly so the rule does not depend on that.
+    return stories.map(({ rawText: _rawText, ...story }) => story);
   },
 });

@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import OpenAI from "openai";
 import { internal } from "./_generated/api";
-import { internalAction, internalMutation } from "./_generated/server";
+import { internalAction, internalMutation, query } from "./_generated/server";
 
 const MODEL = "gpt-4o-mini";
 
@@ -127,5 +127,26 @@ export const saveDrill = internalMutation({
       correct: args.correct,
       explanation: args.explanation,
     });
+  },
+});
+
+// The back of a post. Looked up through the by_story index.
+// correct and explanation stay on the server until the reader answers.
+export const drillForStory = query({
+  args: { storyId: v.id("stories") },
+  handler: async (ctx, args) => {
+    const drill = await ctx.db
+      .query("drills")
+      .withIndex("by_story", (q) => q.eq("storyId", args.storyId))
+      .unique();
+
+    if (drill === null) return null;
+
+    return {
+      _id: drill._id,
+      storyId: drill.storyId,
+      prompt: drill.prompt,
+      choices: drill.choices,
+    };
   },
 });

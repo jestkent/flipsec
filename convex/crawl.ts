@@ -5,10 +5,6 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { internalAction } from "./_generated/server";
 
-// consumer.ftc.gov sets "Crawl-delay: 10" in robots.txt, and Firecrawl's free
-// tier allows about 13 requests a minute. 10s satisfies both.
-const SCRAPE_DELAY_MS = 10000;
-
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 type Source = {
@@ -17,6 +13,9 @@ type Source = {
   icon: string;
   // Each index page lists its articles in its own markdown shape.
   linkPattern: RegExp;
+  // Whatever the site's robots.txt asks for, floored at 5s to stay under
+  // Firecrawl's free-tier limit of about 13 requests a minute.
+  delayMs: number;
 };
 
 const SOURCES: Source[] = [
@@ -29,6 +28,8 @@ const SOURCES: Source[] = [
     icon: "https://www.google.com/s2/favicons?domain=ic3.gov&sz=64",
     linkPattern:
       /^\d+\.\s+\[(.+?)\]\((https:\/\/www\.ic3\.gov\/PSA\/\d{4}\/[^)]+)\)/gm,
+    // ic3.gov robots.txt sets no crawl-delay.
+    delayMs: 5000,
   },
   {
     // Public domain, and already written close to the reading level FlipSec
@@ -38,6 +39,8 @@ const SOURCES: Source[] = [
     icon: "https://www.google.com/s2/favicons?domain=consumer.ftc.gov&sz=64",
     linkPattern:
       /^### \[(.+?)\]\((https:\/\/consumer\.ftc\.gov\/consumer-alerts\/\d{4}\/\d{2}\/[^)]+)\)/gm,
+    // consumer.ftc.gov robots.txt sets "Crawl-delay: 10".
+    delayMs: 10000,
   },
 ];
 
@@ -88,7 +91,7 @@ export const crawlSources = internalAction({
     let first = true;
 
     for (const source of SOURCES) {
-      if (!first) await sleep(SCRAPE_DELAY_MS);
+      if (!first) await sleep(source.delayMs);
       first = false;
 
       let alerts: Alert[] = [];
@@ -110,7 +113,7 @@ export const crawlSources = internalAction({
       console.log(`${source.name}: found ${alerts.length} alerts`);
 
       for (const alert of alerts) {
-        await sleep(SCRAPE_DELAY_MS);
+        await sleep(source.delayMs);
 
         try {
           const article = await firecrawl.scrape(alert.url, {

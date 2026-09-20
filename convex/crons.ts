@@ -9,7 +9,7 @@ crons.interval(
   "crawl sources",
   { hours: 6 },
   internal.crawl.crawlSources,
-  { limit: 8 },
+  { limit: 15 },
 );
 
 export default crons;
