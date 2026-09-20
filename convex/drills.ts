@@ -8,7 +8,15 @@ const MODEL = "gpt-4o-mini";
 const DRILL_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["prompt", "choices", "correct", "explanation", "steps", "whyItWorks"],
+  required: [
+    "prompt",
+    "choices",
+    "correct",
+    "explanation",
+    "steps",
+    "whyItWorks",
+    "illusion",
+  ],
   properties: {
     prompt: {
       type: "string",
@@ -39,6 +47,20 @@ const DRILL_SCHEMA = {
       description:
         "Why a careful person still falls for this, 45 words maximum.",
     },
+    illusion: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["seen", "real"],
+        properties: {
+          seen: { type: "string" },
+          real: { type: "string" },
+        },
+      },
+      description:
+        "Exactly three pairs: what the person thought was happening, and what was actually happening.",
+    },
   },
 } as const;
 
@@ -55,6 +77,7 @@ Rules you must follow:
 - Do not name the source, the agency, or the news story. The reader is in the scene, not reading about it.
 - The explanation is 40 words maximum and says what gave the scam away.
 - Then write exactly three steps showing how the scam runs from start to finish, in order. One short sentence each. Step one is what the scammer does first, step three is what they walk away with. Same reading level. These are the first thing the reader sees when they flip the post, so they teach the mechanic plainly.
+- Then write exactly three illusion pairs. seen is what the person believed was happening, in the words they would have used at the time. real is what was actually happening. Eight words maximum each, no full stops. Make the two halves line up so the contrast is obvious: if seen is "a lawyer who knows my case", real is "a stranger using a face-swap app". Each pair must be about a different part of the scam: one about who the person thought they were dealing with, one about what they thought they were looking at, and one about what they thought would happen next. Never make the same contrast twice. Do not repeat the steps.
 - Then write whyItWorks: why a careful person still falls for this one. Name the feeling the scam uses, such as fear, hurry, or wanting to help. 45 words maximum, same reading level. Do not give advice and do not repeat the steps.`;
 
 export const makeDrill = internalAction({
@@ -94,6 +117,7 @@ export const makeDrill = internalAction({
       explanation: string;
       steps: string[];
       whyItWorks: string;
+      illusion: Array<{ seen: string; real: string }>;
     };
 
     if (drill.choices.length !== 3) {
@@ -113,6 +137,7 @@ export const makeDrill = internalAction({
       explanation: drill.explanation,
       steps: drill.steps,
       whyItWorks: drill.whyItWorks,
+      illusion: drill.illusion,
     });
   },
 });
@@ -128,6 +153,9 @@ export const saveDrill = internalMutation({
     explanation: v.string(),
     steps: v.optional(v.array(v.string())),
     whyItWorks: v.optional(v.string()),
+    illusion: v.optional(
+      v.array(v.object({ seen: v.string(), real: v.string() })),
+    ),
   },
   handler: async (ctx, args) => {
     const existing = await ctx.db
@@ -138,10 +166,15 @@ export const saveDrill = internalMutation({
     if (existing !== null) {
       // A drill written before the lesson existed gets its steps filled in
       // rather than a second drill stacked behind the same post.
-      if (existing.steps === undefined || existing.whyItWorks === undefined) {
+      if (
+        existing.steps === undefined ||
+        existing.whyItWorks === undefined ||
+        existing.illusion === undefined
+      ) {
         await ctx.db.patch(existing._id, {
           steps: args.steps ?? existing.steps,
           whyItWorks: args.whyItWorks ?? existing.whyItWorks,
+          illusion: args.illusion ?? existing.illusion,
         });
       }
       return existing._id;
@@ -155,6 +188,7 @@ export const saveDrill = internalMutation({
       explanation: args.explanation,
       steps: args.steps,
       whyItWorks: args.whyItWorks,
+      illusion: args.illusion,
     });
   },
 });
@@ -178,6 +212,26 @@ export const drillForStory = query({
       choices: drill.choices,
       steps: drill.steps ?? [],
       whyItWorks: drill.whyItWorks ?? "",
+      illusion: drill.illusion ?? [],
     };
+  },
+});
+
+// Clears the generated lesson fields so backfillLessons rewrites them. Used
+// when a prompt changes and the existing lessons need to catch up.
+export const resetLessonFields = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const drills = await ctx.db.query("drills").take(200);
+
+    for (const drill of drills) {
+      await ctx.db.patch(drill._id, {
+        steps: undefined,
+        whyItWorks: undefined,
+        illusion: undefined,
+      });
+    }
+
+    return { reset: drills.length };
   },
 });

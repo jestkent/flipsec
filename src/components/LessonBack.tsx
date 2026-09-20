@@ -2,6 +2,7 @@ import { useAction, useMutation } from "convex/react";
 import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
+import Illusion from "./Illusion";
 import ScamFlow from "./ScamFlow";
 
 type Drill = {
@@ -11,6 +12,7 @@ type Drill = {
   choices: string[];
   steps: string[];
   whyItWorks: string;
+  illusion: Array<{ seen: string; real: string }>;
 };
 
 type Result = { correct: boolean; correctIndex: number; explanation: string };
@@ -124,14 +126,17 @@ export default function LessonBack({
         </div>
       )}
 
-      {drill.whyItWorks && (
-        <div className="rounded-xl bg-neutral-50 p-4">
+      {(drill.illusion.length > 0 || drill.whyItWorks) && (
+        <div className="flex flex-col gap-3">
           <p className="text-xs font-semibold tracking-wider text-neutral-400 uppercase">
             Why it works
           </p>
-          <p className="mt-1.5 text-sm leading-relaxed text-neutral-700">
-            {drill.whyItWorks}
-          </p>
+          <Illusion pairs={drill.illusion} tactic={tactic} />
+          {drill.whyItWorks && (
+            <p className="text-sm leading-relaxed text-neutral-600">
+              {drill.whyItWorks}
+            </p>
+          )}
         </div>
       )}
 

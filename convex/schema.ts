@@ -28,6 +28,11 @@ export default defineSchema({
     explanation: v.string(),
     steps: v.optional(v.array(v.string())),   // the three stages, shown on flip
     whyItWorks: v.optional(v.string()),       // why people fall for it
+    // What the victim believed, beside what was actually happening. Drawn as
+    // the "why it works" panel.
+    illusion: v.optional(
+      v.array(v.object({ seen: v.string(), real: v.string() })),
+    ),
   }).index("by_story", ["storyId"]),
 
   attempts: defineTable({

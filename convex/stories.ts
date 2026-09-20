@@ -309,7 +309,8 @@ export const backfillLessons = internalMutation({
       if (
         drill !== null &&
         drill.steps !== undefined &&
-        drill.whyItWorks !== undefined
+        drill.whyItWorks !== undefined &&
+        drill.illusion !== undefined
       ) {
         continue;
       }
