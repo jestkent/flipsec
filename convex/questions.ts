@@ -14,6 +14,9 @@ const MODEL = "gpt-4o-mini";
 // reader gets an hour, and how much the model is allowed to say back.
 const MAX_QUESTION_CHARS = 200;
 const MAX_PER_HOUR = 10;
+// Backstop. A caller who regenerates their userId escapes the per-reader cap
+// but not this one.
+const MAX_PER_HOUR_GLOBAL = 200;
 const MAX_ANSWER_TOKENS = 220;
 
 export const getForAsking = internalQuery({
@@ -36,14 +39,22 @@ export const checkRate = internalMutation({
   args: { userId: v.string() },
   handler: async (ctx, args) => {
     const since = Date.now() - 60 * 60 * 1000;
-    const recent = await ctx.db
+
+    const mine = await ctx.db
       .query("questions")
       .withIndex("by_user_time", (q) =>
         q.eq("userId", args.userId).gt("createdAt", since),
       )
       .take(MAX_PER_HOUR + 1);
 
-    return { allowed: recent.length < MAX_PER_HOUR };
+    if (mine.length >= MAX_PER_HOUR) return { allowed: false };
+
+    const everyone = await ctx.db
+      .query("questions")
+      .withIndex("by_time", (q) => q.gt("createdAt", since))
+      .take(MAX_PER_HOUR_GLOBAL + 1);
+
+    return { allowed: everyone.length < MAX_PER_HOUR_GLOBAL };
   },
 });
 

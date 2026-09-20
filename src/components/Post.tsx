@@ -1,5 +1,5 @@
 import { useQuery } from "convex/react";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Doc } from "../../convex/_generated/dataModel";
 import LessonBack from "./LessonBack";
@@ -34,27 +34,38 @@ export default function Post({
 }) {
   const [flipped, setFlipped] = useState(false);
   const [flipping, setFlipping] = useState(false);
-  const [height, setHeight] = useState<number>();
+  const [shownFace, setShownFace] = useState<"front" | "back">("front");
+  const [sizes, setSizes] = useState({ front: 0, back: 0 });
+  const [imageFailed, setImageFailed] = useState(false);
 
   const frontRef = useRef<HTMLDivElement>(null);
   const backRef = useRef<HTMLDivElement>(null);
+  const artId = useId();
 
   // Only load the drill once the reader actually flips. Loading one per post
   // would open a subscription for every card in the feed.
-  const drill = useQuery(
+  const liveDrill = useQuery(
     api.drills.drillForStory,
     flipped ? { storyId: story._id } : "skip",
   );
 
+  // Flipping back sets the query to "skip", which makes liveDrill undefined
+  // again. Without this the back face would swap to its loading state while
+  // it is still rotating away. Keep whatever was last loaded.
+  const [drill, setDrill] = useState(liveDrill);
+  useEffect(() => {
+    if (liveDrill !== undefined) setDrill(liveDrill);
+  }, [liveDrill]);
+
   // Both faces are absolutely positioned, so the container has no natural
-  // height. Measure both and lock to the taller one or the feed jumps
-  // mid-flip.
+  // height. Measure each one separately.
   useLayoutEffect(() => {
     function measure() {
       const front = frontRef.current?.scrollHeight ?? 0;
       const back = backRef.current?.scrollHeight ?? 0;
-      const next = Math.max(front, back);
-      if (next > 0) setHeight(next);
+      setSizes((prev) =>
+        prev.front === front && prev.back === back ? prev : { front, back },
+      );
     }
 
     measure();
@@ -73,11 +84,21 @@ export default function Post({
   }, [flipping]);
 
   function flip() {
+    const next = flipped ? "front" : "back";
     setFlipping(true);
     setFlipped((f) => !f);
+
+    // The lesson is much taller than the post, so locking the card to the
+    // taller of the two would leave every card in the feed as tall as its
+    // own lesson. Instead the card is the height of the face being shown,
+    // and the swap happens at the midpoint of the 520ms rotation, while the
+    // card is edge on and the change cannot be seen. Still transform-only.
+    window.setTimeout(() => setShownFace(next), 260);
   }
 
   const tactic = story.tactic ?? "other";
+  const height = sizes[shownFace] || undefined;
+  const showArt = !story.image || imageFailed;
 
   return (
     <article className="post">
@@ -91,15 +112,16 @@ export default function Post({
       >
         <div ref={frontRef} className="face face-front flex flex-col">
           <div className="h-40 w-full shrink-0 overflow-hidden border-b border-neutral-100 bg-neutral-50">
-            {story.image ? (
+            {showArt ? (
+              <TacticArt tactic={tactic} uid={artId} />
+            ) : (
               <img
                 src={story.image}
                 alt=""
                 loading="lazy"
+                onError={() => setImageFailed(true)}
                 className="h-full w-full object-cover"
               />
-            ) : (
-              <TacticArt tactic={tactic} />
             )}
           </div>
 

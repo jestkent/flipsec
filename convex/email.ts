@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
-import { action, internalAction } from "./_generated/server";
+import { internalAction } from "./_generated/server";
 
 // The AgentMail SDK dynamically imports @x402/fetch, a payments module this
 // app does not use, and that import cannot be bundled by Convex. The REST API
@@ -112,7 +112,12 @@ export const sendDailyDrill = internalAction({
 // Sends today's drill to one address on demand, so the loop can be shown
 // without waiting for the 7am cron. Records the send against the subscriber
 // so the reply has something to be graded against.
-export const sendTestDrill = action({
+//
+// internalAction, never action. As a public function this would send mail
+// from our inbox to any address a caller named, which is an open relay and
+// would burn the sending reputation the daily drill depends on. It is called
+// from the CLI only.
+export const sendTestDrill = internalAction({
   args: { email: v.string() },
   handler: async (ctx, args): Promise<{ ok: boolean; detail: string }> => {
     const email = args.email.trim().toLowerCase();

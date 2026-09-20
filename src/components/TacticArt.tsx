@@ -9,9 +9,17 @@ const ART: Record<string, { from: string; to: string; glyph: string }> = {
   other: { from: "#f5f5f5", to: "#e5e5e5", glyph: "M12 3v10M12 17v.01M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z" },
 };
 
-export default function TacticArt({ tactic }: { tactic: string }) {
+export default function TacticArt({
+  tactic,
+  uid,
+}: {
+  tactic: string;
+  uid: string;
+}) {
   const art = ART[tactic] ?? ART.other;
-  const id = `art-${tactic}`;
+  // Two posts sharing a tactic would otherwise emit the same element id, and
+  // the gradient reference could bind to the wrong one.
+  const id = `art-${tactic}-${uid.replace(/[^a-zA-Z0-9-]/g, "")}`;
 
   return (
     <svg

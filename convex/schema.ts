@@ -58,7 +58,12 @@ export default defineSchema({
     question: v.string(),
     answer: v.string(),
     createdAt: v.number(),
-  }).index("by_user_time", ["userId", "createdAt"]),
+  })
+    .index("by_user_time", ["userId", "createdAt"])
+    // userId comes from the browser and can be regenerated at will, so the
+    // per-reader cap is a courtesy. This index backs a deployment-wide cap
+    // that a caller cannot get around.
+    .index("by_time", ["createdAt"]),
 
   subscribers: defineTable({
     email: v.string(),
