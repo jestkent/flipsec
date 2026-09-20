@@ -3,7 +3,7 @@
 **Flip the news. Learn the threat.** A security awareness feed where every post
 flips into a drill built from that exact story.
 
-**Live URL:** TBD
+**Live URL:** https://hallowed-nightingale-322.convex.site
 
 ## What it does
 

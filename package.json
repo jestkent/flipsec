@@ -7,9 +7,11 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "npx @convex-dev/static-hosting deploy"
   },
   "dependencies": {
+    "@convex-dev/static-hosting": "^0.2.1",
     "@mendable/firecrawl-js": "^4.41.0",
     "convex": "^1.46.0",
     "openai": "^7.20.0",
