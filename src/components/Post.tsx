@@ -97,7 +97,11 @@ export default function Post({
   }
 
   const tactic = story.tactic ?? "other";
-  const height = sizes[shownFace] || undefined;
+  // A floor, because a mis-measured face used to collapse the card to a
+  // sliver: the lesson had h-full and its own scrollbar, so it reported the
+  // clamped height rather than its content, and that fed back in.
+  const measured = sizes[shownFace];
+  const height = measured > 0 ? Math.max(measured, 220) : undefined;
   const showArt = !story.image || imageFailed;
 
   return (

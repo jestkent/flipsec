@@ -72,19 +72,21 @@ export default function LessonBack({
   }
 
   if (drill === undefined) {
-    return <p className="p-6 text-sm text-neutral-500">Opening the lesson…</p>;
+    return (
+      <p className="min-h-56 p-6 text-sm text-neutral-500">Opening the lesson…</p>
+    );
   }
 
   if (drill === null) {
     return (
-      <div className="flex h-full flex-col p-6">
+      <div className="flex min-h-56 flex-col gap-4 p-6">
         <p className="text-sm text-neutral-500">
           No lesson for this one yet. Check back after the next crawl.
         </p>
         <button
           type="button"
           onClick={onBack}
-          className="mt-auto self-start text-sm font-medium text-neutral-500 hover:text-neutral-900"
+          className="self-start text-sm font-medium text-neutral-500 hover:text-neutral-900"
         >
           ← Back to the story
         </button>
@@ -93,7 +95,7 @@ export default function LessonBack({
   }
 
   return (
-    <div className="flex h-full flex-col gap-5 overflow-y-auto p-6">
+    <div className="flex flex-col gap-5 p-6">
       <p className="text-xs font-semibold tracking-widest text-neutral-400 uppercase">
         How this works
       </p>
@@ -224,7 +226,7 @@ export default function LessonBack({
       <button
         type="button"
         onClick={onBack}
-        className="mt-auto self-start pt-2 text-sm font-medium text-neutral-500 hover:text-neutral-900"
+        className="self-start pt-2 text-sm font-medium text-neutral-500 hover:text-neutral-900"
       >
         ← Back to the story
       </button>
