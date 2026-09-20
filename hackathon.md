@@ -1,157 +1,120 @@
-# FlipSec — Convex All Gas build log
+# Hackathon log
 
-**Flip the news. Learn the threat.**
+- **Project:** FlipSec
+- **Event:** Convex All Gas Hackathon
+- **What it does:** A social-style feed of real AI scams where flipping a post opens a lesson built from that exact story, and a daily drill emailed to readers is graded from their plain-English reply.
+- **Live app:** https://hallowed-nightingale-322.convex.site
+- **Repo:** https://github.com/jestkent/flipsec
+- **Frontend:** Convex static hosting
+- **Convex deployment:** https://hallowed-nightingale-322.convex.cloud
+- **Components:** @convex-dev/static-hosting
+- **Convex features:** schema, tables, indexes, queries, mutations, actions, HTTP actions, crons, scheduled functions, realtime queries
+- **Auth:** none
+- **AI models:** gpt-4o-mini
+- **Started:** 2026-09-20T17:35:41Z
+- **Last updated:** 2026-09-20T21:43:13Z
 
-| | |
-|---|---|
-| **Live app** | <https://hallowed-nightingale-322.convex.site> |
-| **Repo** | <https://github.com/jestkent/flipsec> |
-| **Demo video** | _to come_ |
-| **Built by** | Jestoni Agan, who teaches Internet Safety to 6th–8th graders |
+## Log
 
----
+### 2026-09-20 - 488533c
+Started the repo with the build plan, a .gitignore written before the first
+commit, and project docs (`PLAN.md`, `CLAUDE.md`, `README.md`).
 
-## What it is
+### 2026-09-20 - 76054f6
+Scaffolded Vite, React, TypeScript and Tailwind v4 with Convex installed, then
+defined the schema: stories, drills, attempts and subscribers, with indexes on
+url, status, published, story and user. Convex features: schema, tables, indexes
+(`convex/schema.ts`).
 
-A scrolling feed that reads like social media and carries real alerts about AI
-being used against people. Every post flips.
+### 2026-09-20 - 9f19da6
+First Firecrawl crawl against the FTC consumer alerts index, running in the Node
+runtime because the Firecrawl SDK imports Node built-ins. Proved usable article
+text comes back before building anything on top. Convex features: actions
+(`convex/crawl.ts`).
 
-On the back is a lesson built from that exact story: a diagram of the three
-stages of the scam, a note on why a careful person still falls for it, a button
-that writes you a tutor-style explanation with an everyday comparison, and a box
-where you can ask it anything about that scam. Underneath, if you want it, a
-practice question.
+### 2026-09-20 - 1e4f165
+Made the crawl two-stage: scrape the index for article links, then scrape each
+article for its body. Writes go out through a scheduled mutation that dedupes on
+the by_url index, so the action never touches the database. Crawl spacing honours
+each source's robots.txt, including FTC's ten second crawl delay. Convex
+features: scheduled functions, mutations, indexes (`convex/crawl.ts`,
+`convex/stories.ts`).
 
-The lesson is always about the post you just read, so the context is already in
-your head. No setup, no curriculum, no login wall.
+### 2026-09-20 - 4dde136
+Chained the rest of the content pipeline. One OpenAI call turns crawled
+government prose into a plain-language summary, red flags and a tactic;
+publishing clears the raw text; a second call writes the drill. A cron re-crawls
+every six hours. Convex features: actions, mutations, scheduled functions, crons
+(`convex/stories.ts`, `convex/drills.ts`, `convex/crons.ts`).
 
-## Who it is for
+### 2026-09-20 - 66d1098
+Built the feed and the flip. listPublished walks the by_published index and
+strips raw text before it leaves the server; the drill query withholds the answer
+key until a reader commits. The flip is a 3D rotation with perspective on the
+parent, 520ms on an asymmetric curve, and a cross-fade under
+prefers-reduced-motion. Convex features: queries, realtime queries, indexes
+(`convex/stories.ts`, `src/components/Post.tsx`, `src/index.css`).
 
-People who are not security professionals. Middle school students, their parents,
-their teachers, anyone who got a weird text last week. Every post is written at a
-7th grade reading level, and that constraint is the product, not a nicety. It is
-what separates this from every enterprise awareness tool in the category.
+### 2026-09-20 - ac2f215
+Deployed to Convex static hosting. The component owns the root, so app HTTP
+routes move under /api. Convex features: registered component
+(`convex/convex.config.ts`).
 
-Bad grammar used to be how you spotted a scam. It is not anymore. Voice cloning,
-deepfaked video calls and personalised phishing are now cheap enough to aim at
-ordinary people. Awareness training, meanwhile, is annual, corporate and built
-around threats from five years ago.
+### 2026-09-20 - a47c98e
+Posts carry the source's og:image where one exists and tactic art where it does
+not. The lesson gained three how-it-works steps generated in the existing drill
+call, and an ask box answering questions scoped to one post, capped by length,
+by reader and by output tokens (`convex/crawl.ts`, `convex/questions.ts`).
 
-## The stack, and what each piece actually does
+### 2026-09-20 - 1705f5a
+Fixed tactic classification drifting to the catch-all: the guidance is now an
+ordered list and both classification calls run at temperature 0, so two runs on
+the same input agree (`convex/stories.ts`).
 
-**Convex** runs everything. Not a database behind an API — the whole backend.
+### 2026-09-20 - f8b8e34
+Turned the flip into a lesson rather than a quiz, at the owner's direction. The
+back of a post opens on a tactic-tinted flow diagram, a note on why the scam
+works, an on-demand tutor explanation cached per story, and the drill underneath
+as optional practice. Convex features: actions, queries
+(`convex/lessons.ts`, `src/components/LessonBack.tsx`, `src/components/ScamFlow.tsx`).
 
-- **Reactive queries** drive the feed. `listPublished` subscribes over a
-  WebSocket, and when a crawl publishes a story the post appears in every open
-  browser with no refresh and no polling.
-- **The scheduler** chains the entire content pipeline. A cron fires a crawl, the
-  crawl schedules a mutation, that mutation schedules an AI action, which
-  schedules another mutation, which schedules lesson generation. A reply that
-  arrives by email enters the same way. Each link is independently retryable.
-- **Two crons**: re-crawl every six hours, send the daily drill email.
-- **Mutations** are transactions: they record attempts, dedupe stories on URL and
-  enforce the rate limit on reader questions.
-- **Indexes** on every lookup. Seven of them, no table scans anywhere.
-- **Static hosting** serves the React app from the same deployment, at
-  `.convex.site`.
+### 2026-09-20 - c1e0b58
+Closed the email loop in both directions. A cron sends one drill a day from the
+AgentMail inbox and records which drill went to which subscriber. Replies arrive
+on a Convex HTTP action under /api, which answers 200 immediately and schedules
+the work; OpenAI grades the free text against the answer key and writes the
+result back onto the attempt. Round trip proven on the production deployment: a
+drill sent from the project inbox, a reply typed in plain English from a normal
+mail client, and the grade landing on the attempt. AgentMail is called over REST
+because its SDK imports a payments module Convex cannot bundle. Convex features:
+HTTP actions, crons, scheduled functions, mutations, actions (`convex/http.ts`,
+`convex/email.ts`, `convex/attempts.ts`, `convex/subscribers.ts`).
 
-**Firecrawl** is the content engine. Without it there is no feed. It runs a
-two-stage crawl: scrape each source's index for article links, then scrape every article
-for its body text. It also pulls each
-article's `og:image` so posts carry the source's own artwork where one exists.
-Crawl spacing honours each site's `robots.txt`.
+### 2026-09-20 - 01b3a86
+Tightened what reaches the feed. One OpenAI call now judges four gates beside the
+summary: whether AI is genuinely in the story, whether it is a trick a reader
+could spot, whether it could happen to an ordinary person, and whether the
+subject is fit for a middle school screen. The safety gate names a category
+rather than answering yes or no, because a boolean false-positived on ordinary
+crime reporting. Added the AI Incident Database as a third source, reading only
+its own CC BY-SA description field (`convex/stories.ts`, `convex/crawl.ts`).
 
-**OpenAI** turns crawled government prose into something a 7th grader reads.
-Every story gets one structured call that returns a summary in original phrasing,
-the red flags, the tactic, and a judgment on whether AI is genuinely part of the
-scam. A second call writes the three lesson steps, why the scam works, and a
-practice question with three plausible choices. A third writes the tutor lesson
-on demand, cached so a story is never taught twice. A third answers reader questions, scoped to the
-post in front of them.
+### 2026-09-20 - 4396003
+Audit pass. Made the daily-drill test send internal so it cannot be called from a
+browser, backed the per-reader question cap with a deployment-wide cap on a new
+by_time index, fixed the flipped card collapsing to a sliver, and guarded every
+localStorage call so a private window cannot blank the feed. Convex features:
+indexes, actions (`convex/email.ts`, `convex/questions.ts`, `convex/schema.ts`,
+`src/components/Post.tsx`, `src/components/Feed.tsx`).
 
-**AgentMail** closes the loop, in both directions. A cron sends one drill a day
-to every subscriber and records which drill went to whom. The reader replies in
-plain English from their own inbox. AgentMail posts that reply to an httpAction,
-OpenAI grades the free text against the answer key, and the result is written
-back onto the attempt. The reader never has to quote the question or pick a
-letter: "the one about having to act fast" marks correct.
+### 2026-09-20 - b7ef03b
+Made the flip unmissable with a badge on both faces plus a clickable card, and
+replaced the "why it works" paragraph with a panel contrasting what the victim
+believed against what was actually happening, drawn from structured model output
+rather than a generated image (`src/components/Post.tsx`,
+`src/components/Illusion.tsx`, `convex/drills.ts`).
 
-Not using the AgentMail SDK. It dynamically imports a payments module this app
-does not use, and Convex cannot bundle it, so the REST API is called directly
-with fetch. That also keeps the code in Convex's fast default runtime.
-
-## Architecture
-
-```
-CRON (6h) -> crawlSources (internalAction, Firecrawl)
-               -> saveRawStory (mutation, dedupe on by_url)
-                    -> processStory (internalAction, OpenAI)
-                         -> saveProcessed (mutation, publish + clear rawText)
-                              -> makeDrill (internalAction, OpenAI)
-                                   -> saveDrill (mutation)
-
-CRON (daily) -> sendDailyDrill (internalAction, AgentMail)
-AgentMail inbound -> POST /api/agentmail-inbound (httpAction)
-                      -> saveReply (mutation)
-                           -> gradeReply (internalAction, OpenAI)
-                                -> saveGrade (mutation)
-
-FEED   -- useQuery(listPublished)  --> live
-LESSON -- useQuery(drillForStory)  --> live, loaded only on flip
-```
-
-One rule governs all of it: **actions do network calls and never touch the
-database.** They reach it by scheduling mutations. Mutations are transactions and
-never fetch. Where a mutation already holds the data an action needs, it passes it
-straight in, so no action ever reads a row.
-
-41 Convex functions. Every AI and crawl function is internal and cannot be called
-from a browser. Public write paths are limited to answering a practice question,
-asking about a post, requesting a lesson and subscribing, and they are capped.
-
-## The flip
-
-The signature interaction, and the one place real effort went. A 3D rotation with
-perspective on the parent rather than the card, 520ms on an asymmetric easing
-curve that leaves fast and settles slow, both faces measured so the container
-locks to the taller one and the feed never jumps mid-rotation, and a shadow that
-lifts at the midpoint to sell the third dimension. Only `transform` and `opacity`
-animate, so it stays on the compositor. Under `prefers-reduced-motion` the faces
-cross-fade instead.
-
-## Sources and copyright
-
-FlipSec displays only original summaries and links out for the full story. It
-never republishes article text.
-
-Three sources, all openly licensed:
-
-- **AI Incident Database** — a public catalogue of real-world AI harms, CC BY-SA
-  4.0. Only the AIID-written incident description is read; their aggregated
-  report text is explicitly outside that licence and is never touched.
-- **FBI IC3** public service announcements — US government work, public domain.
-- **FTC consumer alerts** — public domain, and already close to the reading level
-  FlipSec targets.
-
-The summarisation prompt explicitly forbids reusing any phrase from the source.
-Raw crawled text is deleted from the database the moment a story is processed,
-and the feed query strips it again on the way out. Each source's robots.txt is
-honoured, including FTC's ten second crawl delay.
-
-Three gates run inside the same OpenAI call as the summary, so filtering costs
-nothing extra. Was AI actually used, or is this just a modern scam. Is it a trick
-a reader could learn to see coming, rather than a system failing or an insider
-misusing access. And could it land on an ordinary person's own phone: a story
-needing the words token, kit, server or admin is written for IT staff, and
-FlipSec is not for IT staff. A story has to pass all three.
-
-## Status
-
-- Live at a public URL, no invite needed
-- Crawl, AI pipeline, feed, flip, lesson, ask-AI and the two-way email loop all
-  working end to end against live services
-- The feed is deliberately small. Two gates run inside the one OpenAI call that
-  writes each summary: is AI actually part of this, and could this land on a
-  12 year old's own phone. Most government advisories fail one or the other, and
-  the ones that fail are dropped rather than padded into the feed.
-- Not built, and out of scope by choice: accounts, reactions, streaks
+### 2026-09-20 - working tree
+Installed the Convex hackathon skill into the project and rewrote this log in its
+documented format, replacing a hand-written version
+(`.claude/skills/convex-hackathon-skill/`).
