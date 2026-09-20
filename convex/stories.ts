@@ -1,7 +1,12 @@
 import { v } from "convex/values";
 import OpenAI from "openai";
 import { internal } from "./_generated/api";
-import { internalAction, internalMutation, query } from "./_generated/server";
+import {
+  internalAction,
+  internalMutation,
+  internalQuery,
+  query,
+} from "./_generated/server";
 
 const MODEL = "gpt-4o-mini";
 
@@ -13,6 +18,7 @@ export const saveRawStory = internalMutation({
     title: v.string(),
     source: v.string(),
     sourceIcon: v.optional(v.string()),
+    image: v.optional(v.string()),
     rawText: v.string(),
   },
   handler: async (ctx, args) => {
@@ -30,6 +36,7 @@ export const saveRawStory = internalMutation({
       title: args.title,
       source: args.source,
       sourceIcon: args.sourceIcon,
+      image: args.image,
       rawText: args.rawText,
       status: "raw",
       crawledAt: Date.now(),
@@ -211,5 +218,59 @@ export const listPublished = query({
     // rawText is never sent to a client. It is cleared on publish, but this
     // strips it explicitly so the rule does not depend on that.
     return stories.map(({ rawText: _rawText, ...story }) => story);
+  },
+});
+
+// Queues drill regeneration for published stories whose drill predates the
+// lesson steps. saveDrill patches the existing row rather than duplicating it.
+export const backfillLessons = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const published = await ctx.db
+      .query("stories")
+      .withIndex("by_status", (q) => q.eq("status", "published"))
+      .take(50);
+
+    let queued = 0;
+    for (const story of published) {
+      const drill = await ctx.db
+        .query("drills")
+        .withIndex("by_story", (q) => q.eq("storyId", story._id))
+        .unique();
+
+      if (drill !== null && drill.steps !== undefined) continue;
+
+      await ctx.scheduler.runAfter(0, internal.drills.makeDrill, {
+        storyId: story._id,
+        summary: story.summary ?? "",
+        tactic: story.tactic ?? "other",
+      });
+      queued++;
+    }
+
+    return { published: published.length, queued };
+  },
+});
+
+// Stories crawled before og:image was captured keep their text but have no
+// picture. This hands the action the list so it can go fetch them.
+export const listMissingImages = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const published = await ctx.db
+      .query("stories")
+      .withIndex("by_status", (q) => q.eq("status", "published"))
+      .take(50);
+
+    return published
+      .filter((s) => s.image === undefined)
+      .map((s) => ({ storyId: s._id, url: s.url }));
+  },
+});
+
+export const setImage = internalMutation({
+  args: { storyId: v.id("stories"), image: v.string() },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.storyId, { image: args.image });
   },
 });

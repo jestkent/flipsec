@@ -8,7 +8,7 @@ const MODEL = "gpt-4o-mini";
 const DRILL_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["prompt", "choices", "correct", "explanation"],
+  required: ["prompt", "choices", "correct", "explanation", "steps"],
   properties: {
     prompt: {
       type: "string",
@@ -28,6 +28,12 @@ const DRILL_SCHEMA = {
       type: "string",
       description: "Why that answer is right, 40 words maximum.",
     },
+    steps: {
+      type: "array",
+      items: { type: "string" },
+      description:
+        "Exactly three steps showing how the scam runs, in order, one sentence each.",
+    },
   },
 } as const;
 
@@ -42,7 +48,8 @@ Rules you must follow:
 - The right answer is about why the message cannot be trusted, not about what the reader should go do.
 - Write at a 7th grade reading level. Short sentences. Plain verbs. Sentence case.
 - Do not name the source, the agency, or the news story. The reader is in the scene, not reading about it.
-- The explanation is 40 words maximum and says what gave the scam away.`;
+- The explanation is 40 words maximum and says what gave the scam away.
+- Then write exactly three steps showing how the scam runs from start to finish, in order. One short sentence each. Step one is what the scammer does first, step three is what they walk away with. Same reading level. These are read after the reader answers, so they teach the mechanic, not the answer.`;
 
 export const makeDrill = internalAction({
   args: {
@@ -79,6 +86,7 @@ export const makeDrill = internalAction({
       choices: string[];
       correct: number;
       explanation: string;
+      steps: string[];
     };
 
     if (drill.choices.length !== 3) {
@@ -96,6 +104,7 @@ export const makeDrill = internalAction({
       choices: drill.choices,
       correct: drill.correct,
       explanation: drill.explanation,
+      steps: drill.steps,
     });
   },
 });
@@ -109,6 +118,7 @@ export const saveDrill = internalMutation({
     choices: v.array(v.string()),
     correct: v.number(),
     explanation: v.string(),
+    steps: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
     const existing = await ctx.db
@@ -117,6 +127,11 @@ export const saveDrill = internalMutation({
       .unique();
 
     if (existing !== null) {
+      // A drill written before the lesson existed gets its steps filled in
+      // rather than a second drill stacked behind the same post.
+      if (existing.steps === undefined && args.steps !== undefined) {
+        await ctx.db.patch(existing._id, { steps: args.steps });
+      }
       return existing._id;
     }
 
@@ -126,6 +141,7 @@ export const saveDrill = internalMutation({
       choices: args.choices,
       correct: args.correct,
       explanation: args.explanation,
+      steps: args.steps,
     });
   },
 });

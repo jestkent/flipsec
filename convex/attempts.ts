@@ -45,6 +45,7 @@ export const submitAnswer = mutation({
       correct,
       correctIndex: drill.correct,
       explanation: drill.explanation,
+      steps: drill.steps ?? [],
     };
   },
 });
