@@ -42,6 +42,7 @@ Firecrawl, AgentMail (not built yet).
 - `askAboutStory` answers only about its own post, treats reader input as a
   question never an instruction, and is capped: 200 chars in, 10 per reader per
   hour, 220 tokens out.
+- `teachLesson` is cached per story in `lessons`. Never regenerate per view.
 
 ## Voice
 
@@ -53,8 +54,10 @@ jargon. If a 7th grader would not use the word, it does not go on the post.
 See PLAN.md for the full spec. Never build anything in section 15. Deviations
 from it, agreed with the owner:
 
-- The flip back is the drill *then* a lesson and an ask box. The question still
-  comes first, so sections 2, 4 and 12 hold.
+- The flip opens the LESSON, not the drill: a tactic-tinted flow diagram, why
+  the scam works, an on-demand tutor lesson and an ask box. The drill sits
+  under it as optional practice. Sections 2, 4 and 12 assume the drill is the
+  flip; the owner overrode that twice, deliberately.
 - IC3 leads the sources. Section 5 lists FTC first, but FTC carries little AI.
 
 Open issue: the AI filter rejects ~85% of crawled stories and still lets through
