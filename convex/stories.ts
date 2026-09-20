@@ -506,16 +506,24 @@ export const reclassifyTactics = internalAction({
 
 // Failed stories keep their URL, which blocks a re-crawl from ever looking at
 // them again. Clearing them lets a changed filter re-judge the same sources.
+// kind narrows it to one feed. Retuning the course gates should not throw
+// away every rejected scam story and make the next crawl pay to re-judge
+// them all.
 export const clearFailed = internalMutation({
-  args: { limit: v.optional(v.number()) },
+  args: { limit: v.optional(v.number()), kind: v.optional(v.string()) },
   handler: async (ctx, args) => {
     const failed = await ctx.db
       .query("stories")
       .withIndex("by_status", (q) => q.eq("status", "failed"))
       .take(args.limit ?? 200);
 
-    for (const story of failed) await ctx.db.delete(story._id);
-    return { deleted: failed.length };
+    const target =
+      args.kind === undefined
+        ? failed
+        : failed.filter((story) => (story.kind ?? "scam") === args.kind);
+
+    for (const story of target) await ctx.db.delete(story._id);
+    return { deleted: target.length };
   },
 });
 
