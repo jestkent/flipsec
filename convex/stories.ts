@@ -254,7 +254,13 @@ export const backfillLessons = internalMutation({
         .withIndex("by_story", (q) => q.eq("storyId", story._id))
         .unique();
 
-      if (drill !== null && drill.steps !== undefined) continue;
+      if (
+        drill !== null &&
+        drill.steps !== undefined &&
+        drill.whyItWorks !== undefined
+      ) {
+        continue;
+      }
 
       await ctx.scheduler.runAfter(0, internal.drills.makeDrill, {
         storyId: story._id,

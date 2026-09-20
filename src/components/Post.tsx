@@ -2,7 +2,7 @@ import { useQuery } from "convex/react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Doc } from "../../convex/_generated/dataModel";
-import DrillBack from "./DrillBack";
+import LessonBack from "./LessonBack";
 import TacticArt from "./TacticArt";
 
 type Story = Omit<Doc<"stories">, "rawText">;
@@ -151,7 +151,7 @@ export default function Post({
               aria-expanded={flipped}
               className="text-sm font-semibold text-neutral-900 hover:text-neutral-600"
             >
-              ↻ Flip
+              ↻ How this works
             </button>
             <a
               href={story.url}
@@ -166,9 +166,10 @@ export default function Post({
         </div>
 
         <div ref={backRef} className="face face-back">
-          <DrillBack
+          <LessonBack
             drill={drill}
             storyId={story._id}
+            tactic={tactic}
             userId={userId}
             onBack={flip}
           />

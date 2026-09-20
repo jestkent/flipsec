@@ -8,7 +8,7 @@ const MODEL = "gpt-4o-mini";
 const DRILL_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["prompt", "choices", "correct", "explanation", "steps"],
+  required: ["prompt", "choices", "correct", "explanation", "steps", "whyItWorks"],
   properties: {
     prompt: {
       type: "string",
@@ -34,6 +34,11 @@ const DRILL_SCHEMA = {
       description:
         "Exactly three steps showing how the scam runs, in order, one sentence each.",
     },
+    whyItWorks: {
+      type: "string",
+      description:
+        "Why a careful person still falls for this, 45 words maximum.",
+    },
   },
 } as const;
 
@@ -49,7 +54,8 @@ Rules you must follow:
 - Write at a 7th grade reading level. Short sentences. Plain verbs. Sentence case.
 - Do not name the source, the agency, or the news story. The reader is in the scene, not reading about it.
 - The explanation is 40 words maximum and says what gave the scam away.
-- Then write exactly three steps showing how the scam runs from start to finish, in order. One short sentence each. Step one is what the scammer does first, step three is what they walk away with. Same reading level. These are read after the reader answers, so they teach the mechanic, not the answer.`;
+- Then write exactly three steps showing how the scam runs from start to finish, in order. One short sentence each. Step one is what the scammer does first, step three is what they walk away with. Same reading level. These are the first thing the reader sees when they flip the post, so they teach the mechanic plainly.
+- Then write whyItWorks: why a careful person still falls for this one. Name the feeling the scam uses, such as fear, hurry, or wanting to help. 45 words maximum, same reading level. Do not give advice and do not repeat the steps.`;
 
 export const makeDrill = internalAction({
   args: {
@@ -87,6 +93,7 @@ export const makeDrill = internalAction({
       correct: number;
       explanation: string;
       steps: string[];
+      whyItWorks: string;
     };
 
     if (drill.choices.length !== 3) {
@@ -105,6 +112,7 @@ export const makeDrill = internalAction({
       correct: drill.correct,
       explanation: drill.explanation,
       steps: drill.steps,
+      whyItWorks: drill.whyItWorks,
     });
   },
 });
@@ -119,6 +127,7 @@ export const saveDrill = internalMutation({
     correct: v.number(),
     explanation: v.string(),
     steps: v.optional(v.array(v.string())),
+    whyItWorks: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const existing = await ctx.db
@@ -129,8 +138,11 @@ export const saveDrill = internalMutation({
     if (existing !== null) {
       // A drill written before the lesson existed gets its steps filled in
       // rather than a second drill stacked behind the same post.
-      if (existing.steps === undefined && args.steps !== undefined) {
-        await ctx.db.patch(existing._id, { steps: args.steps });
+      if (existing.steps === undefined || existing.whyItWorks === undefined) {
+        await ctx.db.patch(existing._id, {
+          steps: args.steps ?? existing.steps,
+          whyItWorks: args.whyItWorks ?? existing.whyItWorks,
+        });
       }
       return existing._id;
     }
@@ -142,6 +154,7 @@ export const saveDrill = internalMutation({
       correct: args.correct,
       explanation: args.explanation,
       steps: args.steps,
+      whyItWorks: args.whyItWorks,
     });
   },
 });
@@ -163,6 +176,8 @@ export const drillForStory = query({
       storyId: drill.storyId,
       prompt: drill.prompt,
       choices: drill.choices,
+      steps: drill.steps ?? [],
+      whyItWorks: drill.whyItWorks ?? "",
     };
   },
 });

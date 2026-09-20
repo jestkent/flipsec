@@ -26,7 +26,8 @@ export default defineSchema({
     choices: v.array(v.string()),
     correct: v.number(),
     explanation: v.string(),
-    steps: v.optional(v.array(v.string())),  // how the scam works, shown after answering
+    steps: v.optional(v.array(v.string())),   // the three stages, shown on flip
+    whyItWorks: v.optional(v.string()),       // why people fall for it
   }).index("by_story", ["storyId"]),
 
   attempts: defineTable({
@@ -40,6 +41,14 @@ export default defineSchema({
   })
     .index("by_user", ["userId"])
     .index("by_user_drill", ["userId", "drillId"]),
+
+  // A longer tutor-style lesson, generated on demand and kept. PLAN.md
+  // section 14 says process a story once, never regenerate per view.
+  lessons: defineTable({
+    storyId: v.id("stories"),
+    body: v.string(),
+    createdAt: v.number(),
+  }).index("by_story", ["storyId"]),
 
   // Reader questions about a post, answered by OpenAI with that post as the
   // only context. Stored so the hourly rate limit has something to count.
