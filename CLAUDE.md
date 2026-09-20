@@ -29,12 +29,13 @@ Firecrawl, AgentMail.
   failed, and `listPublished` strips it again rather than trusting that.
 - Summaries must be original phrasing. No reused phrases from the source.
 - Every post links its source, with the source name visible.
-- Sources are public-domain government advisories: FBI IC3 (primary), FTC
-  consumer alerts (secondary). Honour each robots.txt and its crawl-delay.
-  CISA does not crawl, its index is JavaScript-rendered.
-- One OpenAI call judges two gates alongside the summary: aiRelated, and
-  everydayPerson, which rejects anything needing words like token, kit, server
-  or admin to tell. Failing either marks the story `failed`.
+- Sources: AI Incident Database (CC BY-SA, AIID description field only, never
+  their report text), FBI IC3, FTC consumer alerts. Honour each robots.txt and
+  crawl-delay. CISA does not crawl, its index is JavaScript-rendered.
+- One OpenAI call judges three gates alongside the summary: aiRelated (AI must
+  actually be in the story), isScam (a trick a reader could spot, not a system
+  failure), everydayPerson (no token/kit/server/admin vocabulary). Failing any
+  marks the story `failed`.
 - Post images come from `og:image`; FTC has them, IC3 does not, so those fall
   back to `TacticArt.tsx`.
 - `askAboutStory` answers only about its own post, treats reader input as a

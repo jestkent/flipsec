@@ -58,12 +58,30 @@ export const saveRawStory = internalMutation({
 const PROCESS_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["aiRelated", "everydayPerson", "summary", "redFlags", "tactic"],
+  required: [
+    "aiRelated",
+    "isScam",
+    "everydayPerson",
+    "classroomSafe",
+    "summary",
+    "redFlags",
+    "tactic",
+  ],
   properties: {
     aiRelated: {
       type: "boolean",
       description:
-        "True if AI is part of this scam or is what made the technique cheap. Deepfakes, cloned voices, AI-written messages and AI-built fake sites count. So does pretending to be a real person or a real organisation, because that is the trick AI has made easy.",
+        "True only when the story itself says AI was used: a deepfake, a cloned voice, an AI-written message, an AI-made image or site, a chatbot. A plain scam with no AI in it is false, however clever it is.",
+    },
+    isScam: {
+      type: "boolean",
+      description:
+        "True if this is a trick aimed at a person that a reader could learn to recognise. False for accidents, bias, bad decisions by a system, or misuse by an insider.",
+    },
+    classroomSafe: {
+      type: "boolean",
+      description:
+        "Almost always true. Set false ONLY when the subject matter itself is sexual content, nude or intimate images, child abuse, suicide, self harm, or graphic violence. Fraud, impersonation, theft and hacking are all safe.",
     },
     everydayPerson: {
       type: "boolean",
@@ -99,7 +117,9 @@ Rules you must follow:
 - If a 7th grader would not use a word, do not use it. Never write "revictimize", "personally identifiable information", "threat actor", "malicious", "mitigation" or "credentials".
 - Say what happened and how the trick works. Do not give advice or tell the reader what to do.
 - Red flags are the signs that give the scam away, not instructions. Two to four of them, four words maximum each, lowercase.
-- Set aiRelated true when AI is part of the scam, or when the scam turns on pretending to be a real person or a real organisation. That impersonation is the thing AI made cheap, so it counts. A scam with no AI and no impersonation gets false.
+- Set aiRelated true only when the story says AI was actually used. A deepfake video, a cloned voice, a message or website a model produced, a chatbot. If the story never shows AI doing anything, set it false, no matter how modern or serious the scam is. Ordinary phishing with no AI in it is false.
+- classroomSafe is true for almost every scam. Set it false ONLY when the subject of the story is itself one of these: sexual content, nude or intimate images of anyone, child sexual abuse, suicide, self harm, or graphic violence. Money being stolen, people being lied to, accounts being broken into, fake officials, fake videos and fake voices are all fine. A story is not unsafe just because someone was hurt or frightened, or because a crime was serious. Ask only whether the topic itself is one a teacher could not name out loud to a class.
+- Set isScam true only if this is a trick aimed at a person, something a reader could learn to see coming. Set it false when the story is about a system making a mistake, unfair treatment by software, a staff member misusing access, or a company behaving badly. Those matter, but a reader cannot spot them.
 - Set everydayPerson true only if this is a scam a 12 year old or their parent could actually meet, on their own phone, their own email, or their own social media, in their own life.
 - Set it false if telling the story needs any of these words: token, credential, kit, tool, exploit, server, network, endpoint, admin, enterprise, infrastructure, or the name of a piece of hacking software. Those stories are written for IT staff, and FlipSec is not for IT staff.
 - Set it false when the victim is a company, a government network, a utility, or the people who run them, however serious the story is.
@@ -151,20 +171,24 @@ export const processStory = internalAction({
 
     const result = JSON.parse(raw) as {
       aiRelated: boolean;
+      isScam: boolean;
       everydayPerson: boolean;
+      classroomSafe: boolean;
       summary: string;
       redFlags: string[];
       tactic: string;
     };
 
     console.log(
-      `${args.title} -> ai=${result.aiRelated} everyday=${result.everydayPerson} tactic=${result.tactic}`,
+      `${args.title} -> ai=${result.aiRelated} scam=${result.isScam} everyday=${result.everydayPerson} safe=${result.classroomSafe}`,
     );
 
     await ctx.scheduler.runAfter(0, internal.stories.saveProcessed, {
       storyId: args.storyId,
       aiRelated: result.aiRelated,
+      isScam: result.isScam,
       everydayPerson: result.everydayPerson,
+      classroomSafe: result.classroomSafe,
       summary: result.summary,
       redFlags: result.redFlags,
       tactic: result.tactic,
@@ -178,7 +202,9 @@ export const saveProcessed = internalMutation({
   args: {
     storyId: v.id("stories"),
     aiRelated: v.boolean(),
+    isScam: v.boolean(),
     everydayPerson: v.boolean(),
+    classroomSafe: v.boolean(),
     summary: v.string(),
     redFlags: v.array(v.string()),
     tactic: v.string(),
@@ -186,7 +212,15 @@ export const saveProcessed = internalMutation({
   handler: async (ctx, args) => {
     // Both tests must pass. An AI scam aimed at IT staff is still not a post
     // a 12 year old can use.
-    if (!args.aiRelated || !args.everydayPerson) {
+    // All four gates must pass: AI is really in it, it is a trick a reader
+    // could learn to spot, it could happen to an ordinary person, and a
+    // teacher could show it to a class.
+    if (
+      !args.aiRelated ||
+      !args.isScam ||
+      !args.everydayPerson ||
+      !args.classroomSafe
+    ) {
       await ctx.db.patch(args.storyId, { status: "failed", rawText: undefined });
       return;
     }
@@ -427,17 +461,21 @@ export const unpublish = internalMutation({
   },
 });
 
-const AUDIENCE_SCHEMA = {
+const GATES_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["everydayPerson"],
-  properties: { everydayPerson: { type: "boolean" } },
+  required: ["aiRelated", "isScam", "everydayPerson", "classroomSafe"],
+  properties: {
+    aiRelated: { type: "boolean" },
+    isScam: { type: "boolean" },
+    everydayPerson: { type: "boolean" },
+    classroomSafe: { type: "boolean" },
+  },
 } as const;
 
-// Re-judges already published stories against the everyday-person test, which
-// did not exist when they were processed. Works from the summary, since
-// rawText is gone by publish time.
-export const recheckAudience = internalAction({
+// Re-judges everything already published against the current gates, for when
+// the gates change. Works from the summary, since rawText is gone by publish.
+export const recheckGates = internalAction({
   args: {},
   handler: async (ctx): Promise<{ checked: number; removed: number }> => {
     const apiKey = process.env.OPENAI_API_KEY;
@@ -464,21 +502,26 @@ export const recheckAudience = internalAction({
         ],
         response_format: {
           type: "json_schema",
-          json_schema: {
-            name: "audience",
-            strict: true,
-            schema: AUDIENCE_SCHEMA,
-          },
+          json_schema: { name: "gates", strict: true, schema: GATES_SCHEMA },
         },
       });
 
       const raw = completion.choices[0]?.message?.content;
       if (!raw) continue;
 
-      const { everydayPerson } = JSON.parse(raw) as { everydayPerson: boolean };
-      if (everydayPerson) continue;
+      const gates = JSON.parse(raw) as {
+        aiRelated: boolean;
+        isScam: boolean;
+        everydayPerson: boolean;
+        classroomSafe: boolean;
+      };
 
-      console.log(`removing, not for everyday readers: ${story.title}`);
+      const failed = Object.entries(gates)
+        .filter(([, passed]) => !passed)
+        .map(([gate]) => gate);
+      if (failed.length === 0) continue;
+
+      console.log(`removing (${failed.join(", ")}): ${story.title.slice(0, 60)}`);
       await ctx.runMutation(internal.stories.unpublish, {
         storyId: story.storyId,
       });

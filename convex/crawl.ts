@@ -17,9 +17,30 @@ type Source = {
   // Whatever the site's robots.txt asks for, floored at 5s to stay under
   // Firecrawl's free-tier limit of about 13 requests a minute.
   delayMs: number;
+  // Most index pages write [title](url). The AI Incident Database writes the
+  // url first and the real title on a later line, so the groups are reversed.
+  urlFirst?: boolean;
+  // How deep to go by default. Every AIID entry is about AI, so it is worth
+  // reading far more of than the government feeds, where most stories are
+  // not about AI at all and get rejected.
+  depth: number;
 };
 
 const SOURCES: Source[] = [
+  {
+    // Every entry here is about AI by definition, which is why it leads. The
+    // incident records are CC BY-SA 4.0. Report text fields are NOT, so only
+    // the AIID-written Description is taken, and each post links back.
+    // The site serves no robots.txt.
+    name: "AI Incident Database",
+    indexUrl: "https://incidentdatabase.ai/summaries/incidents/",
+    icon: "https://www.google.com/s2/favicons?domain=incidentdatabase.ai&sz=64",
+    linkPattern:
+      /^## \[Incident \d+\]\((https:\/\/incidentdatabase\.ai\/cite\/\d+\/)\)[\s\S]{0,240}?[“"]([^”"]{15,300})[”"]/gm,
+    delayMs: 5000,
+    urlFirst: true,
+    depth: 45,
+  },
   {
     // Public domain, and the only one of the two that reliably carries AI
     // scams: deepfaked officials, cloned voices, AI-built fake sites.
@@ -31,6 +52,7 @@ const SOURCES: Source[] = [
       /^\d+\.\s+\[(.+?)\]\((https:\/\/www\.ic3\.gov\/PSA\/\d{4}\/[^)]+)\)/gm,
     // ic3.gov robots.txt sets no crawl-delay.
     delayMs: 5000,
+    depth: 14,
   },
   {
     // Public domain, and already written close to the reading level FlipSec
@@ -42,12 +64,18 @@ const SOURCES: Source[] = [
       /^### \[(.+?)\]\((https:\/\/consumer\.ftc\.gov\/consumer-alerts\/\d{4}\/\d{2}\/[^)]+)\)/gm,
     // consumer.ftc.gov robots.txt sets "Crawl-delay: 10".
     delayMs: 10000,
+    depth: 10,
   },
 ];
 
 // FTC pages open with the .gov banner and put the article under a top level
 // heading. IC3 pages open with a skip link and no heading at all.
 function stripBoilerplate(markdown: string): string {
+  // AIID pages carry their own prose under a Description label. Everything
+  // above it is navigation, and the label introduces the CC licensed part.
+  const description = markdown.indexOf("**Description**");
+  if (description !== -1) return markdown.slice(description).trim();
+
   const heading = markdown.indexOf("\n# ");
   const body = heading === -1 ? markdown : markdown.slice(heading + 1);
   return body.replace(/^\[Skip to main[^\]]*\]\([^)]*\)\s*/i, "").trim();
@@ -55,12 +83,18 @@ function stripBoilerplate(markdown: string): string {
 
 type Alert = { title: string; url: string };
 
-function parseIndex(markdown: string, pattern: RegExp): Alert[] {
+function parseIndex(
+  markdown: string,
+  pattern: RegExp,
+  urlFirst = false,
+): Alert[] {
   const alerts: Alert[] = [];
   const seen = new Set<string>();
 
   for (const match of markdown.matchAll(pattern)) {
-    const [, title, url] = match;
+    const [, first, second] = match;
+    const title = urlFirst ? second : first;
+    const url = urlFirst ? first : second;
     // Some IC3 announcements are published as PDFs. Firecrawl can parse those
     // but they are slow and the layout is noisy, so skip them.
     if (url.toLowerCase().endsWith(".pdf")) continue;
@@ -76,14 +110,17 @@ function parseIndex(markdown: string, pattern: RegExp): Alert[] {
 // article for its body text. Actions do network calls only, so every write
 // goes out through a scheduled mutation.
 export const crawlSources = internalAction({
-  args: { limit: v.optional(v.number()) },
+  args: { limit: v.optional(v.number()), only: v.optional(v.string()) },
   handler: async (ctx, args) => {
     const apiKey = process.env.FIRECRAWL_API_KEY;
     if (!apiKey) {
       throw new Error("FIRECRAWL_API_KEY is not set in Convex env vars");
     }
 
-    const limit = args.limit ?? 8;
+    // One source at a time keeps a deep crawl inside the action time limit.
+    const sources = args.only
+      ? SOURCES.filter((s) => s.name === args.only)
+      : SOURCES;
     const firecrawl = new FirecrawlApp({ apiKey });
 
     let scraped = 0;
@@ -91,7 +128,7 @@ export const crawlSources = internalAction({
     let found = 0;
     let first = true;
 
-    for (const source of SOURCES) {
+    for (const source of sources) {
       if (!first) await sleep(source.delayMs);
       first = false;
 
@@ -101,10 +138,11 @@ export const crawlSources = internalAction({
           formats: ["markdown"],
           onlyMainContent: true,
         });
-        alerts = parseIndex(index.markdown ?? "", source.linkPattern).slice(
-          0,
-          limit,
-        );
+        alerts = parseIndex(
+          index.markdown ?? "",
+          source.linkPattern,
+          source.urlFirst,
+        ).slice(0, args.limit ?? source.depth);
       } catch (error) {
         console.error(`failed to scrape index ${source.indexUrl}`, error);
         continue;

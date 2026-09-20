@@ -56,8 +56,8 @@ around threats from five years ago.
   `.convex.site`.
 
 **Firecrawl** is the content engine. Without it there is no feed. It runs a
-two-stage crawl: scrape the index pages of FBI IC3 and FTC consumer alerts for
-article links, then scrape each article for its body text. It also pulls each
+two-stage crawl: scrape each source's index for article links, then scrape every article
+for its body text. It also pulls each
 article's `og:image` so posts carry the source's own artwork where one exists.
 Crawl spacing honours each site's `robots.txt`.
 
@@ -124,18 +124,26 @@ cross-fade instead.
 FlipSec displays only original summaries and links out for the full story. It
 never republishes article text.
 
-Primary sources are **public-domain US government advisories** — FBI IC3 public
-service announcements and FTC consumer alerts. Both are written for the public,
-both are free of copyright, and both are about scams hitting real people this
-month. The summarisation prompt explicitly forbids reusing any phrase from the
-source. Raw crawled text is deleted from the database the moment a story is
-processed, and the feed query strips it again on the way out.
+Three sources, all openly licensed:
 
-Two gates run inside the same OpenAI call as the summary. One asks whether AI is
-genuinely part of the scam. The other asks whether an ordinary person could meet
-it on their own phone: a story that needs the words token, kit, server or admin
-to tell is written for IT staff, and FlipSec is not for IT staff. A story has to
-pass both to publish.
+- **AI Incident Database** — a public catalogue of real-world AI harms, CC BY-SA
+  4.0. Only the AIID-written incident description is read; their aggregated
+  report text is explicitly outside that licence and is never touched.
+- **FBI IC3** public service announcements — US government work, public domain.
+- **FTC consumer alerts** — public domain, and already close to the reading level
+  FlipSec targets.
+
+The summarisation prompt explicitly forbids reusing any phrase from the source.
+Raw crawled text is deleted from the database the moment a story is processed,
+and the feed query strips it again on the way out. Each source's robots.txt is
+honoured, including FTC's ten second crawl delay.
+
+Three gates run inside the same OpenAI call as the summary, so filtering costs
+nothing extra. Was AI actually used, or is this just a modern scam. Is it a trick
+a reader could learn to see coming, rather than a system failing or an insider
+misusing access. And could it land on an ordinary person's own phone: a story
+needing the words token, kit, server or admin is written for IT staff, and
+FlipSec is not for IT staff. A story has to pass all three.
 
 ## Status
 
