@@ -21,6 +21,12 @@ export const saveRawStory = internalMutation({
     sourceIcon: v.optional(v.string()),
     image: v.optional(v.string()),
     rawText: v.string(),
+    // scam | course | job. Absent means scam, which is what every caller
+    // written before the other two verticals passes.
+    kind: v.optional(v.string()),
+    // Extra fields the crawler already knows and the model should not have to
+    // guess at, such as a job's company and apply link. Shape varies by kind.
+    seed: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
     const existing = await ctx.db
@@ -32,6 +38,8 @@ export const saveRawStory = internalMutation({
       return null;
     }
 
+    const kind = args.kind ?? "scam";
+
     const storyId = await ctx.db.insert("stories", {
       url: args.url,
       title: args.title,
@@ -40,16 +48,36 @@ export const saveRawStory = internalMutation({
       image: args.image,
       rawText: args.rawText,
       status: "raw",
+      kind,
       crawledAt: Date.now(),
     });
 
     // The mutation already holds the text, so hand it straight to the action.
     // That keeps the action off the database entirely.
-    await ctx.scheduler.runAfter(0, internal.stories.processStory, {
-      storyId,
-      title: args.title,
-      rawText: args.rawText,
-    });
+    //
+    // One crawler, three OpenAI passes. Each kind asks the model for a
+    // different shape, so the dispatch happens here rather than inside one
+    // prompt trying to be all three.
+    if (kind === "course") {
+      await ctx.scheduler.runAfter(0, internal.courses.processCourse, {
+        storyId,
+        title: args.title,
+        rawText: args.rawText,
+      });
+    } else if (kind === "job") {
+      await ctx.scheduler.runAfter(0, internal.jobs.processJob, {
+        storyId,
+        title: args.title,
+        rawText: args.rawText,
+        seed: args.seed,
+      });
+    } else {
+      await ctx.scheduler.runAfter(0, internal.stories.processStory, {
+        storyId,
+        title: args.title,
+        rawText: args.rawText,
+      });
+    }
 
     return storyId;
   },
@@ -275,11 +303,18 @@ export const reprocessRaw = internalMutation({
 // index so the sync engine reruns this for every client the moment a crawl
 // publishes something new.
 export const listPublished = query({
-  args: { limit: v.optional(v.number()) },
+  args: { limit: v.optional(v.number()), kind: v.optional(v.string()) },
   handler: async (ctx, args) => {
+    // Defaults to the scam feed, so a caller that passes nothing — including
+    // any client still running the previous bundle — gets exactly what it got
+    // before. Every scam row carries kind = "scam" via backfillKind.
+    const kind = args.kind ?? "scam";
+
     const stories = await ctx.db
       .query("stories")
-      .withIndex("by_published", (q) => q.eq("status", "published"))
+      .withIndex("by_kind_published", (q) =>
+        q.eq("kind", kind).eq("status", "published"),
+      )
       .order("desc")
       .take(args.limit ?? 30);
 

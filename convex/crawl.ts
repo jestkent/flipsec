@@ -24,6 +24,14 @@ type Source = {
   // reading far more of than the government feeds, where most stories are
   // not about AI at all and get rejected.
   depth: number;
+  // Which feed the crawled rows land in, and therefore which OpenAI pass
+  // processes them. Absent means "scam", the original vertical.
+  kind?: string;
+  // Firecrawl's main-content filter is right for an article and wrong for an
+  // index built in JavaScript: Hugging Face's course grid sits outside what
+  // the filter calls main, so filtering it returns an empty page. This only
+  // affects the index scrape; article scrapes always keep the filter on.
+  indexAllContent?: boolean;
 };
 
 const SOURCES: Source[] = [
@@ -65,6 +73,26 @@ const SOURCES: Source[] = [
     // consumer.ftc.gov robots.txt sets "Crawl-delay: 10".
     delayMs: 10000,
     depth: 10,
+  },
+  {
+    // The Learn AI feed. Hugging Face publishes its courses free and in the
+    // open, and robots.txt is a bare "Allow: /" with no crawl-delay. Every
+    // course here is about AI, so almost nothing gets rejected.
+    //
+    // The index is a JavaScript grid, so it needs indexAllContent. The course
+    // pages themselves are ordinary documentation and scrape normally.
+    name: "Hugging Face",
+    indexUrl: "https://huggingface.co/learn",
+    icon: "https://www.google.com/s2/favicons?domain=huggingface.co&sz=64",
+    // The grid writes [**Title** \ description](url) with the description on
+    // a continuation line, so the gap between title and url has to be allowed
+    // to run a little.
+    linkPattern:
+      /\[\*\*([^*\]]{3,80})\*\*[\s\S]{0,300}?\]\((https:\/\/huggingface\.co\/learn\/[a-z0-9-]+)\)/g,
+    delayMs: 5000,
+    depth: 12,
+    kind: "course",
+    indexAllContent: true,
   },
 ];
 
@@ -136,7 +164,7 @@ export const crawlSources = internalAction({
       try {
         const index = await firecrawl.scrape(source.indexUrl, {
           formats: ["markdown"],
-          onlyMainContent: true,
+          onlyMainContent: source.indexAllContent !== true,
         });
         alerts = parseIndex(
           index.markdown ?? "",
@@ -177,6 +205,7 @@ export const crawlSources = internalAction({
             sourceIcon: source.icon,
             image,
             rawText,
+            kind: source.kind ?? "scam",
           });
 
           scraped++;
