@@ -7,7 +7,17 @@ import { internalAction } from "./_generated/server";
 // Dev-only helper for evaluating a candidate source before wiring it into the
 // pipeline. Logs what Firecrawl returns. Writes nothing.
 export const probeSource = internalAction({
-  args: { url: v.string(), chars: v.optional(v.number()) },
+  args: {
+    url: v.string(),
+    chars: v.optional(v.number()),
+    // Some index pages build their list in JavaScript and hang it outside
+    // whatever Firecrawl decides the main content is, which comes back as an
+    // empty page. Turning the filter off shows whether the list is there at
+    // all before a source gets written off.
+    all: v.optional(v.boolean()),
+    waitMs: v.optional(v.number()),
+    grep: v.optional(v.string()),
+  },
   handler: async (_ctx, args) => {
     const apiKey = process.env.FIRECRAWL_API_KEY;
     if (!apiKey) throw new Error("FIRECRAWL_API_KEY is not set");
@@ -15,7 +25,8 @@ export const probeSource = internalAction({
     const firecrawl = new FirecrawlApp({ apiKey });
     const result = await firecrawl.scrape(args.url, {
       formats: ["markdown", "links"],
-      onlyMainContent: true,
+      onlyMainContent: args.all !== true,
+      ...(args.waitMs ? { waitFor: args.waitMs } : {}),
     });
 
     const markdown = result.markdown ?? "";
@@ -24,8 +35,19 @@ export const probeSource = internalAction({
     console.log("title:", result.metadata?.title);
     console.log("markdown length:", markdown.length);
     console.log("link count:", links.length);
-    console.log("--- markdown ---");
-    console.log(markdown.slice(0, args.chars ?? 2500));
+
+    // With the filter off a page can be tens of thousands of characters of
+    // navigation. grep shows only the lines that matter for a link pattern.
+    if (args.grep) {
+      const hits = markdown
+        .split("\n")
+        .filter((line) => line.toLowerCase().includes(args.grep!.toLowerCase()));
+      console.log(`--- ${hits.length} lines matching "${args.grep}" ---`);
+      console.log(hits.slice(0, 40).join("\n").slice(0, args.chars ?? 2500));
+    } else {
+      console.log("--- markdown ---");
+      console.log(markdown.slice(0, args.chars ?? 2500));
+    }
 
     return { title: result.metadata?.title, length: markdown.length, links: links.length };
   },

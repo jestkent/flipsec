@@ -15,10 +15,20 @@ export default defineSchema({
     status: v.string(),               // raw | published | failed
     publishedAt: v.optional(v.number()),
     crawledAt: v.number(),
+    // Which feed this card belongs to: scam | course | job. Optional because
+    // the scam stories predate it; backfillKind fills them in and everything
+    // written since sets it. Absent is read as "scam".
+    kind: v.optional(v.string()),
+    // The generated flip side, shaped per kind. Deliberately v.any(): a course
+    // back and a job back hold different fields, and pinning either down now
+    // would mean a schema change every time one of them moves. The scam kind
+    // does not use it — its back is the drills row, which is already typed.
+    back: v.optional(v.any()),
   })
     .index("by_status", ["status"])
     .index("by_url", ["url"])
-    .index("by_published", ["status", "publishedAt"]),
+    .index("by_published", ["status", "publishedAt"])
+    .index("by_kind_published", ["kind", "status", "publishedAt"]),
 
   drills: defineTable({
     storyId: v.id("stories"),

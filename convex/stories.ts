@@ -289,6 +289,37 @@ export const listPublished = query({
   },
 });
 
+// Every story written before the feed had more than one kind has no kind at
+// all, and an index lookup on kind = "scam" would not find them. This stamps
+// them, and it has to run on a deployment BEFORE listPublished starts reading
+// the by_kind_published index, or the scam feed comes back empty.
+//
+// Safe to run twice: it only touches rows where kind is still missing.
+export const backfillKind = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    let patched = 0;
+    let seen = 0;
+
+    for (const status of ["published", "raw", "failed"]) {
+      const rows = await ctx.db
+        .query("stories")
+        .withIndex("by_status", (q) => q.eq("status", status))
+        .take(500);
+
+      seen += rows.length;
+      for (const row of rows) {
+        if (row.kind !== undefined) continue;
+        await ctx.db.patch(row._id, { kind: "scam" });
+        patched++;
+      }
+    }
+
+    console.log(`backfillKind: stamped ${patched} of ${seen}`);
+    return { seen, patched };
+  },
+});
+
 // Queues drill regeneration for published stories whose drill predates the
 // lesson steps. saveDrill patches the existing row rather than duplicating it.
 export const backfillLessons = internalMutation({
