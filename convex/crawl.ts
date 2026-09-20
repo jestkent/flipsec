@@ -1,3 +1,5 @@
+"use node";
+
 import FirecrawlApp from "@mendable/firecrawl-js";
 import { internalAction } from "./_generated/server";
 
