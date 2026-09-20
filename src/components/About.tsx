@@ -31,10 +31,26 @@ export default function About({ onBack }: { onBack: () => void }) {
           a face you know, and a voice on the phone can sound like family.
         </p>
         <p className="text-base leading-relaxed text-neutral-700">
-          FlipSec collects real reports of those scams and rewrites each one so
-          anyone can read it. Flip a post and you get the lesson: how the trick
-          ran, what gave it away, and why it worked on someone careful.
+          FlipSec collects what is really happening with AI and rewrites it so
+          anyone can read it. Everything here is a card, and every card flips to
+          show you what the front does not tell you.
         </p>
+        <ul className="flex flex-col gap-2 text-base leading-relaxed text-neutral-700">
+          <li>
+            <span className="font-medium text-neutral-900">Scams</span> — real
+            reports of AI used against people. Flip for the lesson: how the
+            trick ran, what gave it away, and why it worked on someone careful.
+          </li>
+          <li>
+            <span className="font-medium text-neutral-900">Learn AI</span> —
+            free courses. Flip for what you will learn and the first thing to do
+            to begin.
+          </li>
+          <li>
+            <span className="font-medium text-neutral-900">Jobs</span> — remote
+            AI openings. Flip for what they want and how to apply.
+          </li>
+        </ul>
       </Block>
 
       <Block title="Who it is for">
@@ -102,12 +118,37 @@ export default function About({ onBack }: { onBack: () => void }) {
             </a>{" "}
             — US government work, public domain.
           </li>
+          <li>
+            <a
+              href="https://huggingface.co/learn"
+              target="_blank"
+              rel="noreferrer"
+              className="font-medium text-neutral-900 underline underline-offset-2"
+            >
+              Hugging Face
+            </a>{" "}
+            — free courses, openly published.
+          </li>
+          <li>
+            <a
+              href="https://remoteok.com/"
+              target="_blank"
+              rel="noreferrer"
+              className="font-medium text-neutral-900 underline underline-offset-2"
+            >
+              Remote OK
+            </a>{" "}
+            — remote job listings, read through their public feed, which asks to
+            be named as the source and linked back. Every job card does both.
+          </li>
         </ul>
         <p className="text-base leading-relaxed text-neutral-600">
-          A story only reaches the feed if AI was really part of it, if it is a
-          trick a reader could learn to spot, if it could happen to an ordinary
-          person, and if a teacher could show it to a class. Most reports fail
-          one of those, and the feed stays small on purpose.
+          A story only reaches the Scams feed if AI was really part of it, if it
+          is a trick a reader could learn to spot, if it could happen to an
+          ordinary person, and if a teacher could show it to a class. A course
+          has to be genuinely free and genuinely about AI. A job has to be
+          genuinely about AI and genuinely remote. Most candidates fail one of
+          those, and the feeds stay small on purpose.
         </p>
       </Block>
 
@@ -137,10 +178,11 @@ export default function About({ onBack }: { onBack: () => void }) {
       <Block title="How it is built">
         <p className="text-base leading-relaxed text-neutral-700">
           Firecrawl reads the sources every six hours. OpenAI writes the
-          summary, the lesson and the practice question, and marks a reply that
-          arrives by email. AgentMail sends that daily drill and carries the
-          reply back. Convex runs all of it and keeps the feed live, so a new
-          post appears without anyone refreshing the page.
+          summary, the lesson, the course and job cards and the practice
+          question, and marks a reply that arrives by email. AgentMail sends the
+          daily email and carries the reply back. Convex runs all of it and
+          keeps every feed live, so a new card appears without anyone refreshing
+          the page.
         </p>
         <p className="text-base leading-relaxed text-neutral-600">
           Built for the Convex All Gas Hackathon. The code is open at{" "}

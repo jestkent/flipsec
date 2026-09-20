@@ -2,7 +2,7 @@
 
 - **Project:** FlipSec
 - **Event:** Convex All Gas Hackathon
-- **What it does:** A social-style feed of real AI scams where flipping a post opens a lesson built from that exact story, and a daily drill emailed to readers is graded from their plain-English reply.
+- **What it does:** Three feeds of real AI news - scams, free courses, and remote AI jobs - where every card flips to a plain-language explanation built from that exact item, and a daily email carries one card per feed a reader picked.
 - **Live app:** https://hallowed-nightingale-322.convex.site
 - **Repo:** https://github.com/jestkent/flipsec
 - **Frontend:** Convex static hosting
@@ -12,7 +12,7 @@
 - **Auth:** none
 - **AI models:** gpt-4o-mini
 - **Started:** 2026-09-20T17:35:41Z
-- **Last updated:** 2026-09-20T22:32:20Z
+- **Last updated:** 2026-09-20T23:02:57Z
 
 ## Log
 
@@ -166,3 +166,58 @@ the flip as opening a drill and listed only two of the three sources, which left
 the AI Incident Database's CC BY-SA attribution off the repo's front page. The
 project guide gained the type-size floor and the audience note so neither gets
 undone by a later change (`README.md`, `CLAUDE.md`).
+
+### 2026-09-20 - 5af8b8b
+Made the feed able to hold more than one kind of card. Stories gained an
+optional kind and an optional back, plus a by_kind_published index beside the
+existing one rather than replacing it. A row with no kind does not appear under
+kind = "scam", so a backfill mutation has to run on a deployment before any
+query reads the new index; run on prod first, 40 rows stamped, feed still
+returning 6. Convex features: schema, indexes, mutations (`convex/schema.ts`,
+`convex/stories.ts`).
+
+### 2026-09-20 - 0a8a07e
+Added two more verticals behind the same pipeline. Learn AI crawls Hugging
+Face, whose course index is a JavaScript grid that Firecrawl's main-content
+filter reduces to an empty page, so a source can now ask for the unfiltered
+index while article scrapes keep the filter on. Jobs come from Remote OK's
+public JSON feed instead, because their listing table renders in the browser
+and a scrape returns only navigation; their API terms ask to be named as the
+source and linked back without nofollow, which every job card does. Their
+listings carry an anti-scraping line asking the reader to repeat a codeword,
+which is an instruction sitting in text this app feeds to a model, so it is cut
+before the text is sent and the prompt is told the listing is data. Each kind
+gets its own OpenAI pass at temperature 0 returning front, back and gates
+together. Convex features: actions, mutations, scheduled functions
+(`convex/crawl.ts`, `convex/courses.ts`, `convex/jobs.ts`, `convex/stories.ts`).
+
+### 2026-09-20 - b5d0ff5
+Turned the flip into a primitive and put three tabs over it. The card component
+still owns the rotation, the midpoint height swap, the content-wrapper
+measuring and the reduced-motion path; only what is printed on the far face
+changes. Courses and jobs carry their whole back on the story row, so they
+never open the drill subscription. Feed order lives in one exported array, and
+each tab mounts its own feed so switching does not inherit the previous tab's
+flipped cards. Subscriptions became per feed: signing up from a tab asks for
+that tab, two tabs merge rather than replace, and the daily mail carries a
+section per feed in one message. Only the scam drill is gradeable, so only it
+records a reply target. Convex features: queries, mutations, indexes, actions
+(`src/App.tsx`, `src/components/Post.tsx`, `convex/subscribers.ts`,
+`convex/email.ts`).
+
+### 2026-09-20 - ac98128
+Fixed the free-course gate rejecting four courses that are free. A scraped page
+carries the whole site with it, and the model was answering about the site's
+paid plans rather than about the lessons. Same failure the earlier safety
+boolean had: a gate asked a question broad enough to catch its surroundings.
+The fix names the scope rather than softening the rule. Clearing failed rows
+now takes a kind, so retuning one feed does not discard another feed's
+rejections. Prod after the re-crawl: 6 scams, 10 courses, 6 jobs
+(`convex/courses.ts`, `convex/stories.ts`).
+
+### 2026-09-20 - docs pass
+Brought the docs up to three feeds: the README and the in-app About page both
+described a single-feed app and listed three of the five sources, and the
+project guide gained the new schema rule, the gate-scoping rule and the
+one-flip-three-backs rule (`README.md`, `CLAUDE.md`,
+`src/components/About.tsx`).
