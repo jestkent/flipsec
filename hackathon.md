@@ -64,9 +64,16 @@ scam. A second call writes the drill, its three plausible choices, the
 explanation and the lesson steps. A third answers reader questions, scoped to the
 post in front of them.
 
-**AgentMail** is not built yet. It is the next thing in the queue: send the daily
-drill, receive the emailed reply, grade it with OpenAI and write the result back
-into the app. The schema and the HTTP route prefix are already in place for it.
+**AgentMail** closes the loop, in both directions. A cron sends one drill a day
+to every subscriber and records which drill went to whom. The reader replies in
+plain English from their own inbox. AgentMail posts that reply to an httpAction,
+OpenAI grades the free text against the answer key, and the result is written
+back onto the attempt. The reader never has to quote the question or pick a
+letter: "the one about having to act fast" marks correct.
+
+Not using the AgentMail SDK. It dynamically imports a payments module this app
+does not use, and Convex cannot bundle it, so the REST API is called directly
+with fetch. That also keeps the code in Convex's fast default runtime.
 
 ## Architecture
 
@@ -123,4 +130,4 @@ than large and generic.
 - Live at a public URL, no invite needed
 - Crawl, AI pipeline, feed, flip, drill, lesson and ask-AI all working end to end
 - Currently 26 stories crawled, 4 published, 4 drills, on the production deployment
-- Not yet built: AgentMail two-way email, accounts, reactions
+- Not built, and out of scope by choice: accounts, reactions, streaks

@@ -16,7 +16,8 @@ happened.
 ## Built with
 
 Convex for the backend and the live feed, Firecrawl for the crawl, OpenAI for
-the summaries, drills and lessons. AgentMail is planned and not built yet.
+the summaries, drills, lessons and reply grading, AgentMail for the daily drill
+email and the replies that come back.
 
 ## Sources and content
 

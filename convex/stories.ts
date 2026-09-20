@@ -58,12 +58,17 @@ export const saveRawStory = internalMutation({
 const PROCESS_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["aiRelated", "summary", "redFlags", "tactic"],
+  required: ["aiRelated", "everydayPerson", "summary", "redFlags", "tactic"],
   properties: {
     aiRelated: {
       type: "boolean",
       description:
-        "True only if artificial intelligence makes this scam possible, cheaper, or more convincing. Deepfakes, cloned voices, AI-written messages, AI-generated images, video or websites all count.",
+        "True if AI is part of this scam or is what made the technique cheap. Deepfakes, cloned voices, AI-written messages and AI-built fake sites count. So does pretending to be a real person or a real organisation, because that is the trick AI has made easy.",
+    },
+    everydayPerson: {
+      type: "boolean",
+      description:
+        "True only if this is a scam a 12 year old or their parent could meet on their own phone. False for anything about hacking tools, phishing kits, tokens, servers, networks or company accounts.",
     },
     summary: {
       type: "string",
@@ -94,7 +99,11 @@ Rules you must follow:
 - If a 7th grader would not use a word, do not use it. Never write "revictimize", "personally identifiable information", "threat actor", "malicious", "mitigation" or "credentials".
 - Say what happened and how the trick works. Do not give advice or tell the reader what to do.
 - Red flags are the signs that give the scam away, not instructions. Two to four of them, four words maximum each, lowercase.
-- Set aiRelated true only when AI is genuinely part of the scam. A plain scam with no AI in it gets false, even if it is a serious scam.
+- Set aiRelated true when AI is part of the scam, or when the scam turns on pretending to be a real person or a real organisation. That impersonation is the thing AI made cheap, so it counts. A scam with no AI and no impersonation gets false.
+- Set everydayPerson true only if this is a scam a 12 year old or their parent could actually meet, on their own phone, their own email, or their own social media, in their own life.
+- Set it false if telling the story needs any of these words: token, credential, kit, tool, exploit, server, network, endpoint, admin, enterprise, infrastructure, or the name of a piece of hacking software. Those stories are written for IT staff, and FlipSec is not for IT staff.
+- Set it false when the victim is a company, a government network, a utility, or the people who run them, however serious the story is.
+- A useful test: could this land on a 12 year old's phone at the dinner table? If you have to explain what a piece of software is before the story makes sense, the answer is no.
 
 Pick the tactic by working down this list and taking the FIRST one that fits:
 1. deepfake - fake video or images of a real person. AI-generated faces, fake officials, fake executives on a video call, fake promotional clips.
@@ -142,18 +151,20 @@ export const processStory = internalAction({
 
     const result = JSON.parse(raw) as {
       aiRelated: boolean;
+      everydayPerson: boolean;
       summary: string;
       redFlags: string[];
       tactic: string;
     };
 
     console.log(
-      `${args.title} -> aiRelated=${result.aiRelated} tactic=${result.tactic}`,
+      `${args.title} -> ai=${result.aiRelated} everyday=${result.everydayPerson} tactic=${result.tactic}`,
     );
 
     await ctx.scheduler.runAfter(0, internal.stories.saveProcessed, {
       storyId: args.storyId,
       aiRelated: result.aiRelated,
+      everydayPerson: result.everydayPerson,
       summary: result.summary,
       redFlags: result.redFlags,
       tactic: result.tactic,
@@ -167,12 +178,15 @@ export const saveProcessed = internalMutation({
   args: {
     storyId: v.id("stories"),
     aiRelated: v.boolean(),
+    everydayPerson: v.boolean(),
     summary: v.string(),
     redFlags: v.array(v.string()),
     tactic: v.string(),
   },
   handler: async (ctx, args) => {
-    if (!args.aiRelated) {
+    // Both tests must pass. An AI scam aimed at IT staff is still not a post
+    // a 12 year old can use.
+    if (!args.aiRelated || !args.everydayPerson) {
       await ctx.db.patch(args.storyId, { status: "failed", rawText: undefined });
       return;
     }
@@ -382,5 +396,95 @@ export const reclassifyTactics = internalAction({
     }
 
     return { checked: stories.length, changed };
+  },
+});
+
+// Failed stories keep their URL, which blocks a re-crawl from ever looking at
+// them again. Clearing them lets a changed filter re-judge the same sources.
+export const clearFailed = internalMutation({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const failed = await ctx.db
+      .query("stories")
+      .withIndex("by_status", (q) => q.eq("status", "failed"))
+      .take(args.limit ?? 200);
+
+    for (const story of failed) await ctx.db.delete(story._id);
+    return { deleted: failed.length };
+  },
+});
+
+export const unpublish = internalMutation({
+  args: { storyId: v.id("stories") },
+  handler: async (ctx, args) => {
+    const drill = await ctx.db
+      .query("drills")
+      .withIndex("by_story", (q) => q.eq("storyId", args.storyId))
+      .unique();
+
+    if (drill !== null) await ctx.db.delete(drill._id);
+    await ctx.db.delete(args.storyId);
+  },
+});
+
+const AUDIENCE_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["everydayPerson"],
+  properties: { everydayPerson: { type: "boolean" } },
+} as const;
+
+// Re-judges already published stories against the everyday-person test, which
+// did not exist when they were processed. Works from the summary, since
+// rawText is gone by publish time.
+export const recheckAudience = internalAction({
+  args: {},
+  handler: async (ctx): Promise<{ checked: number; removed: number }> => {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) throw new Error("OPENAI_API_KEY is not set in Convex env vars");
+
+    const openai = new OpenAI({ apiKey });
+    const stories: Array<{
+      storyId: Id<"stories">;
+      title: string;
+      summary: string;
+    }> = await ctx.runQuery(internal.stories.listForReclassify, {});
+
+    let removed = 0;
+    for (const story of stories) {
+      const completion = await openai.chat.completions.create({
+        model: MODEL,
+        temperature: 0,
+        messages: [
+          { role: "system", content: PROCESS_PROMPT },
+          {
+            role: "user",
+            content: `Answer the everydayPerson question only.\n\nHeadline: ${story.title}\n\nPost: ${story.summary}`,
+          },
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "audience",
+            strict: true,
+            schema: AUDIENCE_SCHEMA,
+          },
+        },
+      });
+
+      const raw = completion.choices[0]?.message?.content;
+      if (!raw) continue;
+
+      const { everydayPerson } = JSON.parse(raw) as { everydayPerson: boolean };
+      if (everydayPerson) continue;
+
+      console.log(`removing, not for everyday readers: ${story.title}`);
+      await ctx.runMutation(internal.stories.unpublish, {
+        storyId: story.storyId,
+      });
+      removed++;
+    }
+
+    return { checked: stories.length, removed };
   },
 });

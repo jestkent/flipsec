@@ -47,7 +47,7 @@ http.route({
 
     await ctx.runMutation(internal.attempts.saveReply, {
       from: addressOnly(from),
-      body: body.slice(0, 2000),
+      body: stripQuoted(body).slice(0, 2000),
     });
 
     return new Response("ok", { status: 200 });
@@ -58,6 +58,37 @@ http.route({
 function addressOnly(from: string): string {
   const angled = from.match(/<([^>]+)>/);
   return (angled ? angled[1] : from).trim().toLowerCase();
+}
+
+// Mail clients append the whole message being replied to. Keeping it would
+// store the drill back on the attempt and bill for those tokens on every
+// grade, so everything from the first quote marker is dropped.
+const QUOTE_MARKERS = [
+  // Gmail's "On <date> <sender> wrote:" wraps across lines, so this spans them.
+  /^[ \t]*On\s[\s\S]{10,300}?wrote:/m,
+  /^[ \t]*-{2,}\s*Original Message\s*-{2,}/im,
+  /^_{10,}/m,
+  /^[ \t]*From:\s.+$/im,
+  /^[ \t]*Sent from my /im,
+];
+
+function stripQuoted(body: string): string {
+  let cut = body.length;
+
+  for (const marker of QUOTE_MARKERS) {
+    const found = body.search(marker);
+    if (found !== -1 && found < cut) cut = found;
+  }
+
+  const kept = body
+    .slice(0, cut)
+    .split("\n")
+    .filter((line) => !line.trimStart().startsWith(">"))
+    .join("\n")
+    .trim();
+
+  // If stripping ate the whole reply, the markers misfired. Keep the original.
+  return kept.length > 0 ? kept : body.trim();
 }
 
 function stripHtml(html: string): string {
