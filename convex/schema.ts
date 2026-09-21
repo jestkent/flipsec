@@ -91,6 +91,7 @@ export default defineSchema({
       v.literal("chat"),
       v.literal("speech"),
       v.literal("translate"),
+      v.literal("subscribe"),
     ),
     createdAt: v.number(),
   })
@@ -131,6 +132,12 @@ export default defineSchema({
     email: v.string(),
     userId: v.optional(v.string()),
     active: v.boolean(),
+    // Double opt-in. ABSENT means confirmed: every row written before this
+    // existed is a real reader who asked for the mail under the old flow, and
+    // reading absent as "pending" would have silently unsubscribed all of
+    // them. Only a new sign-up sets it to true, and confirming clears it.
+    pending: v.optional(v.boolean()),
+    confirmedAt: v.optional(v.number()),
     // Which drill went out last, so an emailed reply can be graded against
     // the right question without the reader quoting anything back.
     lastDrillId: v.optional(v.id("drills")),

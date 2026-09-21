@@ -37,7 +37,107 @@ async function unsubscribeToken(email: string): Promise<string> {
     .slice(0, 32);
 }
 
+// A separate token for confirming, so an unsubscribe link can never confirm
+// and a confirm link can never unsubscribe. unsubscribeToken above keeps
+// signing the bare address exactly as it did, because links in mail that has
+// already been delivered have to keep working.
+export async function confirmToken(email: string): Promise<string> {
+  const secret = process.env.WEBHOOK_SECRET ?? "";
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    new TextEncoder().encode(`confirm:${email.trim().toLowerCase()}`),
+  );
+  return Array.from(new Uint8Array(signature))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("")
+    .slice(0, 32);
+}
+
 export { unsubscribeToken };
+
+// The address now has to travel through a hidden form field, so for the first
+// time it reaches the HTML these routes build by hand. Nothing here escapes
+// anything for us, which is exactly where a reflected XSS lives.
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+// Shared shell for the small pages these routes serve. `body` is trusted
+// markup written in this file; anything that came from a request passes
+// through escapeHtml before it gets near it.
+function htmlPage(title: string, body: string): Response {
+  return new Response(
+    `<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>${title}</title></head>
+<body style="margin:0;font:16px/1.6 system-ui,sans-serif;background:#f7f5ef;color:#17212b">
+<div style="max-width:32rem;margin:4rem auto;padding:0 1.25rem">
+<h1 style="font-size:1.5rem;margin:0 0 .5rem;color:#102a43">${title}</h1>
+${body}
+<p style="margin-top:1.5rem"><a href="/" style="color:#3e6450">&larr; Back to FlipSec.ai</a></p>
+</div></body></html>`,
+    { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } },
+  );
+}
+
+function message(title: string, line: string): Response {
+  return htmlPage(title, `<p style="color:#52677a;margin:0">${line}</p>`);
+}
+
+// A button, not a link that acts on sight. Outlook Safe Links, Proofpoint URL
+// Defense and Gmail all fetch links in mail before a human sees them. A GET
+// that unsubscribed on sight meant a scanner quietly removed real readers,
+// and a GET that confirmed on sight would make double opt-in meaningless,
+// because the scanner would be the one consenting.
+function actionPage(
+  title: string,
+  line: string,
+  path: string,
+  email: string,
+  token: string,
+  button: string,
+): Response {
+  return htmlPage(
+    title,
+    `<p style="color:#52677a;margin:0 0 1.5rem">${line}</p>
+<form method="POST" action="${path}">
+<input type="hidden" name="e" value="${escapeHtml(email)}">
+<input type="hidden" name="t" value="${escapeHtml(token)}">
+<button type="submit" style="min-height:44px;padding:0 1.25rem;border:0;border-radius:8px;background:#3e6450;color:#fff;font:600 16px system-ui,sans-serif;cursor:pointer">${button}</button>
+</form>`,
+  );
+}
+
+// The address arrives in the query string on the GET that draws the button,
+// and in the posted form on the POST that acts.
+async function readParams(request: Request): Promise<{ email: string; token: string }> {
+  if (request.method === "POST") {
+    const form = new URLSearchParams(await request.text());
+    return {
+      email: (form.get("e") ?? "").trim().toLowerCase(),
+      token: form.get("t") ?? "",
+    };
+  }
+  const url = new URL(request.url);
+  return {
+    email: (url.searchParams.get("e") ?? "").trim().toLowerCase(),
+    token: url.searchParams.get("t") ?? "",
+  };
+}
 
 // AgentMail signs every webhook it sends, the way most providers do: an id, a
 // timestamp and an HMAC over "id.timestamp.body", with the signing secret
@@ -181,42 +281,66 @@ http.route({
 // blind — except that a scanner following it should still not silently
 // unsubscribe a real reader, which is why the address has to arrive with a
 // matching signature.
-http.route({
-  path: "/unsubscribe",
-  method: "GET",
-  handler: httpAction(async (ctx, request) => {
-    const url = new URL(request.url);
-    const email = (url.searchParams.get("e") ?? "").trim().toLowerCase();
-    const token = url.searchParams.get("t") ?? "";
+const unsubscribeHandler = httpAction(async (ctx, request) => {
+  const { email, token } = await readParams(request);
+  if (!email || !token) return message("That link is incomplete", "Nothing was changed.");
 
-    const page = (title: string, line: string) =>
-      new Response(
-        `<!doctype html><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${title}</title>
-<body style="margin:0;font:16px/1.6 system-ui,sans-serif;background:#fafafa;color:#171717">
-<div style="max-width:32rem;margin:4rem auto;padding:0 1.25rem">
-<h1 style="font-size:1.5rem;margin:0 0 .5rem">${title}</h1>
-<p style="color:#525252;margin:0 0 1.5rem">${line}</p>
-<a href="/" style="color:#171717">← Back to FlipSec.ai</a>
-</div></body>`,
-        { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } },
-      );
+  if (!secretsMatch(token, await unsubscribeToken(email))) {
+    return message("That link is not valid", "Nothing was changed.");
+  }
 
-    if (!email || !token) return page("That link is incomplete", "Nothing was changed.");
-
-    const expected = await unsubscribeToken(email);
-    if (!secretsMatch(token, expected)) {
-      return page("That link is not valid", "Nothing was changed.");
-    }
-
-    await ctx.runMutation(internal.subscribers.deactivate, { email });
-    return page(
-      "You are unsubscribed",
-      "No more daily mail from FlipSec.ai. You can read the feed any time without signing up.",
+  if (request.method !== "POST") {
+    return actionPage(
+      "Unsubscribe from FlipSec.ai?",
+      "You are about to stop the daily email. Every feed stays readable on the site without signing up.",
+      "/api/unsubscribe",
+      email,
+      token,
+      "Unsubscribe",
     );
-  }),
+  }
+
+  await ctx.runMutation(internal.subscribers.deactivate, { email });
+  return message(
+    "You are unsubscribed",
+    "No more daily mail from FlipSec.ai. You can read the feed any time without signing up.",
+  );
 });
+
+http.route({ path: "/unsubscribe", method: "GET", handler: unsubscribeHandler });
+http.route({ path: "/unsubscribe", method: "POST", handler: unsubscribeHandler });
+
+// Double opt-in. The address that will receive the mail is the one that has
+// to press the button, which is what makes this consent rather than a
+// stranger filling in a form with someone else's address.
+const confirmHandler = httpAction(async (ctx, request) => {
+  const { email, token } = await readParams(request);
+  if (!email || !token) return message("That link is incomplete", "Nothing was changed.");
+
+  if (!secretsMatch(token, await confirmToken(email))) {
+    return message("That link is not valid", "Nothing was changed.");
+  }
+
+  if (request.method !== "POST") {
+    return actionPage(
+      "Start the daily email?",
+      "Press the button and one card from each feed you picked arrives each morning. You can stop any time from the link at the foot of every email.",
+      "/api/confirm",
+      email,
+      token,
+      "Yes, start the daily email",
+    );
+  }
+
+  await ctx.runMutation(internal.subscribers.confirm, { email });
+  return message(
+    "You are on the list",
+    "The first email arrives tomorrow morning. Every one of them carries an unsubscribe link at the foot.",
+  );
+});
+
+http.route({ path: "/confirm", method: "GET", handler: confirmHandler });
+http.route({ path: "/confirm", method: "POST", handler: confirmHandler });
 
 // "Jess <jess@example.com>" -> "jess@example.com"
 function addressOnly(from: string): string {

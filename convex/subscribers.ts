@@ -1,5 +1,7 @@
 import { v } from "convex/values";
+import { internal } from "./_generated/api";
 import { internalMutation, internalQuery, mutation } from "./_generated/server";
+import { reserveSlot } from "./rateLimit";
 
 // Public: a reader gives their address on the site. Deduped on by_email so
 // signing up twice reactivates rather than creating a second row.
@@ -28,6 +30,18 @@ function cleanEmail(raw: string): string {
   return email;
 }
 
+// Anyone can type any address into this box, including an address that is not
+// theirs. Before double opt-in, doing so put a stranger on a daily mailing
+// list they never asked to join: harassment for them, spam complaints against
+// a shared sending domain for us, and no provable consent under GDPR.
+//
+// So a sign-up no longer subscribes anyone. It records an UNCONFIRMED row and
+// mails that address a link. Only following the link from the address itself
+// turns the mail on, which means consent comes from the mailbox rather than
+// from whoever filled in the form.
+//
+// It is also rate limited, tightly. It is the only public write that both
+// costs an outbound email and names a third party.
 export const subscribe = mutation({
   args: {
     email: v.string(),
@@ -37,8 +51,15 @@ export const subscribe = mutation({
   },
   handler: async (ctx, args) => {
     const email = cleanEmail(args.email);
-
     const kinds = cleanKinds(args.kinds);
+
+    const allowed = await reserveSlot(
+      ctx,
+      "subscribe",
+      args.userId ?? "anonymous",
+      "subscribe",
+    );
+    if (!allowed) throw new Error("Too many sign-ups from here. Try again later.");
 
     const existing = await ctx.db
       .query("subscribers")
@@ -49,27 +70,67 @@ export const subscribe = mutation({
       // Signing up again from a different tab adds that feed rather than
       // replacing what they already asked for.
       const merged = cleanKinds([...(existing.kinds ?? ["scam"]), ...kinds]);
+
+      // Absent pending means this row predates double opt-in, or was already
+      // confirmed. Either way it is a real reader and nothing needs resending.
+      const stillPending = existing.pending === true;
       await ctx.db.patch(existing._id, { active: true, kinds: merged });
-      return { already: true };
+
+      if (stillPending) {
+        await ctx.scheduler.runAfter(0, internal.email.sendConfirmation, { email });
+        return { already: true, confirm: true };
+      }
+      return { already: true, confirm: false };
     }
 
     await ctx.db.insert("subscribers", {
       email,
       userId: args.userId,
+      // active stays true so unsubscribe still means what it says; pending is
+      // what holds the mail back until the address itself says yes.
       active: true,
+      pending: true,
       kinds,
     });
-    return { already: false };
+
+    // A mutation reaches the network only by scheduling. Scheduling is itself
+    // a database write, so a mutation that throws sends nothing.
+    await ctx.scheduler.runAfter(0, internal.email.sendConfirmation, { email });
+    return { already: false, confirm: true };
+  },
+});
+
+// Following the link from the address itself. Idempotent: confirming twice is
+// the same as confirming once, which matters because people forward mail and
+// click things more than once.
+export const confirm = internalMutation({
+  args: { email: v.string() },
+  returns: v.boolean(),
+  handler: async (ctx, args) => {
+    const row = await ctx.db
+      .query("subscribers")
+      .withIndex("by_email", (q) => q.eq("email", args.email.trim().toLowerCase()))
+      .unique();
+    if (row === null) return false;
+    await ctx.db.patch(row._id, {
+      pending: false,
+      active: true,
+      confirmedAt: row.confirmedAt ?? Date.now(),
+    });
+    return true;
   },
 });
 
 export const listActive = internalQuery({
   args: {},
   handler: async (ctx) => {
-    const subs = await ctx.db
+    const subs = (await ctx.db
       .query("subscribers")
       .withIndex("by_active", (q) => q.eq("active", true))
-      .take(200);
+      .take(200))
+      // An unconfirmed address never receives the daily mail. Absent pending
+      // is a row from before double opt-in and is treated as confirmed.
+      .filter((s) => s.pending !== true);
 
     return subs.map((s) => ({
       subscriberId: s._id,

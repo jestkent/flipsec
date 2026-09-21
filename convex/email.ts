@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { internalAction } from "./_generated/server";
-import { unsubscribeToken } from "./http";
+import { confirmToken, unsubscribeToken } from "./http";
 
 // The AgentMail SDK dynamically imports @x402/fetch, a payments module this
 // app does not use, and that import cannot be bundled by Convex. The REST API
@@ -116,6 +116,46 @@ ${SITE}
 
 Don't want these? Unsubscribe: ${unsubscribeUrl}`;
 }
+
+// The other half of double opt-in. Anyone can type any address into the
+// sign-up box, so nothing is sent to that address except this one message
+// asking whether they actually want it. Until the link is pressed the row
+// stays pending and listActive skips it.
+//
+// Scheduled from the subscribe mutation, so a mutation that throws sends
+// nothing at all.
+export const sendConfirmation = internalAction({
+  args: { email: v.string() },
+  returns: v.null(),
+  handler: async (_ctx, args) => {
+    const email = args.email.trim().toLowerCase();
+    const token = await confirmToken(email);
+    const url = `${SITE}/api/confirm?e=${encodeURIComponent(email)}&t=${token}`;
+
+    try {
+      await sendMessage(
+        email,
+        "Confirm your FlipSec.ai email",
+        `Someone asked for the FlipSec.ai daily email to be sent to this address.
+
+If that was you, open this link and press the button:
+
+${url}
+
+If it was not you, ignore this message. Nothing will be sent and the address
+will not be added.
+
+FlipSec.ai — ${SITE}`,
+      );
+    } catch (error) {
+      // A bad address is the common case here, and it is not an app fault.
+      // The row stays pending, which is the safe state: no daily mail goes
+      // anywhere that never confirmed.
+      console.error("confirmation send failed", error);
+    }
+    return null;
+  },
+});
 
 export const sendDailyDrill = internalAction({
   args: {},

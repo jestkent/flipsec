@@ -22,10 +22,13 @@ export const BUDGETS = {
   chat: { kinds: ["chat", "image"], perReader: 10, global: 160 },
   speech: { kinds: ["speech"], perReader: 20, global: 300 },
   translate: { kinds: ["translate"], perReader: 30, global: 300 },
+  // Sign-ups cost an outbound email and name a third party's address, so this
+  // is deliberately the tightest budget in the table.
+  subscribe: { kinds: ["subscribe"], perReader: 3, global: 60 },
 } as const;
 
 export type BudgetName = keyof typeof BUDGETS;
-export type CheckKind = "message" | "image" | "chat" | "speech" | "translate";
+export type CheckKind = "message" | "image" | "chat" | "speech" | "translate" | "subscribe";
 
 // userId comes from the browser and can be regenerated, so the per-reader cap
 // is a courtesy. The global cap is the one an attacker cannot get around, and

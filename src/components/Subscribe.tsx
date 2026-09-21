@@ -39,6 +39,10 @@ export default function Subscribe({
 
   const pitch = PITCH[kind] ?? PITCH.scam;
 
+  const [error, setError] = useState(
+    "That did not go through. Check the address and try again.",
+  );
+
   async function signUp() {
     if (!email.includes("@") || state === "sending") return;
     setState("sending");
@@ -46,7 +50,15 @@ export default function Subscribe({
       await subscribe({ email, userId, kinds: [kind] });
       setState("done");
       setEmail("");
-    } catch {
+    } catch (thrown) {
+      // The sign-up cap has its own message worth showing, because "check the
+      // address" is wrong advice for someone who typed a fine address.
+      const text = thrown instanceof Error ? thrown.message : "";
+      setError(
+        text.includes("Too many sign-ups")
+          ? "That is a lot of sign-ups from here. Try again in a little while."
+          : "That did not go through. Check the address and try again.",
+      );
       setState("error");
     }
   }
@@ -54,7 +66,8 @@ export default function Subscribe({
   if (state === "done") {
     return (
       <p role="status" className="rounded-card border border-line bg-white px-5 py-4 text-base text-ink">
-        You are on the list. {pitch.done}
+        Check your email and press the button in it. Nothing is sent until you
+        do, so nobody can sign up an address that is not theirs. {pitch.done}
       </p>
     );
   }
@@ -93,7 +106,7 @@ export default function Subscribe({
       </div>
       {state === "error" && (
         <p id={errorId} role="alert" className="mt-2 text-base text-danger">
-          That did not go through. Check the address and try again.
+          {error}
         </p>
       )}
     </form>
