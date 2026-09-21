@@ -69,13 +69,37 @@ export default function Subscribe({
     }
   }
 
+  // A confirmation nobody can find is a sign-up that never happens, and mail
+  // from a domain with no sending history lands in spam more often than not.
+  // So this says where to look and what to look for, rather than leaving a
+  // reader to decide the site is broken.
   if (state === "done") {
     return (
-      <p role="status" className="rounded-card border border-line bg-white px-5 py-4 text-base text-ink">
-        {sentConfirmation
-          ? `Check your email and press the button in it. Nothing is sent until you do, so nobody can sign up an address that is not theirs. ${pitch.done}`
-          : `You are already on the list, and this tab has been added to what you get. ${pitch.done}`}
-      </p>
+      <div role="status" className="flex flex-col gap-2 rounded-card border border-line bg-white px-5 py-4">
+        {sentConfirmation ? (
+          <>
+            <p className="text-base leading-relaxed text-ink">
+              Check your email and press the button in it. {pitch.done}
+            </p>
+            <p className="text-base leading-relaxed text-ink">
+              Not there after a minute? Look in your spam or junk folder, and
+              search for <strong className="font-semibold text-navy">FlipSec</strong>.
+              The subject is <strong className="font-semibold text-navy">Confirm
+              your FlipSec.ai email</strong>. If you find it in spam, marking it
+              as not spam helps the daily one reach you.
+            </p>
+            <p className="text-base leading-relaxed text-slate">
+              Nothing is sent until you press that button, so nobody can sign up
+              an address that is not theirs.
+            </p>
+          </>
+        ) : (
+          <p className="text-base leading-relaxed text-ink">
+            You are already on the list, and this tab has been added to what you
+            get. {pitch.done}
+          </p>
+        )}
+      </div>
     );
   }
 

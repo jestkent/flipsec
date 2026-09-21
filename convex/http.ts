@@ -386,9 +386,12 @@ const confirmHandler = httpAction(async (ctx, request) => {
   }
 
   await ctx.runMutation(internal.subscribers.confirm, { email, kinds });
+  // The daily mail can land in spam for the same reason the confirmation
+  // does, and a reader who has just confirmed is the one person guaranteed to
+  // be looking for it tomorrow. Say it once, here, where it is useful.
   return message(
     "You are on the list",
-    "The first email arrives tomorrow morning, carrying the feeds you picked in one message. Every one of them has an unsubscribe link at the foot.",
+    "The first email arrives tomorrow morning, carrying the feeds you picked in one message. If it is not in your inbox, look in spam or junk and mark it as not spam. Every email has an unsubscribe link at the foot.",
   );
 });
 
