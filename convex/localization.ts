@@ -54,7 +54,7 @@ async function translateInto(
   if (!content || typeof content !== "object" || Array.isArray(content)) {
     throw new Error("The translation could not be checked.");
   }
-  await ctx.runMutation(internal.localizationData.saveStory, { storyId, language: code, content });
+  await ctx.runMutation(internal.localizationData.saveStory, { storyId, language: code, content, sourceHash: context.sourceHash });
   return content;
 }
 
@@ -156,6 +156,7 @@ export const translateStory = action({
       storyId: args.storyId,
       language: args.language,
       content,
+      sourceHash: context.sourceHash,
     });
     return content;
   },

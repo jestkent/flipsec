@@ -54,6 +54,11 @@ export default defineSchema({
     feedback: v.optional(v.string()),
     source: v.string(),               // web | email
     createdAt: v.number(),
+    deliveryStatus: v.optional(v.union(v.literal("pending"), v.literal("sending"), v.literal("sent"), v.literal("failed"))),
+    deliveryAttempts: v.optional(v.number()),
+    deliveryStartedAt: v.optional(v.number()),
+    deliveryLeaseUntil: v.optional(v.number()),
+    deliveryMessageId: v.optional(v.string()),
   })
     .index("by_user", ["userId"])
     .index("by_user_drill", ["userId", "drillId"]),
@@ -119,6 +124,7 @@ export default defineSchema({
     storyId: v.id("stories"),
     language,
     content: v.any(),
+    sourceHash: v.optional(v.string()),
     createdAt: v.number(),
   }).index("by_story_language", ["storyId", "language"]),
 
@@ -151,8 +157,18 @@ export default defineSchema({
     // which is what everyone who signed up before the other two feeds existed
     // actually asked for.
     kinds: v.optional(v.array(v.string())),
+    // Proposed preferences never replace consented preferences until confirmed.
+    pendingKinds: v.optional(v.array(v.string())),
   }).index("by_email", ["email"])
     .index("by_active", ["active"]),
+
+  sentDrills: defineTable({
+    subscriberId: v.id("subscribers"),
+    messageId: v.string(),
+    drillId: v.id("drills"),
+    createdAt: v.number(),
+  }).index("by_message", ["messageId"])
+    .index("by_subscriber", ["subscriberId"]),
 
   // What each cron run actually achieved. Every cron in this app catches its
   // own per-item failures and returns counts, so a run that achieved nothing

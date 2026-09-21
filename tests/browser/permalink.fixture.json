@@ -1,0 +1,17 @@
+[
+  {
+    "url": "https://example.invalid/flipsec-permalink-test",
+    "title": "Permalink verification card",
+    "source": "Local browser test",
+    "summary": "A temporary local card for checking a shared link.",
+    "status": "published",
+    "kind": "course",
+    "publishedAt": 1790013600000,
+    "crawledAt": 1790013600000,
+    "back": {
+      "whatYouLearn": ["Open and share a card"],
+      "whoItIsFor": "Local verification",
+      "firstStep": "Open this card's link."
+    }
+  }
+]

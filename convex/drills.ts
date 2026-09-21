@@ -157,6 +157,7 @@ export const saveDrill = internalMutation({
       v.array(v.object({ seen: v.string(), real: v.string() })),
     ),
   },
+  returns: v.id("drills"),
   handler: async (ctx, args) => {
     const existing = await ctx.db
       .query("drills")
@@ -177,10 +178,11 @@ export const saveDrill = internalMutation({
           illusion: args.illusion ?? existing.illusion,
         });
       }
+      await ctx.scheduler.runAfter(0, internal.localization.translateAllLanguages, { storyId: args.storyId });
       return existing._id;
     }
 
-    return await ctx.db.insert("drills", {
+    const drillId = await ctx.db.insert("drills", {
       storyId: args.storyId,
       prompt: args.prompt,
       choices: args.choices,
@@ -190,6 +192,8 @@ export const saveDrill = internalMutation({
       whyItWorks: args.whyItWorks,
       illusion: args.illusion,
     });
+    await ctx.scheduler.runAfter(0, internal.localization.translateAllLanguages, { storyId: args.storyId });
+    return drillId;
   },
 });
 

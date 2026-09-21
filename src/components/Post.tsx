@@ -11,6 +11,7 @@ import ReadAloudButton from "./ReadAloudButton";
 import { demoKey, findDemo } from "./demoRegistry";
 import { languageInfo, useLanguage } from "../localization";
 import { readerId } from "../reader";
+import { routeHash } from "../navigation";
 
 type Story = Omit<Doc<"stories">, "rawText">;
 
@@ -532,7 +533,12 @@ export default function Post({
                 {tactic}
               </Badge>
 
-              <ReadAloudButton targetRef={frontRef} label={t("readCard")} />
+              <div className="flex flex-wrap items-center gap-3">
+                <ReadAloudButton targetRef={frontRef} label={t("readCard")} />
+                <a className="inline-flex min-h-11 items-center text-base underline" href={routeHash({ view: "feed", kind: story.kind ?? "scam", storyId: story._id })}>
+                  {t("cardLink")}
+                </a>
+              </div>
 
               <footer className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-1">
                 <FlipHint kind={kind} onFlip={() => flip(true)} controls={backId} />

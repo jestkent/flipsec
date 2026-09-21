@@ -28,8 +28,9 @@ language, and puts it on a card that flips.
 ## Four things you can try
 
 Reading that a voice can be faked is not the same as hearing one. These are on
-the Ask FlipSec page and in the Learn feed, they need no account, and nothing
-you do in them leaves the page.
+the Ask FlipSec page and in the Learn feed. They need no account. Practice
+choices stay in the browser; playing the voice example uses the same online
+speech service as Read aloud.
 
 - **The voice on the phone.** Press play and hear what a call sounds like now,
   then the two things that still work: hang up and call back on the number you
@@ -93,13 +94,14 @@ dictionary rather than translated article text over English buttons, and the
 menu names every language in its own script. A whole card translates, not just
 its headline: the summary, the warning signs, and the lesson, course guide or
 job posting behind the flip, along with every label around them. Translations
-are generated once per card and language and then cached, so the same card is
-never translated twice.
+are cached per card and language. News translation waits for the drill, and
+English remains available while it finishes. Incomplete or stale translations
+can be regenerated; concurrent cache misses can still make duplicate model calls.
 
-Two things stay in English on purpose. Source names and links are never
+Some content remains in English. Source names and links are never
 translated, because the reader needs to recognise what they are clicking
-through to. And the About page and homepage copy are English for now, which is
-an incomplete piece of work rather than a decision. No right-to-left language
+through to. The home page, About, Privacy, sign-up form and interactive lessons remain
+English for now. These regions declare their language for assistive technology. No right-to-left language
 ships yet either, because the layout needs to move off physical direction
 classes before Arabic or Urdu would read correctly rather than mirror.
 
@@ -107,6 +109,8 @@ Sign up on any tab and confirm from the link that arrives. The confirmation
 page is where you pick the feeds, already ticked for whatever tab you signed
 up from, so signing up from three tabs asks once rather than three times. One
 card from each feed you picked then arrives in a single email each morning.
+Restarting an unsubscribed address or adding feeds also requires confirmation;
+public requests cannot alter existing consent.
 
 Reply to the news drill in your own words and the grade comes back to your
 inbox: whether you got it, why, and what the strongest sign was. One graded
@@ -178,7 +182,9 @@ qualify. Most candidates fail a gate, so the feeds stay small on purpose.
 
 FlipSec.ai stores a subscriber email address, the questions readers ask a post,
 the answers they give, Ask FlipSec's text conversation, and small usage records
-for model calls. An attached image is resized in the browser, sent to OpenAI for
+for model calls. Outgoing message identifiers match replies to the correct drill;
+feedback delivery status supports bounded retries. Read-aloud audio is cached,
+including assistant answers, and is not deleted with a conversation. An attached image is resized in the browser, sent to OpenAI for
 that answer, and not kept in the conversation or the app's own tables. There are
 no accounts. A reader on the web is a random id kept in their own browser.
 
@@ -198,26 +204,26 @@ sign-up box, written from the schema rather than a template.
 ## Local setup
 
 ```bash
-# scaffold
-npm create vite@latest flipsec -- --template react-ts
+git clone https://github.com/jestkent/flipsec
 cd flipsec
-npm install
-npm install convex
-npx convex dev
+npm ci
+npx convex dev  # link the existing project; check the deployment target
+npm run dev
 
-# tailwind
-npm install -D tailwindcss @tailwindcss/vite
-
-# integrations
-npm install @mendable/firecrawl-js openai
-npm install @convex-dev/agent ai @ai-sdk/openai
-
-# secrets (never commit these)
-npx convex env set OPENAI_API_KEY sk-...
-npx convex env set FIRECRAWL_API_KEY fc-...
-npx convex env set AGENTMAIL_API_KEY ...
-npx convex env set WEBHOOK_SECRET "$(openssl rand -hex 24)"
+# Verification
+npm test
+npm run test:browser  # uses installed Chrome
+npm run build
+npx tsc --noEmit -p convex/tsconfig.json
+npm run lint
 ```
+
+Configure provider credentials in the intended Convex deployment, never in
+tracked source. See HANDOFF.md for deployment guidance and RELIABILITY.md for
+the current local changes, verification limits, and production rollout notes.
+
+Pages and cards have hash links that survive refresh and browser history. Card
+links open only published content. Hash routing does not add per-card SEO.
 
 ## Licence
 

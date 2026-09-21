@@ -20,7 +20,7 @@ function inboxId(): string {
   return id;
 }
 
-async function sendMessage(to: string, subject: string, text: string) {
+async function sendMessage(to: string, subject: string, text: string, idempotencyKey?: string) {
   const apiKey = process.env.AGENTMAIL_API_KEY;
   if (!apiKey) throw new Error("AGENTMAIL_API_KEY is not set in Convex env vars");
 
@@ -31,8 +31,10 @@ async function sendMessage(to: string, subject: string, text: string) {
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
+        ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
       },
       body: JSON.stringify({ to, subject, text }),
+      signal: AbortSignal.timeout(20_000),
     },
   );
 
@@ -42,7 +44,11 @@ async function sendMessage(to: string, subject: string, text: string) {
     );
   }
 
-  return (await response.json()) as { message_id?: string };
+  const result: unknown = await response.json();
+  if (!result || typeof result !== "object" || !("message_id" in result) || typeof result.message_id !== "string") {
+    throw new Error("AgentMail returned no message ID");
+  }
+  return { message_id: result.message_id };
 }
 
 function drillSection(drill: {
@@ -144,15 +150,15 @@ export const sendConfirmation = internalAction({
         `Someone asked for the FlipSec.ai daily email to be sent to this address,
 covering ${wants}.
 
-If that was you, open this link and press the button:
+If that was you, open this link, choose your feeds, and press the button:
 
 ${url}
 
 One email a day, whichever feeds you picked, in one message rather than one
-per feed. Adding another feed later does not need another confirmation.
+per feed. Restarting delivery or adding feeds also needs confirmation.
 
-If it was not you, ignore this message. Nothing will be sent and the address
-will not be added.
+If it was not you, ignore this message. Your current subscription stays
+unchanged, and a new subscription will not start.
 
 FlipSec.ai — ${SITE}`,
       );
@@ -177,6 +183,7 @@ FlipSec.ai — ${SITE}`,
 // somebody who gets a scam drill wrong is exactly the reader this is for.
 export const sendGrade = internalAction({
   args: {
+    attemptId: v.optional(v.id("attempts")),
     to: v.string(),
     correct: v.boolean(),
     feedback: v.string(),
@@ -184,7 +191,12 @@ export const sendGrade = internalAction({
     explanation: v.string(),
   },
   returns: v.null(),
-  handler: async (_ctx, args) => {
+  handler: async (ctx, args) => {
+    if (args.attemptId) {
+      if (!(await ctx.runMutation(internal.attempts.claimDelivery, { ...args, attemptId: args.attemptId }))) return null;
+      // A watchdog survives action interruption, including a successful send
+      // whose response was lost. Same body + same provider key on every retry.
+    }
     const opening = args.correct
       ? "You got it."
       : "Not this time, and that is worth knowing.";
@@ -195,7 +207,7 @@ export const sendGrade = internalAction({
 
     try {
       const token = await unsubscribeToken(args.to);
-      await sendMessage(
+      const sent = await sendMessage(
         args.to,
         args.correct ? "You got today's drill right" : "About today's drill",
         `${opening}
@@ -211,10 +223,11 @@ somewhere it is safe. The next one arrives tomorrow.
 ${SITE}
 
 Don't want these? Unsubscribe: ${SITE}/api/unsubscribe?e=${encodeURIComponent(args.to)}&t=${token}`,
+        args.attemptId ? `grade-${args.attemptId}` : undefined,
       );
+      if (args.attemptId) await ctx.runMutation(internal.attempts.finishDelivery, { attemptId: args.attemptId, messageId: sent.message_id });
     } catch (error) {
-      // The grade is already saved, so a failed send loses the message and
-      // not the work. Never rethrow: a retry would mail them twice.
+      // The saved grade and scheduled watchdog survive a send failure.
       console.error("grade reply send failed", error);
     }
     return null;
@@ -222,9 +235,10 @@ Don't want these? Unsubscribe: ${SITE}/api/unsubscribe?e=${encodeURIComponent(ar
 });
 
 export const sendDailyDrill = internalAction({
-  args: {},
-  handler: async (ctx): Promise<{ sent: number; failed: number }> => {
-    const startedAt = Date.now();
+  args: { cursor: v.optional(v.string()), startedAt: v.optional(v.number()), sent: v.optional(v.number()), failed: v.optional(v.number()), considered: v.optional(v.number()) },
+  returns: v.object({ sent: v.number(), failed: v.number() }),
+  handler: async (ctx, args): Promise<{ sent: number; failed: number }> => {
+    const startedAt = args.startedAt ?? Date.now();
     // Fetched once for everybody, not once per reader. A list rather than one
     // drill, so each reader can be given something they have not had yet.
     const candidates: Array<{
@@ -260,15 +274,11 @@ export const sendDailyDrill = internalAction({
       return { sent: 0, failed: 0 };
     }
 
-    const subscribers: Array<{
-      subscriberId: Id<"subscribers">;
-      email: string;
-      kinds: string[];
-      lastDrillId: Id<"drills"> | null;
-    }> = await ctx.runQuery(internal.subscribers.listActive, {});
-
-    let sent = 0;
-    let failed = 0;
+    const page = await ctx.runQuery(internal.subscribers.activePage, { paginationOpts: { cursor: args.cursor ?? null, numItems: 20 } });
+    const subscribers = page.page;
+    let sent = args.sent ?? 0;
+    let failed = args.failed ?? 0;
+    const considered = (args.considered ?? 0) + subscribers.length;
 
     for (const subscriber of subscribers) {
       // The newest drill this reader did not already get. Falls back to the
@@ -304,10 +314,11 @@ export const sendDailyDrill = internalAction({
           subscriber.email,
         )}&t=${token}`;
 
-        await sendMessage(
+        const delivered = await sendMessage(
           subscriber.email,
           subject,
           dailyEmail(sections, unsubscribeUrl),
+          `daily-${new Date(startedAt).toISOString().slice(0, 10)}-${subscriber.subscriberId}`,
         );
 
         // Only the scam drill is gradeable, so only that records a target.
@@ -318,6 +329,7 @@ export const sendDailyDrill = internalAction({
             subscriberId: subscriber.subscriberId,
             drillId: mine.drillId,
             storyId: mine.storyId,
+            messageId: delivered.message_id,
           });
         }
         sent++;
@@ -327,6 +339,10 @@ export const sendDailyDrill = internalAction({
       }
     }
 
+    if (!page.isDone) {
+      await ctx.scheduler.runAfter(1000, internal.email.sendDailyDrill, { cursor: page.continueCursor, startedAt, sent, failed, considered });
+      return { sent, failed };
+    }
     console.log(`daily send: sent ${sent}, failed ${failed}`);
 
     // An empty list is a healthy run — nobody has confirmed yet, and inventing
@@ -334,8 +350,8 @@ export const sendDailyDrill = internalAction({
     // to nobody while subscribers exist is the fault worth naming.
     await ctx.scheduler.runAfter(0, internal.health.recordRun, {
       job: CRON_JOBS.dailyDrill,
-      ok: subscribers.length === 0 || sent > 0,
-      detail: `sent ${sent}, failed ${failed}, of ${subscribers.length} active`,
+      ok: considered === 0 || sent > 0,
+      detail: `sent ${sent}, failed ${failed}, of ${considered} active`,
       startedAt,
     });
 
@@ -366,7 +382,7 @@ export const sendTestDrill = internalAction({
     );
 
     const token = await unsubscribeToken(email);
-    await sendMessage(
+    const delivered = await sendMessage(
       email,
       "Spot the scam — today's drill",
       dailyEmail(
@@ -379,6 +395,7 @@ export const sendTestDrill = internalAction({
       subscriberId,
       drillId: drill.drillId,
       storyId: drill.storyId,
+      messageId: delivered.message_id,
     });
 
     return { ok: true, detail: `sent to ${email}` };

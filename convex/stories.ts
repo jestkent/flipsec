@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import OpenAI from "openai";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
+import schema from "./schema";
 import {
   internalAction,
   internalMutation,
@@ -269,14 +270,7 @@ export const saveProcessed = internalMutation({
       rawText: undefined,
     });
 
-// Translated now, not on the first reader who asks. A card published
-    // after the last warm-up used to sit in English until somebody waited
-    // through ten seconds of model call, which is why some cards in a feed
-    // were translated and some were not. Publishing is rare; readers are not.
-    await ctx.scheduler.runAfter(0, internal.localization.translateAllLanguages, {
-      storyId: args.storyId,
-    });
-
+    // saveDrill schedules translation only after the entire news card exists.
     await ctx.scheduler.runAfter(0, internal.drills.makeDrill, {
       storyId: args.storyId,
       summary: args.summary,
@@ -334,6 +328,19 @@ export const listPublished = query({
     // rawText is never sent to a client. It is cleared on publish, but this
     // strips it explicitly so the rule does not depend on that.
     return stories.map(({ rawText: _rawText, ...story }) => story);
+  },
+});
+
+export const publishedStory = query({
+  args: { storyId: v.string() },
+  returns: v.union(v.null(), schema.doc("stories").omit("rawText")),
+  handler: async (ctx, args) => {
+    const id = ctx.db.normalizeId("stories", args.storyId);
+    if (!id) return null;
+    const story = await ctx.db.get(id);
+    if (!story || story.status !== "published") return null;
+    const { rawText: _rawText, ...publicStory } = story;
+    return publicStory;
   },
 });
 

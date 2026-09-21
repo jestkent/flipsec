@@ -2,13 +2,18 @@
 
 **Flip the news. Learn the threat.**
 
+Current implementation notes: [RELIABILITY.md](RELIABILITY.md). The original
+spec and historical sections below record earlier designs; the reliability
+update supersedes claims about translation sequencing, email retries, consent,
+and navigation. These fixes have not yet been deployed to production.
+
 An AI security awareness app. The feed looks like social media and carries real stories about AI being used against people. Flip any post and it becomes a drill built from that exact story.
 
 - **Domain:** flipsec.ai
 - **Hackathon:** Convex All Gas
-- **Deadline:** Monday, Sep 22, 12:00 PM PT
+- **Deadline:** Tuesday, Sep 22, 2026, 12:00 PM PT
 - **Submission:** vibeapps.dev
-- **Live URL target:** `https://flipsec.convex.site`
+- **Live URL target:** `https://hallowed-nightingale-322.convex.site`
 
 ---
 
@@ -70,7 +75,7 @@ Reading level target: a 7th grader can follow every post. That constraint is a f
 |---|---|
 | Everyday app, not a developer tool | Aimed at ordinary people who use email and phones. No security background assumed. No CLI, no API, no dev audience. |
 | Creativity and usefulness | The flip ties current news to practice. Someone would use this the week an AI scam hits their town. |
-| Convex depth | Reactive queries drive the feed, mutations record attempts, the scheduler chains crawl to AI to write, cron triggers crawls, an httpAction receives inbound mail, auth scopes progress per user. |
+| Convex depth | Reactive queries drive the feed, mutations record attempts, the scheduler chains crawl to AI to write, cron triggers crawls, an httpAction receives inbound mail, anonymous browser IDs associate activity; there is no account authentication. |
 | Firecrawl doing real work | Firecrawl is the content engine. Without it there is no feed. It crawls advisory sources every 6 hours and that output becomes both the post and the drill. |
 | OpenAI doing real work | Turns raw crawled text into plain-language summaries, extracts red flags, generates the drill, and grades free-text replies from email. |
 | AgentMail doing real work | Sends the daily drill, receives the user's emailed reply, and that reply is graded and written back into the app. Two-way, not just notifications. |
@@ -397,7 +402,7 @@ Three minutes, mostly screen. Talk less, click more.
 
 **1:00 to 1:40** Where content comes from. Convex dashboard, a crawl running, rows appearing, a new post sliding into the feed live with no refresh. This is the Convex depth moment.
 
-**1:40 to 2:20** The email loop. Drill arrives in a real inbox, reply with an answer, grade appears back in the app.
+**1:40 to 2:20** The email loop. Drill arrives in a real inbox, reply with an answer, feedback arrives back in the inbox.
 
 **2:20 to 2:50** Who it is for. One honest sentence about teaching Internet Safety to middle schoolers and why the reading level matters.
 
@@ -662,10 +667,16 @@ also cannot be verified without a browser, and getting `connect-src` wrong
 takes the whole app down, so shipping one blind would have traded a
 theoretical risk for a real outage.
 
-URL routing stays unbuilt. Section 6 of this plan and CLAUDE.md both record
-that a router does not earn itself here, and that is still true of a router —
-but the cost is now measured rather than assumed: one indexable URL, no deep
-links, an inert back button and HTTP 200 on unknown paths.
+URL routing stayed unbuilt at the time of the audit, and section 6 of this
+plan and CLAUDE.md both recorded that a router did not earn itself here. That
+held for a *router*. What shipped later is smaller: hash routing in
+`src/navigation.ts`, which buys deep links, refresh and working Back and
+Forward without a routing library or a change to how the app renders.
+
+The half that a hash cannot buy is still open, because a fragment is never
+sent to the server: one indexable URL, no per-card search indexing, and
+HTTP 200 on unknown paths. The first cost in that list was the one measured
+here, and it is the one that did not move.
 
 ---
 
@@ -888,8 +899,8 @@ to fill it in. Worse, that reader is the one who pays the latency and the one
 who can hit the hourly cap.
 
 The fix is to move the work to the write. `translateAllLanguages` is
-scheduled from every point a story becomes published, so a card is in all ten
-languages before anybody sees it. The lazy path stays as a fallback for a
+scheduled from every point a story becomes published, so complete cards are translated in the background. English remains visible
+while translation runs; the news path now starts after saveDrill. The lazy path stays as a fallback for a
 story published before this existed or a language whose turn failed.
 
 The economics are the argument. Publishing is rare and bounded: a handful of
@@ -942,9 +953,9 @@ inventing. That is worth noticing on its own — a consistency gap between two
 paths through one feature sat harmless for as long as one path was
 incomplete, and became a real fault the moment the feature was finished.
 
-`sendGrade` never rethrows. The grade is saved before the send is attempted,
-so a failure loses the message rather than the work, and a retry would mail
-somebody the same verdict twice.
+The original sendGrade implementation logged failures without retrying.
+The reliability update now commits the grade before scheduling delivery and
+uses bounded retries with a stable provider idempotency key.
 
 ### How it was tested
 

@@ -1,5 +1,18 @@
 # Production readiness audit
 
+## Latest local reliability update
+
+See [RELIABILITY.md](RELIABILITY.md) for new consent, translation, email matching,
+delivery recovery, pagination and navigation fixes. They are implemented and
+validated locally, not yet deployed to production. Historical statuses below
+refer to their named commits. URL sharing/history are now implemented locally;
+per-card SEO and hosting response headers remain open.
+
+The follow-up review found that existing-address sign-up could bypass consent,
+translation could cache a missing drill, and late email replies used the wrong
+drill. Regression tests cover these paths. The earlier audit did not establish
+that those behaviours were correct.
+
 Audit run 2026-09-21 against commit `a0910d6` and the live deployment.
 
 Fixes run from `c233aa8` to `00d3312`. The findings table below names the
@@ -72,7 +85,7 @@ it is blocked by somebody else's, this regression is back.
 | E-1 | The daily email promised "I will tell you how you did" and never sent the grade | **High** | Fixed `00d3312` |
 | E-2 | `saveReply` inserted unconditionally — once the grade is mailed, an auto-responder makes a mail loop | **High** | Fixed `00d3312` |
 | **H-2** | **No security headers** — no CSP, HSTS, or frame protection | **High** | **OPEN — hosting layer, see §6** |
-| S-3 | No URL routing: one indexable URL, back button inert, soft 404 | Medium | **OPEN — deferred, see §7** |
+| S-3 | No URL routing: one indexable URL, back button inert, soft 404 | Medium | **PARTLY CLOSED** — hash routing ships; the soft 404 and single indexable shell remain, see §7 |
 | L-3 | No `List-Unsubscribe` header | Low | **OPEN — see §7** |
 | L-4 | All 11 language dictionaries ship to every reader | Low | **OPEN — see §7** |
 | L-5 | Google Fonts is a render-blocking third-party request | Low | **OPEN — see §7** |
@@ -389,13 +402,20 @@ enforce.
 
 ## 7. Open, deliberately
 
-**S-3, URL routing.** Views live in `App.tsx` state with no `pushState`.
-Consequences: one indexable URL, no deep links, back button does not move
-between views, unknown paths return **HTTP 200** with the app shell (a soft
-404). `CLAUDE.md` records that a router "still does not earn itself", and
-adding URL sync touches the navigation every other feature depends on. Not a
-change to make unverified against a deadline. It is the largest remaining
-SEO limitation.
+**S-3, URL routing — partly closed.** `src/navigation.ts` now syncs the view,
+the feed and a card to the location hash, so deep links, refresh and the
+browser's Back and Forward all work, and an unrecognised hash shows a
+recovery state rather than silently landing on home. Three headless-Chrome
+checks cover exactly that. CLAUDE.md no longer says a router "does not earn
+itself"; it describes the hash routing instead, and this section used to
+quote the old sentence back.
+
+What is **still open** is the part hash routing cannot reach. The fragment is
+never sent to the server, so there is still **one indexable URL**, no
+per-card search indexing, and unknown paths still return **HTTP 200** with
+the app shell rather than a 404 — that last one belongs to the hosting layer,
+which serves fixed responses, the same constraint as H-2 in §6. It remains
+the largest SEO limitation.
 
 **L-3, `List-Unsubscribe`.** Gmail and Yahoo have required it for bulk
 senders since 2024. Not added because the AgentMail REST send endpoint's

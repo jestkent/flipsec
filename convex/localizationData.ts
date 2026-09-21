@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { internalMutation, internalQuery, query } from "./_generated/server";
+import { internalMutation, internalQuery, query, type QueryCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { reserveSlot } from "./rateLimit";
 
@@ -13,7 +13,9 @@ export const story = query({
       .query("storyTranslations")
       .withIndex("by_story_language", (q) => q.eq("storyId", args.storyId).eq("language", args.language))
       .unique();
-    return row?.content ?? null;
+    const source = await translationSource(ctx, args.storyId);
+    return source && row && matchesTranslation(source, row.content) &&
+      (!row.sourceHash || row.sourceHash === await sourceHash(source)) ? row.content : null;
   },
 });
 
@@ -34,46 +36,84 @@ function withoutDemoKey(back: unknown): unknown {
   return rest;
 }
 
+// Validate the generated structure rather than trusting a JSON-mode prompt.
+// Array order is requested from the model; lengths, keys and value types are
+// enforced here. URLs and numeric values must remain unchanged.
+export function matchesTranslation(source: unknown, translated: unknown): boolean {
+  if (source === null) return translated === null;
+  if (typeof source === "string") return typeof translated === "string" &&
+    (!/^https?:\/\//.test(source) || translated === source);
+  if (Array.isArray(source)) return Array.isArray(translated) && source.length === translated.length &&
+    source.every((value, index) => matchesTranslation(value, translated[index]));
+  if (typeof source === "object") {
+    if (!translated || typeof translated !== "object" || Array.isArray(translated)) return false;
+    const left = source as Record<string, unknown>;
+    const right = translated as Record<string, unknown>;
+    return Object.keys(left).length === Object.keys(right).length &&
+      Object.keys(left).every((key) => Object.hasOwn(right, key) && matchesTranslation(left[key], right[key]));
+  }
+  return source === translated;
+}
+
+async function sourceHash(source: unknown) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(source)));
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function translationSource(ctx: QueryCtx, storyId: Id<"stories">) {
+  const source = await ctx.db.get(storyId);
+  if (!source || source.status !== "published") return null;
+  const drill = await ctx.db.query("drills").withIndex("by_story", (q) => q.eq("storyId", storyId)).unique();
+  // A published news front is visible while its lesson is being generated.
+  // Do not cache that temporary, incomplete state in any language.
+  if ((source.kind ?? "scam") === "scam" && !drill) return null;
+  return {
+    title: source.title, summary: source.summary ?? "", redFlags: source.redFlags ?? [],
+    back: withoutDemoKey(source.back),
+    drill: drill ? {
+      prompt: drill.prompt, choices: drill.choices, explanation: drill.explanation,
+      steps: drill.steps ?? [], whyItWorks: drill.whyItWorks ?? "", illusion: drill.illusion ?? [],
+    } : null,
+  };
+}
+
 export const storySource = internalQuery({
   args: { storyId: v.id("stories"), language },
-  returns: v.union(v.null(), v.object({ source: v.any(), cached: v.union(v.null(), v.any()) })),
+  returns: v.union(v.null(), v.object({ source: v.any(), sourceHash: v.string(), cached: v.union(v.null(), v.any()) })),
   handler: async (ctx, args) => {
-    const source = await ctx.db.get(args.storyId);
-    if (!source || source.status !== "published") return null;
+    const source = await translationSource(ctx, args.storyId);
+    if (!source) return null;
     const cached = await ctx.db
       .query("storyTranslations")
       .withIndex("by_story_language", (q) => q.eq("storyId", args.storyId).eq("language", args.language))
       .unique();
-    const drill = await ctx.db.query("drills").withIndex("by_story", (q) => q.eq("storyId", args.storyId)).unique();
+    const hash = await sourceHash(source);
     return {
-      cached: cached?.content ?? null,
-      source: {
-        title: source.title,
-        summary: source.summary ?? "",
-        redFlags: source.redFlags ?? [],
-        back: withoutDemoKey(source.back),
-        drill: drill ? {
-          prompt: drill.prompt,
-          choices: drill.choices,
-          explanation: drill.explanation,
-          steps: drill.steps ?? [],
-          whyItWorks: drill.whyItWorks ?? "",
-          illusion: drill.illusion ?? [],
-        } : null,
-      },
+      cached: cached && matchesTranslation(source, cached.content) && (!cached.sourceHash || cached.sourceHash === hash) ? cached.content : null,
+      source, sourceHash: hash,
     };
   },
 });
 
 export const saveStory = internalMutation({
-  args: { storyId: v.id("stories"), language, content: v.any() },
+  args: { storyId: v.id("stories"), language, content: v.any(), sourceHash: v.optional(v.string()) },
   returns: v.null(),
   handler: async (ctx, args) => {
+    const source = await translationSource(ctx, args.storyId);
+    if (!source) throw new Error("This lesson is not ready for translation yet.");
+    const hash = await sourceHash(source);
+    if ((args.sourceHash && args.sourceHash !== hash) || !matchesTranslation(source, args.content)) {
+      throw new Error("The translation does not match the complete current card.");
+    }
     const existing = await ctx.db
       .query("storyTranslations")
       .withIndex("by_story_language", (q) => q.eq("storyId", args.storyId).eq("language", args.language))
       .unique();
-    if (!existing) await ctx.db.insert("storyTranslations", { ...args, createdAt: Date.now() });
+    const value = { ...args, sourceHash: hash, createdAt: Date.now() };
+    if (!existing) await ctx.db.insert("storyTranslations", value);
+    else if (!matchesTranslation(source, existing.content) || (existing.sourceHash && existing.sourceHash !== hash)) {
+      await ctx.db.patch(existing._id, value);
+    }
     return null;
   },
 });
@@ -98,7 +138,8 @@ export const untranslated = internalQuery({
           q.eq("storyId", story._id).eq("language", args.language),
         )
         .unique();
-      if (row === null) missing.push(story._id);
+      const source = await translationSource(ctx, story._id);
+      if (source && (!row || !matchesTranslation(source, row.content) || (row.sourceHash && row.sourceHash !== await sourceHash(source)))) missing.push(story._id);
     }
     return missing;
   },

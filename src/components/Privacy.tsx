@@ -62,8 +62,8 @@ export default function Privacy({ onBack }: { onBack: () => void }) {
             <strong className="font-semibold text-navy">
               Your email address
             </strong>{" "}
-            — only if you sign up for the daily email, and only after you press
-            the button in the message we send to confirm it.
+            — when you request a subscription, so we can send a confirmation.
+            Daily delivery starts only after you confirm.
           </li>
           <li>
             <strong className="font-semibold text-navy">
@@ -92,6 +92,16 @@ export default function Privacy({ onBack }: { onBack: () => void }) {
             </strong>{" "}
             — a row saying that a reader id used a feature at a time. No content.
           </li>
+          <li>
+            <strong className="font-semibold text-navy">Email delivery records</strong>{" "}
+            — message identifiers link your replies to the right lesson, and
+            delivery status lets failed feedback messages be retried.
+          </li>
+          <li>
+            <strong className="font-semibold text-navy">Read-aloud audio</strong>{" "}
+            — generated speech is cached on Convex, including answers you choose
+            to read aloud. Deleting a conversation does not delete that audio.
+          </li>
         </ul>
       </Block>
 
@@ -118,8 +128,9 @@ export default function Privacy({ onBack }: { onBack: () => void }) {
           settings and the language.
         </p>
         <p className="text-base leading-relaxed text-ink">
-          To have anything else removed, open an issue on the repository linked
-          in the footer and say which address or reader id to delete.
+          To request other deletions, use the repository linked in the footer
+          to ask the owner for a private contact method. Do not post your email
+          address, conversation, or browser reader ID in a public issue.
         </p>
       </Block>
 

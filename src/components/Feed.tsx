@@ -21,10 +21,12 @@ const EMPTY: Record<string, { title: string; body: string }> = {
   },
 };
 
-export default function Feed({ kind = "scam" }: { kind?: string }) {
+export default function Feed({ kind = "scam", storyId }: { kind?: string; storyId?: string }) {
   // Live. The sync engine reruns this and pushes to every open client the
   // moment a crawl publishes a new story. No polling, no refresh.
-  const stories = useQuery(api.stories.listPublished, { kind });
+  const feed = useQuery(api.stories.listPublished, storyId ? "skip" : { kind });
+  const single = useQuery(api.stories.publishedStory, storyId ? { storyId } : "skip");
+  const stories = storyId ? (single === undefined ? undefined : single ? [single] : []) : feed;
   const userId = readerId();
 
   // undefined means the subscription has not resolved yet. Three card shapes
@@ -44,6 +46,7 @@ export default function Feed({ kind = "scam" }: { kind?: string }) {
   const empty = EMPTY[kind] ?? EMPTY.scam;
 
   if (stories.length === 0) {
+    if (storyId) return <div lang="en"><EmptyState title="This card is unavailable" body="It may have been removed. Choose a feed above to keep reading." /></div>;
     return (
       <div className="flex flex-col gap-5">
         <Subscribe userId={userId} kind={kind} />
@@ -58,10 +61,10 @@ export default function Feed({ kind = "scam" }: { kind?: string }) {
       {stories.map((story) => (
         <Post key={story._id} story={story} userId={userId} />
       ))}
-      <p className="pt-2 text-center text-base text-slate">
+      {!storyId && <p className="pt-2 text-center text-base text-slate">
         That is everything in this feed. A card only gets here if it passes
         every gate, so the feeds stay short on purpose.
-      </p>
+      </p>}
     </div>
   );
 }

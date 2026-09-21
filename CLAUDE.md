@@ -1,5 +1,9 @@
 # FlipSec.ai
 
+Read [RELIABILITY.md](RELIABILITY.md) for the current uncommitted reliability
+update, validated locally but not deployed to production. It supersedes older
+notes on consent, translation timing, delivery retries and URL routing.
+
 An AI security app for ordinary people, built around one move: every card
 flips, and the back is what the front does not tell you. Three feeds use it.
 AI Sec News carries real stories about AI used against people and flips to a
@@ -68,12 +72,12 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
   `saveReply` stopped being tidiness and became a loop guard — our reply lands
   in their inbox, and an out-of-office answering it would arrive as another
   reply, be graded, and be answered again, spending an OpenAI call each turn.
-  `by_user_drill` is what makes that one lookup. `sendGrade` never rethrows:
-  the grade is already saved, so a failed send loses the message and not the
-  work, and a retry would mail somebody twice. `translateAllLanguages` is scheduled
-  from every point a story becomes published — `saveProcessed`, `saveCourse`,
-  `saveJob` and `authored.seedLessons` — so a card is in all ten languages
-  before any reader sees it. It used to happen lazily, on the first reader who
+  `by_user_drill` enforces deduplication. Replies now match sentDrills by message
+  ID and subscriber, never lastDrillId. saveGrade writes the verdict and
+  schedules delivery atomically; delivery claims schedule bounded retries with
+  a stable AgentMail Idempotency-Key. Do not revert this to silent lost mail.
+  News translation starts from saveDrill; other kinds start after their backs
+  are saved. Cards may appear in English while translation runs. It used to happen lazily, on the first reader who
   asked for that language, which meant every card published after the last
   warm-up run sat in English until somebody waited through a model call. A
   feed where some cards are translated and some are not reads as broken, and
@@ -88,7 +92,9 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
   `translateStory` reserves AFTER the cache is checked. A hit must stay free
   and unmetered, or a reader switching language on a warm feed spends their
   budget on rows that were already paid for.
-- **One address is one subscription, so one confirmation.** Signing up from
+- **One address is one subscription; changes need mailbox consent.**
+  Public requests write pendingKinds, never reactivate delivery or overwrite
+  consented kinds. The signed confirmation POST applies those changes. Signing up from
   the news tab and then the jobs tab merges into the same row, and the token
   is an HMAC of the address alone, so the message already in the inbox
   confirms whatever set of feeds the reader ends up asking for. `confirmSentAt`
@@ -505,8 +511,7 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
 - Body copy is 16px (`text-base`), never 14px, and muted text stops at
   `neutral-500` on white. Readers include older people, so small grey type is a
   correctness problem here, not a taste one.
-- Four views are held in `App.tsx` state: home, feed, Ask FlipSec and About. A router
-  still does not earn itself.
+- Four views are held in `App.tsx` state: home, feed, Ask FlipSec and About. Hash routing in src/navigation.ts persists views, feeds and card links.
 
 ## Voice
 
@@ -533,8 +538,8 @@ lives on `*.convex.site`, which is Convex's Cloudflare zone and not ours. They
 are blocked behind a custom domain, which also moves every absolute URL with
 it. AUDIT.md carries the reasoning and a starter policy whose `wss:`,
 `media-src` and `img-src` lines are the ones that break the app if got wrong.
-URL routing stays unbuilt, so the site has one indexable URL and returns 200
-for unknown paths.
+Hash routing supports sharing and browser history. The hosting layer still
+has one indexable shell and returns 200 for unknown paths.
 
 ## Spec
 

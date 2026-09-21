@@ -7,6 +7,7 @@ import Header, { type View } from "./components/Header";
 import Home from "./components/Home";
 import SafetyTools from "./components/SafetyTools";
 import { languageInfo, useLanguage } from "./localization";
+import { navigateTo, useRoute } from "./navigation";
 
 // The three feeds, in the order they appear. Reordering the app is editing
 // this array; nothing else reads a hard-coded list of kinds.
@@ -30,10 +31,9 @@ const STACK = [
 
 export default function App() {
   const { t, language } = useLanguage();
-  // Four views in state, still no router.
-  const [view, setView] = useState<View>("home");
-  const [kind, setKind] = useState<string>(TABS[0].kind);
-  const [announcement, setAnnouncement] = useState("Home page");
+  const route = useRoute();
+  const { view, kind } = route;
+  const announcement = route.missing ? "Page not found" : view === "feed" ? `${kind} feed` : `${view} page`;
   // Which interactive lesson is open on the Ask FlipSec page. Defaults to the
   // first, so the section is never an empty row of buttons.
   const [demo, setDemo] = useState<string>(DEMOS[0].key);
@@ -45,15 +45,18 @@ export default function App() {
   const localizedFeedName = active.kind === "scam" ? t("news") : active.kind === "course" ? t("learn") : t("jobs");
 
   useEffect(() => {
+    // Browser history and direct card links are page changes too.
+    window.scrollTo({ top: 0, behavior: "auto" });
+    mainRef.current?.focus();
+  }, [view, route.storyId, route.missing]);
+
+  useEffect(() => {
     const page = view === "feed" ? localizedFeedName : view === "tools" ? "Ask FlipSec" : view === "about" ? t("about") : view === "privacy" ? "Privacy" : "FlipSec.ai";
     document.title = `${page} | FlipSec.ai`;
   }, [localizedFeedName, t, view]);
 
   function navigate(next: View, nextKind?: string) {
-    if (nextKind) setKind(nextKind);
-    setView(next);
-    const nextTab = TABS.find((tab) => tab.kind === nextKind);
-    setAnnouncement(next === "feed" ? `${nextTab?.full ?? active.full} page` : next === "tools" ? "Ask FlipSec page" : next === "about" ? "About page" : next === "privacy" ? "Privacy page" : "Home page");
+    navigateTo({ view: next, kind: nextKind ?? kind });
     // Moving between views is a page change, so it starts at the top. Within
     // a view nothing scrolls on its own, which is what keeps a reader's place
     // when a card flips.
@@ -62,9 +65,7 @@ export default function App() {
   }
 
   function selectFeed(nextKind: string) {
-    setKind(nextKind);
-    const next = TABS.find((tab) => tab.kind === nextKind) ?? TABS[0];
-    setAnnouncement(`${next.full} tab selected`);
+    navigateTo({ view: "feed", kind: nextKind });
   }
 
   function moveFeedTab(event: React.KeyboardEvent, index: number) {
@@ -83,6 +84,11 @@ export default function App() {
     <div className="min-h-screen bg-ivory">
       <a
         href="#main"
+        onClick={(event) => {
+          event.preventDefault();
+          mainRef.current?.focus();
+          mainRef.current?.scrollIntoView({ block: "start" });
+        }}
         className="sr-only rounded-control bg-navy px-4 py-2 text-white focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50"
       >
         Skip to content
@@ -93,7 +99,13 @@ export default function App() {
       <Header view={view} onNavigate={(v) => navigate(v)} />
 
       <main ref={mainRef} id="main" tabIndex={-1} className="mx-auto max-w-5xl px-4 pb-20 sm:px-6">
-        {view === "home" && <Home onNavigate={navigate} />}
+        {route.missing ? (
+          <section lang="en" className="mx-auto max-w-2xl py-10">
+            <h1 className="text-2xl font-semibold">Page not found</h1>
+            <p className="mt-3">This link does not point to a page in FlipSec.</p>
+            <button className="mt-4 min-h-11 underline" onClick={() => navigate("home")}>Go to the home page</button>
+          </section>
+        ) : view === "home" && <Home onNavigate={navigate} />}
 
         {view === "tools" && (
           <div className="mx-auto max-w-2xl pt-8">
@@ -128,7 +140,8 @@ export default function App() {
                 </h2>
                 <p className="mt-2 text-base leading-relaxed text-ink">
                   Four short things you can try. None of them need an account
-                  and nothing you do here leaves the page.
+                  and your practice choices stay on this page. Playing the
+                  voice example uses the same online speech service as Read aloud.
                 </p>
                 {language !== "en" && (
                   <p
@@ -235,7 +248,7 @@ export default function App() {
               role="tabpanel"
               aria-labelledby={`feed-tab-${kind}`}
             >
-              <Feed key={kind} kind={kind} />
+              <Feed key={`${kind}:${route.storyId ?? ""}`} kind={kind} storyId={route.storyId} />
             </section>
           </div>
         )}

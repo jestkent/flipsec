@@ -1,5 +1,18 @@
 # Picking this up on another machine
 
+## Current work - local, not production
+
+Read RELIABILITY.md first and inspect git diff: the reliability update is
+uncommitted. Preserve Claude changes through b9eeac7. It adds regression tests,
+mail consent and reply matching, bounded feedback retries, complete translation
+checks, paginated daily delivery and hash/card navigation. Production has not
+been updated. Use newly sent drills after deployment; old mail has no message
+mapping. Existing incomplete translations may need the documented backfill.
+
+Run npm test and npm run test:browser as well as build, backend typecheck and
+lint. Browser tests use installed Chrome. The configured development target is
+local-kent_agan-flipsec; do not infer production from the live URL below.
+
 Written 2026-09-21. If the date below is stale, trust `git log` and the other
 docs over this file.
 
@@ -73,9 +86,9 @@ move without anybody touching the code. That is normal.
   policy, and flags the three lines that break the app if they are wrong.
 - **API key rotation.** Deferred by the project owner to do last. AUDIT.md
   section 8 item 1.
-- **URL routing.** Views live in `App.tsx` state, so there is one indexable
-  URL, the back button does not move between views, unknown paths return 200,
-  and a card cannot be shared as a link.
+- **SEO and HTTP routing.** Hash links now support view/card sharing and
+  browser history locally. The app still has one indexable shell, and unknown
+  server paths retain the hosting response behaviour.
 - **`List-Unsubscribe` header.** Needs AgentMail's API to be checked first.
 - **Some of the app is still English only** in an eleven-language app: the
   home page, About, Privacy, the sign-up form and all four interactive

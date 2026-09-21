@@ -275,15 +275,7 @@ http.route({
       return new Response("unauthorized", { status: 401 });
     }
 
-    let event: {
-      event_type?: string;
-      message?: {
-        from?: string;
-        text?: string;
-        html?: string;
-        message_id?: string;
-      };
-    };
+    let event: unknown;
 
     try {
       // Already read as text above, because the signature covers the exact
@@ -293,14 +285,24 @@ http.route({
       return new Response("bad json", { status: 400 });
     }
 
+    if (!event || typeof event !== "object" || !("event_type" in event)) return new Response("bad event", { status: 400 });
     if (event.event_type !== "message.received") {
       // Not a reply. Acknowledge so AgentMail stops retrying.
       return new Response("ignored", { status: 200 });
     }
 
-    const from = event.message?.from ?? "";
+    if (!("message" in event) || !event.message || typeof event.message !== "object") return new Response("bad message", { status: 400 });
+    const incoming = event.message as Record<string, unknown>;
+    if (typeof incoming.from !== "string" ||
+      (incoming.text !== undefined && typeof incoming.text !== "string") ||
+      (incoming.html !== undefined && typeof incoming.html !== "string") ||
+      (incoming.in_reply_to !== undefined && typeof incoming.in_reply_to !== "string") ||
+      (incoming.references !== undefined && (!Array.isArray(incoming.references) || incoming.references.some((item) => typeof item !== "string")))) {
+      return new Response("bad message fields", { status: 400 });
+    }
+    const from = incoming.from;
     // text is absent when the sender's client only sent HTML.
-    const body = event.message?.text ?? stripHtml(event.message?.html ?? "");
+    const body = typeof incoming.text === "string" ? incoming.text : stripHtml(typeof incoming.html === "string" ? incoming.html : "");
 
     if (!from || !body.trim()) {
       return new Response("nothing to grade", { status: 200 });
@@ -309,6 +311,8 @@ http.route({
     await ctx.runMutation(internal.attempts.saveReply, {
       from: addressOnly(from),
       body: stripQuoted(body).slice(0, 2000),
+      inReplyTo: typeof incoming.in_reply_to === "string" ? incoming.in_reply_to : undefined,
+      references: Array.isArray(incoming.references) ? (incoming.references as string[]).slice(-20) : undefined,
     });
 
     return new Response("ok", { status: 200 });

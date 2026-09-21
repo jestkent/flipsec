@@ -1,10 +1,11 @@
 import { v } from "convex/values";
+import { paginationOptsValidator } from "convex/server";
 import { internal } from "./_generated/api";
 import { internalMutation, internalQuery, mutation } from "./_generated/server";
 import { reserveSlot } from "./rateLimit";
 
 // Public: a reader gives their address on the site. Deduped on by_email so
-// signing up twice reactivates rather than creating a second row.
+// signing up twice proposes changes rather than creating a second row.
 const FEEDS = ["scam", "course", "job"];
 
 // What the reader calls each feed. The database keeps the original kind
@@ -74,6 +75,7 @@ export const subscribe = mutation({
     // Which feeds to send. Signing up from a tab asks for that tab.
     kinds: v.optional(v.array(v.string())),
   },
+  returns: v.object({ already: v.boolean(), confirm: v.boolean() }),
   handler: async (ctx, args) => {
     const email = cleanEmail(args.email);
     const kinds = cleanKinds(args.kinds);
@@ -92,19 +94,17 @@ export const subscribe = mutation({
       .unique();
 
     if (existing !== null) {
-      // Signing up again from a different tab adds that feed rather than
-      // replacing what they already asked for.
-      const merged = cleanKinds([...(existing.kinds ?? ["scam"]), ...kinds]);
+      const current = cleanKinds(existing.kinds);
+      const unchanged = existing.active && existing.pending !== true &&
+        kinds.every((kind) => current.includes(kind));
+      if (unchanged) return { already: true, confirm: false };
 
-      // Absent pending means this row predates double opt-in, or was already
-      // confirmed. Either way it is a real reader and nothing needs resending.
-      const stillPending = existing.pending === true;
+      const merged = cleanKinds([...(existing.pendingKinds ?? current), ...kinds]);
       const lastSent = existing.confirmSentAt ?? 0;
-      const resend = stillPending && Date.now() - lastSent > RESEND_AFTER_MS;
+      const resend = Date.now() - lastSent >= RESEND_AFTER_MS;
 
       await ctx.db.patch(existing._id, {
-        active: true,
-        kinds: merged,
+        pendingKinds: merged,
         // Stamped in the same transaction that decides to send, so two tabs
         // racing cannot both win the check and both mail.
         ...(resend ? { confirmSentAt: Date.now() } : {}),
@@ -116,10 +116,9 @@ export const subscribe = mutation({
           kinds: merged,
         });
       }
-      // Still pending means a confirmation is sitting in their inbox, whether
-      // this call sent it or an earlier one did. Telling them to go and look
-      // is right either way.
-      return { already: true, confirm: stillPending };
+      // Existing consent and active state are untouched until the mailbox
+      // owner confirms. A stranger cannot reactivate or expand delivery.
+      return { already: true, confirm: true };
     }
 
     await ctx.db.insert("subscribers", {
@@ -151,7 +150,7 @@ export const pendingFor = internalQuery({
       .withIndex("by_email", (q) => q.eq("email", args.email.trim().toLowerCase()))
       .unique();
     if (row === null) return null;
-    return { kinds: cleanKinds(row.kinds), pending: row.pending === true };
+    return { kinds: cleanKinds(row.pendingKinds ?? row.kinds), pending: row.pending === true || !row.active || row.pendingKinds !== undefined };
   },
 });
 
@@ -171,13 +170,32 @@ export const confirm = internalMutation({
       pending: false,
       active: true,
       confirmedAt: row.confirmedAt ?? Date.now(),
+      pendingKinds: undefined,
       // What the reader ticked on the confirm page REPLACES what the sign-up
       // box guessed from whichever tab they happened to be on. Signing up
       // from three tabs is not the same as wanting three feeds, and the
       // moment of consent is the right place to say which.
-      ...(args.kinds ? { kinds: cleanKinds(args.kinds) } : {}),
+      kinds: cleanKinds(args.kinds ?? row.pendingKinds ?? row.kinds),
     });
     return true;
+  },
+});
+
+// Paginate before excluding pending rows; always advance even on an empty page.
+export const activePage = internalQuery({
+  args: { paginationOpts: paginationOptsValidator },
+  returns: v.object({
+    page: v.array(v.object({ subscriberId: v.id("subscribers"), email: v.string(), kinds: v.array(v.string()), lastDrillId: v.union(v.null(), v.id("drills")) })),
+    isDone: v.boolean(), continueCursor: v.string(),
+  }),
+  handler: async (ctx, args) => {
+    const result = await ctx.db.query("subscribers").withIndex("by_active", (q) => q.eq("active", true)).paginate(args.paginationOpts);
+    return {
+      page: result.page.filter((s) => s.pending !== true).map((s) => ({
+        subscriberId: s._id, email: s.email, kinds: s.kinds ?? ["scam"], lastDrillId: s.lastDrillId ?? null,
+      })),
+      isDone: result.isDone, continueCursor: result.continueCursor,
+    };
   },
 });
 
@@ -251,7 +269,7 @@ export const deactivate = internalMutation({
       .unique();
 
     if (subscriber === null) return { removed: false };
-    await ctx.db.patch(subscriber._id, { active: false });
+    await ctx.db.patch(subscriber._id, { active: false, pendingKinds: undefined, confirmSentAt: undefined });
     return { removed: true };
   },
 });
@@ -331,13 +349,21 @@ export const markSent = internalMutation({
     subscriberId: v.id("subscribers"),
     drillId: v.id("drills"),
     storyId: v.id("stories"),
+    messageId: v.optional(v.string()),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
+    if (!(await ctx.db.get(args.subscriberId))) return null;
+    if (args.messageId) {
+      const existing = await ctx.db.query("sentDrills").withIndex("by_message", (q) => q.eq("messageId", args.messageId!)).unique();
+      if (!existing) await ctx.db.insert("sentDrills", { subscriberId: args.subscriberId, messageId: args.messageId, drillId: args.drillId, createdAt: Date.now() });
+    }
     await ctx.db.patch(args.subscriberId, {
       lastDrillId: args.drillId,
       lastStoryId: args.storyId,
       lastSentAt: Date.now(),
     });
+    return null;
   },
 });
 

@@ -89,14 +89,13 @@ export default function Subscribe({
               as not spam helps the daily one reach you.
             </p>
             <p className="text-base leading-relaxed text-slate">
-              Nothing is sent until you press that button, so nobody can sign up
-              an address that is not theirs.
+              New subscriptions and changes need confirmation. If you already
+              receive a daily email, your current feeds stay the same until then.
             </p>
           </>
         ) : (
           <p className="text-base leading-relaxed text-ink">
-            You are already on the list, and this tab has been added to what you
-            get. {pitch.done}
+            You are already subscribed to this feed. {pitch.done}
           </p>
         )}
       </div>
@@ -137,8 +136,8 @@ export default function Subscribe({
         </button>
       </div>
       <p className="mt-2 text-sm leading-relaxed text-slate">
-        Your address is stored only to send this email, and only once you press
-        the button in the message confirming it. Every email carries an
+        Your address is stored to send a confirmation. Daily email starts after
+        you confirm, and preference changes also need confirmation. Every email carries an
         unsubscribe link. See Privacy at the foot of the page.
       </p>
       {state === "error" && (

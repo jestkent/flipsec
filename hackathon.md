@@ -13,7 +13,16 @@
 - **Auth:** none
 - **AI models:** gpt-4o-mini, gpt-4o-mini-tts
 - **Started:** 2026-09-20T17:35:41Z
-- **Last updated:** 2026-09-21T09:10:00Z
+- **Last updated:** 2026-09-21T18:22:30.467Z
+
+## Current reliability work
+
+The local working tree adds consent-safe subscription changes, complete-card
+translation validation, message-based reply matching, bounded idempotent
+feedback retries, paginated delivery, hash navigation and regression tests.
+See [RELIABILITY.md](RELIABILITY.md) for implementation and rollout details.
+These changes have not been deployed to production. The demo, real inbox
+round trip, social post and final submission remain unverified.
 
 ## Log
 

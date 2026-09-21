@@ -19,11 +19,12 @@ export const submitAnswer = mutation({
     drillId: v.id("drills"),
     choice: v.number(),
   },
+  returns: v.object({ correct: v.boolean(), correctIndex: v.number(), explanation: v.string(), steps: v.array(v.string()) }),
   handler: async (ctx, args) => {
     const drill = await ctx.db.get(args.drillId);
     if (drill === null) throw new Error("drill not found");
 
-    if (args.choice < 0 || args.choice >= drill.choices.length) {
+    if (!Number.isInteger(args.choice) || args.choice < 0 || args.choice >= drill.choices.length) {
       throw new Error("choice is out of range");
     }
 
@@ -58,7 +59,7 @@ export const submitAnswer = mutation({
 
     // The answer key only leaves the server once the reader has committed.
     return {
-      correct,
+      correct: existing?.correct ?? correct,
       correctIndex: drill.correct,
       explanation: drill.explanation,
       steps: drill.steps ?? [],
@@ -84,20 +85,27 @@ export const submitAnswer = mutation({
 // judge it. The reply is matched to a drill through the subscriber's last
 // send, so the reader never has to quote the question back.
 export const saveReply = internalMutation({
-  args: { from: v.string(), body: v.string() },
+  args: { from: v.string(), body: v.string(), inReplyTo: v.optional(v.string()), references: v.optional(v.array(v.string())) },
+  returns: v.null(),
   handler: async (ctx, args) => {
     const subscriber = await ctx.db
       .query("subscribers")
       .withIndex("by_email", (q) => q.eq("email", args.from))
       .unique();
 
-    if (subscriber === null || subscriber.lastDrillId === undefined) {
-      console.warn(`reply from ${args.from} with no drill to grade against`);
-      return;
-    }
+    if (!subscriber || !subscriber.active || subscriber.pending === true) return null;
 
-    const drill = await ctx.db.get(subscriber.lastDrillId);
-    if (drill === null) return;
+    // Bind replies to the actual sent message, never the most recent lesson.
+    // Unmatched legacy messages fail closed rather than receiving a wrong grade.
+    const messageIds = [...new Set([args.inReplyTo, ...(args.references ?? []).slice(-20).reverse()].filter((id): id is string => Boolean(id)))];
+    let drillId;
+    for (const messageId of messageIds) {
+      const sent = await ctx.db.query("sentDrills").withIndex("by_message", (q) => q.eq("messageId", messageId)).unique();
+      if (sent?.subscriberId === subscriber._id) { drillId = sent.drillId; break; }
+    }
+    if (!drillId || !args.body.trim()) return null;
+    const drill = await ctx.db.get(drillId);
+    if (drill === null) return null;
 
     const userId = subscriber.userId ?? args.from;
 
@@ -110,18 +118,18 @@ export const saveReply = internalMutation({
     const already = await ctx.db
       .query("attempts")
       .withIndex("by_user_drill", (q) =>
-        q.eq("userId", userId).eq("drillId", subscriber.lastDrillId!),
+        q.eq("userId", userId).eq("drillId", drillId),
       )
       .first();
 
     if (already !== null) {
       console.warn(`reply from a reader who already answered this drill, ignored`);
-      return;
+      return null;
     }
 
     const attemptId = await ctx.db.insert("attempts", {
       userId,
-      drillId: subscriber.lastDrillId,
+      drillId,
       answer: args.body,
       source: "email",
       createdAt: Date.now(),
@@ -139,6 +147,7 @@ export const saveReply = internalMutation({
       correct: drill.correct,
       explanation: drill.explanation,
     });
+    return null;
   },
 });
 
@@ -182,6 +191,7 @@ export const gradeReply = internalAction({
     correct: v.number(),
     explanation: v.string(),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) throw new Error("OPENAI_API_KEY is not set in Convex env vars");
@@ -213,21 +223,15 @@ export const gradeReply = internalAction({
     const grade = JSON.parse(raw) as { correct: boolean; feedback: string };
     console.log(`graded ${args.attemptId}: correct=${grade.correct}`);
 
-    await ctx.scheduler.runAfter(0, internal.attempts.saveGrade, {
+    await ctx.runMutation(internal.attempts.saveGrade, {
       attemptId: args.attemptId,
       correct: grade.correct,
       feedback: grade.feedback,
-    });
-
-    // The half that was missing. The grade was computed, stored, and never
-    // shown to the person who asked for it.
-    await ctx.scheduler.runAfter(0, internal.email.sendGrade, {
       to: args.to,
-      correct: grade.correct,
-      feedback: grade.feedback,
       rightAnswer: args.choices[args.correct] ?? "",
       explanation: args.explanation,
     });
+    return null;
   },
 });
 
@@ -236,11 +240,59 @@ export const saveGrade = internalMutation({
     attemptId: v.id("attempts"),
     correct: v.boolean(),
     feedback: v.string(),
+    to: v.optional(v.string()),
+    rightAnswer: v.optional(v.string()),
+    explanation: v.optional(v.string()),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
+    const attempt = await ctx.db.get(args.attemptId);
+    if (!attempt || attempt.deliveryStatus) return null;
     await ctx.db.patch(args.attemptId, {
       correct: args.correct,
       feedback: args.feedback,
+      ...(args.to ? { deliveryStatus: "pending" as const } : {}),
     });
+    if (args.to) await ctx.scheduler.runAfter(0, internal.email.sendGrade, {
+      attemptId: args.attemptId, to: args.to, correct: args.correct,
+      feedback: args.feedback, rightAnswer: args.rightAnswer ?? "", explanation: args.explanation ?? "",
+    });
+    return null;
+  },
+});
+
+export const claimDelivery = internalMutation({
+  args: { attemptId: v.id("attempts"), to: v.string(), correct: v.boolean(), feedback: v.string(), rightAnswer: v.string(), explanation: v.string() },
+  returns: v.boolean(),
+  handler: async (ctx, args) => {
+    const row = await ctx.db.get(args.attemptId);
+    if (!row || row.deliveryStatus === "sent" || row.deliveryStatus === "failed") return false;
+    const subscriber = await ctx.db.query("subscribers").withIndex("by_email", (q) => q.eq("email", args.to)).unique();
+    if (!subscriber?.active || subscriber.pending === true) {
+      await ctx.db.patch(row._id, { deliveryStatus: "failed" });
+      return false;
+    }
+    const now = Date.now();
+    if ((row.deliveryLeaseUntil ?? 0) > now) return false;
+    // Provider keys expire after 24h. Never replay an ambiguous send later.
+    if ((row.deliveryStartedAt && now - row.deliveryStartedAt > 23 * 60 * 60 * 1000) || (row.deliveryAttempts ?? 0) >= 5) {
+      await ctx.db.patch(row._id, { deliveryStatus: "failed" });
+      return false;
+    }
+    await ctx.db.patch(row._id, { deliveryStatus: "sending", deliveryAttempts: (row.deliveryAttempts ?? 0) + 1, deliveryStartedAt: row.deliveryStartedAt ?? now, deliveryLeaseUntil: now + 60_000 });
+    // Claim and recovery scheduling commit together, even if the action dies.
+    await ctx.scheduler.runAfter(65_000, internal.email.sendGrade, args);
+    return true;
+  },
+});
+
+export const finishDelivery = internalMutation({
+  args: { attemptId: v.id("attempts"), messageId: v.string() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    if (await ctx.db.get(args.attemptId)) await ctx.db.patch(args.attemptId, {
+      deliveryStatus: "sent", deliveryMessageId: args.messageId, deliveryLeaseUntil: undefined,
+    });
+    return null;
   },
 });
