@@ -223,8 +223,24 @@ export const listActive = internalQuery({
 // The newest published card in a feed that is not the scam feed, for the
 // daily email. Courses and jobs carry their whole back on the row, so there
 // is no second table to join.
-export const pickTodaysCard = internalQuery({
-  args: { kind: v.string() },
+// Every published card of one kind, newest first, for the daily mail to
+// rotate through.
+//
+// This used to `take(1)` and hand back the newest card, with no memory of
+// anything. A drill rotates per reader through `lastDrillId`; a course and a
+// job did not rotate at all, so every Learn or Jobs subscriber received the
+// SAME card every morning until the crawler happened to publish a newer one.
+// Most crawls publish nothing - they find plenty and save none, because
+// `saveRawStory` drops what it has seen - so "until a newer one" is routinely
+// days. A daily email that repeats itself is how a sender earns spam
+// complaints, which is worse than not offering the subscription at all.
+//
+// The caller picks by day index rather than by remembering per reader. One
+// stored id can only alternate between two cards; a day index walks the whole
+// feed, needs no schema change, and gives every subscriber the same card on
+// the same day, which is what "today's card" should mean.
+export const listCards = internalQuery({
+  args: { kind: v.string(), limit: v.optional(v.number()) },
   handler: async (ctx, args) => {
     const rows = await ctx.db
       .query("stories")
@@ -232,28 +248,26 @@ export const pickTodaysCard = internalQuery({
         q.eq("kind", args.kind).eq("status", "published"),
       )
       .order("desc")
-      .take(1);
+      .take(Math.min(Math.max(args.limit ?? 50, 1), 100));
 
-    const row = rows[0];
-    if (row === undefined) return null;
-
-    const back = (row.back ?? {}) as {
-      company?: string;
-      locationChip?: string;
-      firstStep?: string;
-      timeCommitment?: string;
-    };
-
-    return {
-      title: row.title,
-      summary: row.summary ?? "",
-      url: row.url,
-      source: row.source,
-      company: back.company,
-      locationChip: back.locationChip,
-      firstStep: back.firstStep,
-      timeCommitment: back.timeCommitment,
-    };
+    return rows.map((row) => {
+      const back = (row.back ?? {}) as {
+        company?: string;
+        locationChip?: string;
+        firstStep?: string;
+        timeCommitment?: string;
+      };
+      return {
+        title: row.title,
+        summary: row.summary ?? "",
+        url: row.url,
+        source: row.source,
+        company: back.company,
+        locationChip: back.locationChip,
+        firstStep: back.firstStep,
+        timeCommitment: back.timeCommitment,
+      };
+    });
   },
 });
 

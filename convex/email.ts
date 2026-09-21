@@ -128,6 +128,11 @@ type Card = {
   timeCommitment?: string;
 };
 
+// The invitation matters as much as the card. A reply that is not a drill
+// answer now reaches Ask FlipSec, so these readers can already hold a
+// conversation -- and until this line nothing told them so. Only the drill
+// section ever asked for a reply, which left two of the three feeds as
+// broadcast when they no longer had to be.
 function courseSection(card: Card): string {
   const time = card.timeCommitment ? ` Takes ${card.timeCommitment}.` : "";
   const start = card.firstStep ? `\n\nHow to start: ${card.firstStep}${time}` : "";
@@ -137,7 +142,10 @@ function courseSection(card: Card): string {
 ${card.title}
 ${card.summary}${start}
 
-${card.url}`;
+${card.url}
+
+Not sure it is for you? Reply and ask. I will tell you what it covers and
+where to start.`;
 }
 
 function jobSection(card: Card): string {
@@ -149,7 +157,10 @@ ${card.title}${where ? `\n${where}` : ""}
 ${card.summary}
 
 Listed on ${card.source}:
-${card.url}`;
+${card.url}
+
+Wondering whether you are close enough to apply? Reply and ask. I will tell
+you what the role really needs and what to learn first.`;
 }
 
 const SITE = "https://hallowed-nightingale-322.convex.site";
@@ -303,14 +314,16 @@ export const sendDailyDrill = internalAction({
       url: string;
     }> = await ctx.runQuery(internal.subscribers.listDrillCandidates, {});
     const drill = candidates[0] ?? null;
-    const course: Card | null = await ctx.runQuery(
-      internal.subscribers.pickTodaysCard,
-      { kind: "course" },
-    );
-    const job: Card | null = await ctx.runQuery(
-      internal.subscribers.pickTodaysCard,
-      { kind: "job" },
-    );
+    // Rotated by day rather than always the newest, so a Learn or Jobs
+    // subscriber works through the feed instead of receiving one card over
+    // and over. Day index is UTC days since the epoch: everyone gets the same
+    // card on the same day, and a rerun of the same day's send picks the same
+    // one, which is what the per-day idempotency key already assumes.
+    const courses: Card[] = await ctx.runQuery(internal.subscribers.listCards, { kind: "course" });
+    const jobs: Card[] = await ctx.runQuery(internal.subscribers.listCards, { kind: "job" });
+    const day = Math.floor(startedAt / 86_400_000);
+    const course: Card | null = courses.length ? courses[day % courses.length] : null;
+    const job: Card | null = jobs.length ? jobs[day % jobs.length] : null;
 
     if (drill === null && course === null && job === null) {
       console.warn("nothing available to send");
@@ -375,8 +388,9 @@ export const sendDailyDrill = internalAction({
         );
 
         // Only the scam drill is gradeable, so only that records a target.
-        // A reply from a courses-only reader finds no drill and saveReply
-        // logs and drops it, which is the intended behaviour.
+        // A reply from a Learn or Jobs reader matches no drill and is routed
+        // to Ask FlipSec instead, which is why those sections now invite one.
+        // It used to be logged and dropped.
         if (wants.includes("scam") && mine !== null) {
           await ctx.runMutation(internal.subscribers.markSent, {
             subscriberId: subscriber.subscriberId,

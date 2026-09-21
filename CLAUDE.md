@@ -65,6 +65,25 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
   worse — one reader translating thirty cards spent their own assistant budget.
   `by_kind_time` and `by_user_kind_time` exist for this. If a feature reports
   an hourly limit with no matching traffic, check `toolChecks` by kind first.
+- **The daily mail rotates the course and job card by day, and only the news
+  drill is a quiz.** `listCards` returns the whole feed and the caller picks
+  `day % length`, so a Learn or Jobs subscriber works through the feed instead
+  of receiving one card forever. It used to `take(1)` and send the newest, with
+  no memory at all: a drill rotates per reader through `lastDrillId`, and these
+  two rotated not at all, so the same card went out every morning until a crawl
+  happened to publish a newer one — which is routinely days, because most
+  crawls find plenty and save none. A daily email that repeats itself earns
+  spam complaints, which is worse than not offering the subscription. A day
+  index rather than a stored id, because one stored id can only alternate
+  between two cards, and because everyone should get the same card on the same
+  day.
+  **Do not give Learn or Jobs a quiz.** The news drill tests a skill against a
+  real incident: here is what happened to somebody, which part should have
+  warned them. A Learn quiz would test whether the reader read a guide, which
+  is comprehension, and section Voice says readers are not marked or graded. A
+  job listing has no right answer to test at all. Both feeds instead **invite a
+  reply**, which reaches Ask FlipSec — a conversation rather than a second
+  quiz.
 - **One graded answer per reader per drill, and the grade goes BACK.** The
   daily mail says "I will tell you how you did" and for a long time nothing
   came back: the model graded the reply, `saveGrade` stored it, and nobody

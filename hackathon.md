@@ -1166,3 +1166,40 @@ footer, because a sticky element stops at the bottom of its container and the
 footer is outside the feed. That is the right answer rather than a limitation -
 you have left the feed.
 
+### 2026-09-21 - what the other two subscriptions were for
+
+Asked what a Learn or Jobs subscription actually does, given the news drill is
+the thing you can reply to. Reading the send path to answer turned a product
+question into a defect.
+
+pickTodaysCard did take(1) and returned the newest card of that kind, with no
+memory of anything. The drill path rotates per reader through lastDrillId.
+These two rotated not at all, so every Learn and Jobs subscriber got the SAME
+card every morning until the crawler published a newer one - and most crawls
+publish nothing, because saveRawStory drops what it has already seen. This
+afternoon's crawl found 60 and saved zero. So "until a newer one" is routinely
+days, and the subscription was a daily email repeating itself, which is how a
+sender earns spam complaints. Worse than not offering it.
+
+Fixed by rotating on a day index rather than by remembering per reader. One
+stored id can only alternate between two cards; day % length walks the whole
+feed, needs no schema change, gives every subscriber the same card on the same
+day, and a rerun of one day's send picks the same card, which is what the
+per-day idempotency key already assumed. Seventeen guides now take seventeen
+days to come round instead of one guide arriving seventeen times.
+
+The second half was the design question underneath. News is a loop - quiz,
+reply, grade, conversation - and the other two were broadcast. But the reply
+loop stopped being news-only earlier today: any reply that is not a drill
+answer now reaches Ask FlipSec. Those readers could already hold a conversation
+and nothing in the mail told them, because only the drill section ever asked
+for a reply. Both sections now invite one, and a comment claiming their replies
+were logged and dropped was corrected - it had been true that morning.
+
+Deliberately not built: a quiz for Learn or Jobs. It would be redundant in form
+and weaker in substance. The news drill tests a skill against a real incident;
+a Learn quiz would test whether somebody read a guide, which is comprehension,
+and the Voice section says readers are not marked or graded. A job listing has
+no right answer to test. One quiz, on the feed where getting it right means
+something.
+
