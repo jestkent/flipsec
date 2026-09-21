@@ -13,7 +13,7 @@
 - **Auth:** none
 - **AI models:** gpt-4o-mini
 - **Started:** 2026-09-20T17:35:41Z
-- **Last updated:** 2026-09-21T02:34:39Z
+- **Last updated:** 2026-09-21T02:45:18Z
 
 ## Log
 
@@ -387,3 +387,25 @@ The artwork's own colours are the palette the redesign already uses - the same
 navy, teal and amber - so nothing needed adjusting to match it
 (`public/brand/`, `src/components/Header.tsx`, `src/components/Home.tsx`,
 `src/App.tsx`).
+
+### 2026-09-21 - calmer, and the card back as it was
+The redesign had gone too far in one direction. The card front had become a
+headline, a clamped summary and a full-width solid button, which made every
+item in the feed look like a landing page rather than something to read.
+
+Reverted the card to the shape that worked: the round flip badge over the
+artwork at top right, the plain-language summary leading rather than the
+source's own headline, the tactic back as a pill, and a quiet "See how this
+works" line beside the source link at the foot. The whole front is a click
+target again. The fixes from the audit stay - the drawn SVG icon instead of a
+character the font does not have, the date, and inert on the turned-away face.
+
+The accent moved from a saturated teal to a muted sage green, which is calmer
+against ivory and is the colour the owner asked for. Contrast checked: 4.8:1 on
+white, so white text on it still passes AA.
+
+Also replaced the home page's row of large numbers with one sentence carrying
+the same live figures, and dropped the count chips from the pathway cards. A
+grid of statistics is the house style of a generated landing page and says less
+than a sentence does (`src/components/Post.tsx`, `src/components/Home.tsx`,
+`src/index.css`).

@@ -13,7 +13,7 @@ type Size = "sm" | "md";
 
 const VARIANT: Record<Variant, string> = {
   primary:
-    "bg-teal text-white hover:bg-teal-deep disabled:hover:bg-teal",
+    "bg-sage text-white hover:bg-sage-deep disabled:hover:bg-sage",
   secondary:
     "bg-white text-navy ring-1 ring-line hover:ring-navy-soft",
   tertiary:
@@ -106,7 +106,7 @@ type Tone = "neutral" | "accent" | "highlight" | "danger" | "success";
 
 const TONE: Record<Tone, string> = {
   neutral: "bg-ivory text-navy-soft ring-line",
-  accent: "bg-[#138a8a14] text-teal-deep ring-[#138a8a33]",
+  accent: "bg-[#4f7c6218] text-sage-deep ring-[#4f7c6240]",
   highlight: "bg-[#e2a12b1f] text-[#8a5f10] ring-[#e2a12b4d]",
   danger: "bg-[#c94f4514] text-danger ring-[#c94f4533]",
   success: "bg-[#2f7d5b14] text-success ring-[#2f7d5b33]",
@@ -114,15 +114,18 @@ const TONE: Record<Tone, string> = {
 
 export function Badge({
   tone = "neutral",
+  pill = false,
   children,
 }: {
   tone?: Tone;
+  pill?: boolean;
   children: ReactNode;
 }) {
   return (
     <span
       className={[
-        "inline-flex items-center rounded-md px-2 py-0.5",
+        "inline-flex items-center px-2.5 py-1",
+        pill ? "self-start rounded-full" : "rounded-md",
         "text-xs font-semibold tracking-wide ring-1 ring-inset",
         TONE[tone],
       ].join(" ")}

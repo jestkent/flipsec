@@ -13,8 +13,8 @@
   /* Palette */
   --color-navy-950: #102a43;
   --color-navy-800: #243b53;
-  --color-teal-600: #138a8a;
-  --color-teal-700: #107272;
+  --color-sage-600: #4f7c62;
+  --color-sage-700: #3e6450;
   --color-amber-500: #e2a12b;
   --color-ivory-50: #f7f5ef;
   --color-white: #ffffff;
@@ -31,8 +31,8 @@
   --text: var(--color-ink);
   --text-muted: var(--color-slate);
   --line: var(--color-border);
-  --accent: var(--color-teal-600);
-  --accent-strong: var(--color-teal-700);
+  --accent: var(--color-sage-600);
+  --accent-strong: var(--color-sage-700);
   --highlight: var(--color-amber-500);
 
   /* An 8px rhythm. Only 4px breaks it, and only for optical nudges. */
@@ -64,8 +64,8 @@
      itself and generate nothing at all. */
   --color-navy: #102a43;
   --color-navy-soft: #243b53;
-  --color-teal: #138a8a;
-  --color-teal-deep: #107272;
+  --color-sage: #4f7c62;
+  --color-sage-deep: #3e6450;
   --color-amber: #e2a12b;
   --color-ivory: #f7f5ef;
   --color-ink: #17212b;

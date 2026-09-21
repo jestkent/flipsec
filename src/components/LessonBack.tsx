@@ -174,7 +174,7 @@ export default function LessonBack({
           type="button"
           onClick={() => void teachMe()}
           disabled={teaching}
-          className="self-start rounded-control bg-teal px-4 py-2.5 text-base font-semibold text-white hover:bg-teal-deep disabled:opacity-50"
+          className="self-start rounded-control bg-sage px-4 py-2.5 text-base font-semibold text-white hover:bg-sage-deep disabled:opacity-50"
         >
           {teaching ? "Writing your lesson…" : "Teach me how this works →"}
         </button>
@@ -205,13 +205,13 @@ export default function LessonBack({
               if (e.key === "Enter") void sendQuestion();
             }}
             placeholder="How would I check if it is really them?"
-            className="min-w-0 flex-1 rounded-control border border-line bg-white px-3 py-2 text-base outline-none focus:border-teal"
+            className="min-w-0 flex-1 rounded-control border border-line bg-white px-3 py-2 text-base outline-none focus:border-sage"
           />
           <button
             type="button"
             onClick={() => void sendQuestion()}
             disabled={asking || question.trim().length < 3}
-            className="rounded-control bg-teal px-4 py-2 text-base font-semibold text-white hover:bg-teal-deep disabled:opacity-40"
+            className="rounded-control bg-sage px-4 py-2 text-base font-semibold text-white hover:bg-sage-deep disabled:opacity-40"
           >
             {asking ? "…" : "Ask"}
           </button>

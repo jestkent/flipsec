@@ -9,7 +9,7 @@
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { View } from "./Header";
-import { Badge, Button, Card, CardSkeleton, Eyebrow, EmptyState } from "./ui";
+import { Button, Card, CardSkeleton, Eyebrow, EmptyState } from "./ui";
 
 const PATHWAYS = [
   {
@@ -51,25 +51,6 @@ const STEPS = [
   },
 ];
 
-function Stat({
-  value,
-  label,
-  loading,
-}: {
-  value: number | undefined;
-  label: string;
-  loading: boolean;
-}) {
-  return (
-    <div>
-      <p className="text-2xl font-semibold text-navy tabular-nums">
-        {loading ? "—" : (value ?? 0)}
-      </p>
-      <p className="text-sm text-slate">{label}</p>
-    </div>
-  );
-}
-
 export default function Home({
   onNavigate,
 }: {
@@ -88,9 +69,6 @@ export default function Home({
   const freshest = [...(news ?? []), ...(edu ?? []), ...(jobs ?? [])]
     .map((s) => s.publishedAt ?? 0)
     .sort((a, b) => b - a)[0];
-
-  const countFor = (kind: string) =>
-    kind === "scam" ? news?.length : kind === "course" ? edu?.length : jobs?.length;
 
   return (
     <div className="flex flex-col gap-16 pb-8">
@@ -130,22 +108,27 @@ export default function Home({
           </Button>
         </div>
 
-        <div className="mt-9 flex flex-wrap items-end gap-8 border-t border-line pt-6">
-          <Stat value={news?.length} label="Stories" loading={loading} />
-          <Stat value={edu?.length} label="Guides" loading={loading} />
-          <Stat value={jobs?.length} label="Open roles" loading={loading} />
-          {freshest ? (
-            <div>
-              <p className="text-2xl font-semibold text-navy">
-                {new Date(freshest).toLocaleDateString(undefined, {
-                  month: "short",
-                  day: "numeric",
-                })}
-              </p>
-              <p className="text-sm text-slate">Last collected</p>
-            </div>
-          ) : null}
-        </div>
+        {/* This was a row of big numbers under four labels, which is the
+            house style of every generated landing page and says less than a
+            sentence does. Same live data, read as English. */}
+        <p className="mt-8 border-t border-line pt-5 text-base text-slate">
+          {loading ? (
+            "Counting what is in the feeds…"
+          ) : (
+            <>
+              Right now: {news?.length ?? 0} stories, {edu?.length ?? 0} guides
+              and {jobs?.length ?? 0} open roles
+              {freshest
+                ? `, last collected ${new Date(freshest).toLocaleDateString(
+                    undefined,
+                    { month: "long", day: "numeric" },
+                  )}`
+                : ""}
+              . These numbers are a live query, so they move on their own when
+              a crawl publishes.
+            </>
+          )}
+        </p>
       </section>
 
       {/* ------------------------------------------------------------------ */}
@@ -163,21 +146,16 @@ export default function Home({
         <div className="mt-6 grid gap-4 sm:grid-cols-3">
           {PATHWAYS.map((path) => (
             <Card key={path.kind} className="flex flex-col p-5">
-              <div className="flex items-center justify-between gap-2">
-                <h3 className="text-base font-semibold text-navy">
-                  {path.name}
-                </h3>
-                <Badge tone="neutral">
-                  {loading ? "—" : (countFor(path.kind) ?? 0)}
-                </Badge>
-              </div>
+              <h3 className="text-base font-semibold text-navy">
+                {path.name}
+              </h3>
               <p className="mt-2 flex-1 text-base leading-relaxed text-slate">
                 {path.benefit}
               </p>
               <button
                 type="button"
                 onClick={() => onNavigate("feed", path.kind)}
-                className="mt-4 min-h-11 self-start rounded-control text-base font-semibold text-teal-deep hover:underline"
+                className="mt-4 min-h-11 self-start rounded-control text-base font-semibold text-sage-deep hover:underline"
               >
                 Open this feed →
               </button>

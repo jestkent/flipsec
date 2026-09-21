@@ -89,7 +89,7 @@ export default function App() {
                       // weight changes too, so the selection is not carried
                       // by colour alone.
                       selected
-                        ? "-mb-px border-b-2 border-teal font-semibold text-navy"
+                        ? "-mb-px border-b-2 border-sage font-semibold text-navy"
                         : "-mb-px border-b-2 border-transparent font-medium text-slate hover:text-navy",
                     ].join(" ")}
                   >

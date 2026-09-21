@@ -70,13 +70,13 @@ export default function Subscribe({
             if (e.key === "Enter") void signUp();
           }}
           placeholder="you@example.com"
-          className="min-w-0 flex-1 rounded-control border border-line px-3 py-2 text-base outline-none focus:border-teal"
+          className="min-w-0 flex-1 rounded-control border border-line px-3 py-2 text-base outline-none focus:border-sage"
         />
         <button
           type="button"
           onClick={() => void signUp()}
           disabled={state === "sending" || !email.includes("@")}
-          className="rounded-control bg-teal px-4 py-2 text-base font-semibold text-white hover:bg-teal-deep disabled:opacity-40"
+          className="rounded-control bg-sage px-4 py-2 text-base font-semibold text-white hover:bg-sage-deep disabled:opacity-40"
         >
           {state === "sending" ? "…" : "Sign up"}
         </button>

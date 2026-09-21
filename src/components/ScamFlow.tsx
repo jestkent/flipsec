@@ -10,12 +10,12 @@ const TINT: Record<string, string> = {
   deepfake: "#c94f45",
   voice: "#e2a12b",
   phishing: "#c94f45",
-  injection: "#138a8a",
+  injection: "#4f7c62",
   other: "#667788",
   beginner: "#2f7d5b",
-  intermediate: "#138a8a",
+  intermediate: "#4f7c62",
   advanced: "#e2a12b",
-  hiring: "#138a8a",
+  hiring: "#4f7c62",
 };
 
 export default function ScamFlow({

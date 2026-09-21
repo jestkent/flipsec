@@ -90,24 +90,52 @@ function FlipIcon({ flipped }: { flipped: boolean }) {
   );
 }
 
-// The flip control. A labelled button, not a mystery roundel: the floating
-// icon-only badge asked the reader to guess, and the label is what a screen
-// reader reads without an aria-label carrying the whole meaning.
+// The round badge that sits over the artwork, top right. This is the original
+// affordance and it was right: it reads as a thing you turn, it does not
+// compete with the writing, and it is in the same place on both faces so the
+// way back is where the way in was.
 //
-// On the front it is the card's primary action and looks like one, because
-// the flip is the entire point of the product and was previously the least
-// prominent thing on the card. On the back it is quieter, since by then the
-// reader is reading rather than deciding.
-function FlipControl({
+// A full width solid button in its place made every card look like a landing
+// page. The label still exists for a screen reader, it is just not printed.
+function FlipBadge({
   flipped,
   kind,
   onFlip,
-  prominent = false,
 }: {
   flipped: boolean;
   kind: string;
   onFlip: () => void;
-  prominent?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onFlip();
+      }}
+      aria-expanded={flipped}
+      aria-label={
+        flipped
+          ? (BACK_LABEL[kind] ?? BACK_LABEL.scam)
+          : (FLIP_LABEL[kind] ?? FLIP_LABEL.scam)
+      }
+      className="absolute top-3 right-3 z-10 grid h-11 w-11 place-items-center rounded-full bg-white text-navy shadow-sm ring-1 ring-line transition-colors hover:text-sage-deep"
+    >
+      <FlipIcon flipped={flipped} />
+    </button>
+  );
+}
+
+// The quiet line at the foot of the card. Says what is behind the card rather
+// than shouting about it.
+function FlipHint({
+  flipped,
+  kind,
+  onFlip,
+}: {
+  flipped: boolean;
+  kind: string;
+  onFlip: () => void;
 }) {
   const label = flipped
     ? (BACK_LABEL[kind] ?? BACK_LABEL.scam)
@@ -121,13 +149,7 @@ function FlipControl({
         onFlip();
       }}
       aria-expanded={flipped}
-      className={[
-        "inline-flex min-h-11 items-center justify-center gap-2 rounded-control",
-        "text-base font-semibold transition-colors",
-        prominent
-          ? "w-full bg-teal px-4 text-white hover:bg-teal-deep"
-          : "px-3 text-teal-deep hover:bg-teal/[0.08]",
-      ].join(" ")}
+      className="inline-flex min-h-11 items-center gap-2 text-base font-semibold text-navy transition-colors hover:text-sage-deep"
     >
       <FlipIcon flipped={flipped} />
       {label}
@@ -246,14 +268,16 @@ export default function Post({
             face from the eye but not from the keyboard or a screen reader, so
             without this every unflipped card still put its ask box, its
             buttons and its drill options in the tab order. */}
+        {/* The whole front is a click target again. The badge is the
+            accessible name and the keyboard path; this is the convenience,
+            and the one link inside it stops the event. */}
         <div
-          className="face face-front"
+          onClick={flip}
+          className="face face-front cursor-pointer"
           inert={flipped}
           aria-hidden={flipped}
         >
-          {/* The brand motif, and the affordance: the corner you would lift
-              to turn a page over. Decorative, so it is not announced. */}
-          <span className="fold" aria-hidden />
+          <FlipBadge flipped={flipped} kind={kind} onFlip={flip} />
 
           <div ref={frontRef} className="flex flex-col">
             <div className="h-36 w-full shrink-0 overflow-hidden border-b border-line bg-ivory">
@@ -304,34 +328,42 @@ export default function Post({
                 </time>
               </header>
 
-              <h3 className="clamp-2 text-lg leading-snug font-semibold text-navy">
-                {story.title}
-              </h3>
+              {/* A news card leads with what happened, because the summary
+                  is already the plain-language version and the source's own
+                  headline is long and written for somebody else. A guide and
+                  a role are named things a reader is choosing between, so
+                  those two lead with the name. */}
+              {kind === "scam" ? (
+                <p className="text-lg leading-snug font-medium text-navy">
+                  {story.summary}
+                </p>
+              ) : (
+                <div className="flex flex-col gap-1.5">
+                  <h3 className="clamp-2 text-lg leading-snug font-semibold text-navy">
+                    {story.title}
+                  </h3>
+                  <p className="clamp-3 text-base leading-relaxed text-ink">
+                    {story.summary}
+                  </p>
+                </div>
+              )}
 
-              <p className="clamp-3 text-base leading-relaxed text-ink">
-                {story.summary}
-              </p>
+              <Badge tone={CHIP_TONE[tactic] ?? "neutral"} pill>
+                {tactic}
+              </Badge>
 
-              <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-1">
-                <Badge tone={CHIP_TONE[tactic] ?? "neutral"}>{tactic}</Badge>
+              <footer className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-1">
+                <FlipHint flipped={flipped} kind={kind} onFlip={flip} />
                 <a
                   href={story.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="min-h-11 content-center text-sm font-medium text-slate underline decoration-line underline-offset-4 hover:text-navy"
+                  onClick={(e) => e.stopPropagation()}
+                  className="min-h-11 content-center text-sm font-medium text-slate hover:text-navy"
                 >
-                  Original source
+                  ↗ Source
                 </a>
-              </div>
-
-              <div className="border-t border-line pt-3">
-                <FlipControl
-                  flipped={flipped}
-                  kind={kind}
-                  onFlip={flip}
-                  prominent
-                />
-              </div>
+              </footer>
             </div>
           </div>
         </div>
@@ -349,7 +381,7 @@ export default function Post({
               or the card is sized without them and clips. */}
           <div ref={backRef}>
             <div className="flex items-center justify-between border-b border-line px-4 py-1">
-              <FlipControl flipped={flipped} kind={kind} onFlip={flip} />
+              <FlipHint flipped={flipped} kind={kind} onFlip={flip} />
               <span className="pr-1 text-sm text-slate">{story.source}</span>
             </div>
             {kind === "course" ? (
