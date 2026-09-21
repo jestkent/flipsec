@@ -77,7 +77,12 @@ move without anybody touching the code. That is normal.
   URL, the back button does not move between views, unknown paths return 200,
   and a card cannot be shared as a link.
 - **`List-Unsubscribe` header.** Needs AgentMail's API to be checked first.
-- The home page and About are **English only** in an eleven-language app.
+- **Some of the app is still English only** in an eleven-language app: the
+  home page, About, Privacy, the sign-up form and all four interactive
+  lessons. Each of those regions now declares `lang="en"` so a screen reader
+  pronounces it correctly and a browser's translator can offer to translate
+  it — delete that attribute in the same change that translates the region.
+  See PLAN.md section 29.
 - No right-to-left language: the layout uses physical direction classes.
 
 ## Never do these
