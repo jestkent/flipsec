@@ -839,3 +839,41 @@ real mailbox was touched: the first reply graded correctly and attempted the
 send, the second was refused with one attempt row on file, and an address with
 no drill to grade against still fails closed. Test subscriber removed, two real
 subscribers untouched, feeds unchanged at 8, 17 and 10.
+
+### 2026-09-21 - a cron that achieves nothing now says so
+
+Nothing watched the crons. AUDIT.md carried it as an open item, and the
+assumption behind it was wrong in an interesting way: the worry was a cron
+that crashes, and the real problem is a cron that succeeds.
+
+crawlSources, crawlJobs and sendDailyDrill each catch their own per-source,
+per-article and per-subscriber failures and return counts. None of them throws
+when a run produces nothing, so Convex records a successful execution and the
+dashboard shows green. A crawl that quietly stopped matching an index page
+looks exactly like a crawl that found nothing new, and would read as healthy
+for days.
+
+It demonstrated itself for free while setting up a second machine. A local
+deployment with no API keys ran the job crawler, which logged
+"greenhouse: shortlisted 25, queued 25" - a clean success - while every single
+downstream job threw on the missing key. The cron reported healthy with nothing
+to show for it.
+
+Each run now records what it achieved, and health:status reports the last run
+of every cron in one call.
+
+The judgement is which number to watch. ok comes from what a run FOUND, never
+from what it saved: saveRawStory drops anything already seen, so saving nothing
+is the normal outcome of most six-hourly runs. Alerting on that would cry wolf
+four times a day and teach whoever reads it to ignore the signal. Finding
+nothing is the real fault - it means an index page stopped parsing.
+
+A run that throws records nothing on purpose. Convex already logs it and the
+job's last row stops advancing, so staleness covers that case. Two failure
+modes, two signals, no overlap.
+
+This is detection and not notification. Nothing pages anybody. It turns "is
+something broken?" from an archaeology exercise across the log into one
+command, and AUDIT.md says exactly that rather than claiming more.
+
+Deployed to production. Feeds unchanged at 8, 17 and 10 either side.

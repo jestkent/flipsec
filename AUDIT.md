@@ -196,6 +196,26 @@ relative paths, so they have to be absolute. If a custom domain is added,
 
 ---
 
+### Cron health is judged on what a run FOUND
+
+`crawlSources`, `crawlJobs` and `sendDailyDrill` each catch their own
+per-source, per-article and per-subscriber errors and return counts, so none
+of them throws when a run achieves nothing. Convex records a successful
+execution and the dashboard shows green. A crawl that quietly stopped matching
+an index page looks exactly like a crawl that found nothing new.
+
+`health.recordRun` therefore sets `ok` from what a run **found**, never from
+what it saved. `saveRawStory` drops anything already seen, so a six-hourly
+crawl that saves nothing is the normal case. Switching `ok` to `scraped` or
+`queued` would fire four times a day and teach whoever reads it to ignore the
+signal.
+
+A run that throws deliberately records **no row**. Convex already logs it, and
+the job's last row simply stops advancing, so staleness is that tell. Two
+failure modes, two signals - do not "fix" the missing row.
+
+---
+
 ## 4. Rate limits, as they now stand
 
 One table, `convex/rateLimit.ts`. Counting and inserting happen in a single
@@ -343,12 +363,12 @@ IPs to Google. One change, three benefits.
 | # | Verify | How |
 | --- | --- | --- |
 | 1 | **Rotate every API key** | OpenAI, Firecrawl, AgentMail, and the `whsec_` signing secret all appeared in terminal sessions. Deliberately deferred by the project owner to be done last. |
-| 2 | Prod env vars set | `npx convex env list --prod`. If `AGENTMAIL_WEBHOOK_SECRET` is unset the inbound route fails closed and reply grading stops silently. **Never print values.** |
+| 2 | Prod env vars set | **Verified 2026-09-21**: all six present, `AGENTMAIL_WEBHOOK_SECRET` included, so the inbound route is not failing closed and reply grading runs. Re-check with `npx convex env list --prod` after any key rotation. **Never print values.** |
 | 3 | Security headers | Cloudflare Transform Rule, §6. |
 | 4 | HSTS | Cloudflare → SSL/TLS → Edge Certificates. |
 | 5 | Custom domain | Currently `*.convex.site`. Decide before the absolute URLs harden. |
 | 6 | Backups | Convex dashboard → Settings → Backups. **Test a restore**; an untested backup is a hypothesis. |
-| 7 | Failure alerting | None exists. A broken cron currently fails silently for days. |
+| 7 | Failure alerting | **Partly closed `46e3dc2`.** Every cron records what it achieved, and `npx convex run health:status --prod` reports the last run of each. That is detection, not notification: nothing pages anybody, so it only helps if somebody looks. §3 says what must not be tidied. |
 | 8 | SPF / DKIM / DMARC | On the AgentMail sending domain. Without DKIM the daily send lands in spam. |
 | 9 | Webhook URL | `https://<deployment>.convex.site/api/agentmail-inbound`, plus one real reply end to end. |
 | 10 | **Double opt-in, end to end** | Not verified with a real mailbox. Sign up with your own address, confirm the mail arrives, press the button, check `pending` clears. This is the one new flow that has never delivered a real message. |
