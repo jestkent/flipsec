@@ -198,6 +198,17 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
 - Images come from `og:image`, else `TacticArt.tsx`, which also carries art for
   the guide levels and `hiring` so a feed with no source pictures still reads
   as a feed.
+- **A value threaded through a chain of scheduled functions is only as good
+  as its weakest hop, and a silent fallback hides the break.** Threading the
+  grade needed `replyToMessageId` carried through `saveReply`, `gradeReply`,
+  `saveGrade`, `sendGrade` and `claimDelivery`. Four of the five were wired
+  and it still shipped broken, because `gradeReply` took the argument and did
+  not pass it on. Nothing failed: a grade with no anchor falls back to a new
+  message BY DESIGN so it is never lost, so the logs were clean, the tests
+  passed and the mail arrived — in the wrong thread. The tell was that emailed
+  QUESTIONS threaded correctly while grades did not, and the question path is
+  the one that skips `gradeReply`. When one path through a feature works and a
+  near-identical one does not, diff the hops rather than the behaviour.
 - **A reply to the daily email that is not a drill answer is a QUESTION, and
   Ask FlipSec answers it.** The mail has always invited a reply; until now
   anything that was not this morning's answer was silently binned, including

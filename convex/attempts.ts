@@ -273,6 +273,12 @@ export const gradeReply = internalAction({
       correct: grade.correct,
       feedback: grade.feedback,
       to: args.to,
+      // Carried the rest of the way, or the grade goes out as its own message
+      // while a question asked in the same breath comes back threaded. This
+      // link was the one missed when threading was added: every other hop had
+      // it, the chain still broke, and nothing logged an error because a grade
+      // with no anchor is SUPPOSED to fall back to a new message.
+      replyToMessageId: args.replyToMessageId,
       rightAnswer: args.choices[args.correct] ?? "",
       explanation: args.explanation,
     });
