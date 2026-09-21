@@ -1,0 +1,18 @@
+# FlipSec.ai
+#
+# The reading app is one URL: the views are held in component state, not in
+# the path, so there is nothing else here for a crawler to find.
+#
+# /api/ is disallowed because those routes are not pages. They are the
+# AgentMail webhook and the confirm and unsubscribe links from the daily
+# email, and the two mail routes now serve a button rather than acting on a
+# GET, which means a crawler following one changes nothing. The pages
+# themselves also carry meta robots noindex. This is belt and braces: a
+# crawler has no reason to be there and an unsubscribe page has no reason to
+# appear in a search result.
+
+User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: https://hallowed-nightingale-322.convex.site/sitemap.xml

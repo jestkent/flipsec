@@ -12,6 +12,34 @@
       content="Three feeds of AI security for people who are not security experts: real incidents, free guides, and jobs where AI and security meet. Every card flips."
     />
 
+    <!-- Social preview. Without these a shared link renders as a bare URL,
+         which for a site about spotting fakes is the wrong first impression.
+         The absolute URLs are required: Open Graph does not resolve relative
+         paths. They point at the Convex site because that is the production
+         domain today — every one of them, and the sitemap, has to change
+         together if a custom domain is ever added. -->
+    <link rel="canonical" href="https://hallowed-nightingale-322.convex.site/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="FlipSec.ai" />
+    <meta property="og:url" content="https://hallowed-nightingale-322.convex.site/" />
+    <meta property="og:title" content="FlipSec.ai — Flip the news. Learn the threat. Find the work." />
+    <meta
+      property="og:description"
+      content="Three feeds of AI security for people who are not security experts: real incidents, free guides, and jobs where AI and security meet. Every card flips."
+    />
+    <meta property="og:image" content="https://hallowed-nightingale-322.convex.site/brand/flipsec-ai-og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="FlipSec.ai — flip the news, learn the threat, find the work." />
+    <meta property="og:locale" content="en_US" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="FlipSec.ai — Flip the news. Learn the threat. Find the work." />
+    <meta
+      name="twitter:description"
+      content="Three feeds of AI security for people who are not security experts: real incidents, free guides, and jobs where AI and security meet. Every card flips."
+    />
+    <meta name="twitter:image" content="https://hallowed-nightingale-322.convex.site/brand/flipsec-ai-og.png" />
+
     <!-- Source Sans 3 is the one family. Preconnect so the first paint is
          not waiting on a DNS lookup, and display=swap so text is readable
          while it loads rather than invisible. -->

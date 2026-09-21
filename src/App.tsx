@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import About from "./components/About";
+import Privacy from "./components/Privacy";
 import Feed from "./components/Feed";
 import Header, { type View } from "./components/Header";
 import Home from "./components/Home";
@@ -39,7 +40,7 @@ export default function App() {
   const localizedFeedName = active.kind === "scam" ? t("news") : active.kind === "course" ? t("learn") : t("jobs");
 
   useEffect(() => {
-    const page = view === "feed" ? localizedFeedName : view === "tools" ? "Ask FlipSec" : view === "about" ? t("about") : "FlipSec.ai";
+    const page = view === "feed" ? localizedFeedName : view === "tools" ? "Ask FlipSec" : view === "about" ? t("about") : view === "privacy" ? "Privacy" : "FlipSec.ai";
     document.title = `${page} | FlipSec.ai`;
   }, [localizedFeedName, t, view]);
 
@@ -47,7 +48,7 @@ export default function App() {
     if (nextKind) setKind(nextKind);
     setView(next);
     const nextTab = TABS.find((tab) => tab.kind === nextKind);
-    setAnnouncement(next === "feed" ? `${nextTab?.full ?? active.full} page` : next === "tools" ? "Ask FlipSec page" : next === "about" ? "About page" : "Home page");
+    setAnnouncement(next === "feed" ? `${nextTab?.full ?? active.full} page` : next === "tools" ? "Ask FlipSec page" : next === "about" ? "About page" : next === "privacy" ? "Privacy page" : "Home page");
     // Moving between views is a page change, so it starts at the top. Within
     // a view nothing scrolls on its own, which is what keeps a reader's place
     // when a card flips.
@@ -98,6 +99,12 @@ export default function App() {
         {view === "about" && (
           <div className="mx-auto max-w-2xl pt-10">
             <About onBack={() => navigate("feed")} />
+          </div>
+        )}
+
+        {view === "privacy" && (
+          <div className="mx-auto max-w-2xl pt-10">
+            <Privacy onBack={() => navigate("feed")} />
           </div>
         )}
 
@@ -191,6 +198,13 @@ export default function App() {
               className="min-h-11 underline underline-offset-4 hover:text-navy"
             >
               Sources and licensing
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate("privacy")}
+              className="min-h-11 underline underline-offset-4 hover:text-navy"
+            >
+              Privacy
             </button>
             <a
               href="https://github.com/jestkent/flipsec"

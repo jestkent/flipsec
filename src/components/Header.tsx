@@ -5,7 +5,7 @@
 import AccessibilityOptions from "./AccessibilityOptions";
 import { LanguageSelector, useLanguage } from "../localization";
 
-export type View = "home" | "feed" | "tools" | "about";
+export type View = "home" | "feed" | "tools" | "about" | "privacy";
 
 export default function Header({
   view,

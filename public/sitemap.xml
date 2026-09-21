@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  One entry, and that is honest rather than lazy. The four reading views are
+  held in App.tsx state with no URL of their own, so listing /about or /feed
+  here would point a crawler at a path that serves the same shell and
+  resolves to the home view. A sitemap that lists URLs which are not real is
+  worse than a short one.
+
+  If URL routing is ever added, this file grows with it, and the absolute
+  URLs here and in index.html change together with any custom domain.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://hallowed-nightingale-322.convex.site/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>

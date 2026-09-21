@@ -104,6 +104,11 @@ export default function Subscribe({
           {state === "sending" ? "Signing up…" : "Sign up"}
         </button>
       </div>
+      <p className="mt-2 text-sm leading-relaxed text-slate">
+        Your address is stored only to send this email, and only once you press
+        the button in the message confirming it. Every email carries an
+        unsubscribe link. See Privacy at the foot of the page.
+      </p>
       {state === "error" && (
         <p id={errorId} role="alert" className="mt-2 text-base text-danger">
           {error}
