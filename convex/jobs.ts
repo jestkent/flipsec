@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import OpenAI from "openai";
 import { internal } from "./_generated/api";
 import { internalAction, internalMutation } from "./_generated/server";
+import { CRON_JOBS } from "./health";
 
 const MODEL = "gpt-4o-mini";
 
@@ -71,6 +72,7 @@ type FullJob = {
 export const crawlJobs = internalAction({
   args: { limit: v.optional(v.number()), perBoard: v.optional(v.number()) },
   handler: async (ctx, args) => {
+    const startedAt = Date.now();
     const perBoard = args.perBoard ?? 6;
     let found = 0;
     let queued = 0;
@@ -158,6 +160,19 @@ export const crawlJobs = internalAction({
     }
 
     console.log(`greenhouse: shortlisted ${found}, queued ${queued}`);
+
+    // Every board can fail its own fetch and be skipped, so this loop reports
+    // success having read nothing at all. Zero shortlisted across ALL boards
+    // means either every board refused us or SECURITY_TITLE stopped matching;
+    // queued alone would be a false alarm, since a board whose roles are all
+    // already saved queues nothing on a healthy run.
+    await ctx.scheduler.runAfter(0, internal.health.recordRun, {
+      job: CRON_JOBS.crawlJobs,
+      ok: found > 0,
+      detail: `shortlisted ${found}, queued ${queued}`,
+      startedAt,
+    });
+
     return { found, queued };
   },
 });

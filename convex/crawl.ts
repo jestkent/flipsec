@@ -5,6 +5,7 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { internalAction } from "./_generated/server";
+import { CRON_JOBS } from "./health";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -173,6 +174,7 @@ export const crawlSources = internalAction({
       : SOURCES;
     const firecrawl = new FirecrawlApp({ apiKey });
 
+    const startedAt = Date.now();
     let scraped = 0;
     let failed = 0;
     let found = 0;
@@ -241,6 +243,18 @@ export const crawlSources = internalAction({
     }
 
     console.log(`crawl done. found ${found}, scraped ${scraped}, failed ${failed}`);
+
+    // Judged on found, never on scraped. saveRawStory drops anything already
+    // seen, so most six-hourly runs legitimately save nothing; a run that
+    // FINDS nothing has stopped parsing its index pages. Scheduled rather than
+    // written directly because an action never touches ctx.db.
+    await ctx.scheduler.runAfter(0, internal.health.recordRun, {
+      job: CRON_JOBS.crawlSources,
+      ok: found > 0,
+      detail: `found ${found}, scraped ${scraped}, failed ${failed}`,
+      startedAt,
+    });
+
     return { found, scraped, failed };
   },
 });

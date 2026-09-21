@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { internalAction } from "./_generated/server";
+import { CRON_JOBS } from "./health";
 import { confirmToken, unsubscribeToken } from "./http";
 import { feedNames } from "./subscribers";
 
@@ -223,6 +224,7 @@ Don't want these? Unsubscribe: ${SITE}/api/unsubscribe?e=${encodeURIComponent(ar
 export const sendDailyDrill = internalAction({
   args: {},
   handler: async (ctx): Promise<{ sent: number; failed: number }> => {
+    const startedAt = Date.now();
     // Fetched once for everybody, not once per reader. A list rather than one
     // drill, so each reader can be given something they have not had yet.
     const candidates: Array<{
@@ -245,6 +247,16 @@ export const sendDailyDrill = internalAction({
 
     if (drill === null && course === null && job === null) {
       console.warn("nothing available to send");
+      // Three published feeds and nothing to put in a mail is a real fault,
+      // not an empty day: it means the queries behind all three came back
+      // empty. Recorded rather than returned quietly, because this path sends
+      // no mail and so leaves no other trace.
+      await ctx.scheduler.runAfter(0, internal.health.recordRun, {
+        job: CRON_JOBS.dailyDrill,
+        ok: false,
+        detail: "nothing available to send",
+        startedAt,
+      });
       return { sent: 0, failed: 0 };
     }
 
@@ -316,6 +328,17 @@ export const sendDailyDrill = internalAction({
     }
 
     console.log(`daily send: sent ${sent}, failed ${failed}`);
+
+    // An empty list is a healthy run — nobody has confirmed yet, and inventing
+    // an alert for that would train whoever reads this to ignore it. Sending
+    // to nobody while subscribers exist is the fault worth naming.
+    await ctx.scheduler.runAfter(0, internal.health.recordRun, {
+      job: CRON_JOBS.dailyDrill,
+      ok: subscribers.length === 0 || sent > 0,
+      detail: `sent ${sent}, failed ${failed}, of ${subscribers.length} active`,
+      startedAt,
+    });
+
     return { sent, failed };
   },
 });

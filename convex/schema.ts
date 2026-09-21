@@ -153,4 +153,18 @@ export default defineSchema({
     kinds: v.optional(v.array(v.string())),
   }).index("by_email", ["email"])
     .index("by_active", ["active"]),
+
+  // What each cron run actually achieved. Every cron in this app catches its
+  // own per-item failures and returns counts, so a run that achieved nothing
+  // still exits successfully and shows as green on the dashboard. `ok` is
+  // judged on what a run FOUND rather than what it saved, because saving
+  // nothing is the normal outcome of a six-hourly crawl. health.ts carries the
+  // full reasoning.
+  cronRuns: defineTable({
+    job: v.string(),                  // one of health.ts CRON_JOBS
+    ok: v.boolean(),
+    detail: v.string(),               // the run's own counts, as it logged them
+    startedAt: v.number(),
+    finishedAt: v.number(),
+  }).index("by_job_time", ["job", "startedAt"]),
 });

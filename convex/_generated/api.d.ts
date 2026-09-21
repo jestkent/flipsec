@@ -18,6 +18,7 @@ import type * as crawl from "../crawl.js";
 import type * as crons from "../crons.js";
 import type * as drills from "../drills.js";
 import type * as email from "../email.js";
+import type * as health from "../health.js";
 import type * as http from "../http.js";
 import type * as jobs from "../jobs.js";
 import type * as languages from "../languages.js";
@@ -47,6 +48,7 @@ declare const fullApi: ApiFromModules<{
   crons: typeof crons;
   drills: typeof drills;
   email: typeof email;
+  health: typeof health;
   http: typeof http;
   jobs: typeof jobs;
   languages: typeof languages;
