@@ -100,6 +100,23 @@ Recording these so they are not re-audited from scratch:
 
 ---
 
+## 2a. What the first real test turned up
+
+Everything in §2 was found by reading code. These four came out of the first
+sign-up with a real mailbox, which is why §5 says an untested flow is not a
+verified one.
+
+| Found | Why it mattered | Fixed |
+| --- | --- | --- |
+| The form said "check your email" to an address that was already confirmed, which is sent no second message by design | The reader waits for mail that is never coming and concludes sign-up is broken | `a667ef6` |
+| Signing up from three tabs sent three identical confirmations | Mail amplification through the very form double opt-in exists to protect: three per address per hour | `da0c94c` |
+| The confirm page only offered agreement, and the feeds had been guessed from whichever tab the reader was on | Signing up from three tabs is not the same as wanting three feeds | `aa0b35a` |
+| A valid signature for a deleted row answered "You are on the list" | Untrue, and the same shape as a real failure: unsubscribe, find an old mail, click it, be told you are subscribed | `aa0b35a` |
+
+The README also claimed emailed replies "come back graded". The grading runs
+and the result is stored on the attempt, but **nothing is sent back** —
+`gradeReply` has zero mail calls. The claim is corrected; the gap is open.
+
 ## 3. Things a future change could break
 
 Each of these is load-bearing. The comment in the code says so too; this is

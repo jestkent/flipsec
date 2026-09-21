@@ -72,9 +72,15 @@ an incomplete piece of work rather than a decision. No right-to-left language
 ships yet either, because the layout needs to move off physical direction
 classes before Arabic or Urdu would read correctly rather than mirror.
 
-Sign up on any tab and one card from each feed you picked arrives in a single
-email each morning. Reply to the news drill in your own words and the reply
-comes back graded.
+Sign up on any tab and confirm from the link that arrives. The confirmation
+page is where you pick the feeds, already ticked for whatever tab you signed
+up from, so signing up from three tabs asks once rather than three times. One
+card from each feed you picked then arrives in a single email each morning.
+
+Replying to the news drill in your own words is graded by the model and the
+grade is stored on the attempt. **It is not yet emailed back**, so a reader
+who replies currently hears nothing. That is a known gap, not a claim this
+README should have been making.
 
 ## Who it is for
 

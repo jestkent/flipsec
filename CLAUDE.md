@@ -65,6 +65,29 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
   `translateStory` reserves AFTER the cache is checked. A hit must stay free
   and unmetered, or a reader switching language on a warm feed spends their
   budget on rows that were already paid for.
+- **One address is one subscription, so one confirmation.** Signing up from
+  the news tab and then the jobs tab merges into the same row, and the token
+  is an HMAC of the address alone, so the message already in the inbox
+  confirms whatever set of feeds the reader ends up asking for. `confirmSentAt`
+  is stamped in the same transaction that decides to send, so two tabs racing
+  cannot both mail. Without it, three tabs meant three identical emails, which
+  is mail amplification through the very form double opt-in exists to protect.
+- **The confirm page is where the feeds are chosen, not just agreed to.** The
+  sign-up box can only guess from whichever tab the reader was on, and signing
+  up from three tabs is not the same as wanting three feeds. What the reader
+  ticks REPLACES the guess. Nothing ticked is a real answer and it means no —
+  confirming an empty selection would start a daily email carrying nothing. A
+  valid signature for an address no longer in the table says so rather than
+  reporting success, because old links from a removed sign-up were being
+  answered with "You are on the list".
+- **Say where the mail landed.** Mail from a domain with no sending history
+  goes to spam more often than not, and a confirmation nobody can find is a
+  sign-up that never happens — the reader cannot tell that from a broken site.
+  The success message names the spam and junk folders, the sender, the exact
+  subject, and that marking it as not spam helps the daily one arrive. The
+  confirm page repeats it for the daily email. This is a mitigation, not a
+  fix: SPF, DKIM and DMARC on the sending domain are the actual fix and are
+  still unverified.
 - **`subscribers.pending` absent means CONFIRMED.** Anyone can type any
   address into the sign-up box, so a sign-up now records an unconfirmed row and
   mails that address a link; nothing is sent until the link is pressed, which

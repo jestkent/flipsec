@@ -13,7 +13,7 @@
 - **Auth:** none
 - **AI models:** gpt-4o-mini, gpt-4o-mini-tts
 - **Started:** 2026-09-20T17:35:41Z
-- **Last updated:** 2026-09-21T06:15:00Z
+- **Last updated:** 2026-09-21T06:55:00Z
 
 ## Log
 
@@ -684,3 +684,35 @@ URL. Both are written down rather than quietly left.
 
 Verified against production after every change: three feeds still returning 6,
 11 and 10.
+
+### 2026-09-21 - the first real sign-up, and what it broke
+
+Tested the new double opt-in flow with a real mailbox for the first time. It
+worked, and it surfaced four things that reading the code had not.
+
+An address that is already confirmed is sent no second confirmation, by design
+- but the form still said "check your email", so a returning reader waits for
+mail that never arrives. Signing up from the news, learn and jobs tabs sent
+three identical confirmations, which is mail amplification through the very
+form double opt-in exists to protect. One address is one subscription, the
+token is an HMAC of the address alone, and the message already in the inbox
+confirms whatever feeds the reader ends up asking for, so the extra copies were
+never needed.
+
+The bigger change came out of asking why the three emails looked the same. The
+sign-up box can only guess which feeds someone wants from whichever tab they
+were on. The confirm page is now where that is decided: three checkboxes,
+already ticked for what was asked for, and what the reader submits replaces the
+guess. That also makes the consent mean something rather than merely exist.
+
+Nothing ticked is a real answer and it means no. A valid signature for an
+address no longer in the table now says so instead of reporting success.
+
+Also added, because mail from a domain with no sending history goes to spam
+more often than not: the success message names the spam and junk folders, the
+sender, the exact subject line, and that marking it as not spam helps tomorrow's
+email arrive. That is a mitigation. SPF, DKIM and DMARC are the actual fix and
+remain unverified.
+
+Corrected a claim in the README rather than leaving it: emailed replies are
+graded and the result is stored, but nothing is sent back to the reader.
