@@ -64,7 +64,7 @@ const MESSAGES: Message[] = [
   },
 ];
 
-export default function InjectionDemo({ onBack }: { onBack: () => void }) {
+export default function InjectionDemo({ onBack }: { onBack?: () => void }) {
   const groupId = useId().replace(/[^a-zA-Z0-9-]/g, "");
   const [pickedId, setPickedId] = useState(MESSAGES[0].id);
   const [revealed, setRevealed] = useState(false);
@@ -228,13 +228,15 @@ export default function InjectionDemo({ onBack }: { onBack: () => void }) {
         </p>
       </div>
 
-      <button
-        type="button"
-        onClick={onBack}
-        className="min-h-11 self-start pt-1 text-base font-medium text-slate hover:text-navy"
-      >
-        <span aria-hidden>← </span>Back to the lesson
-      </button>
+      {onBack && (
+        <button
+          type="button"
+          onClick={onBack}
+          className="min-h-11 self-start pt-1 text-base font-medium text-slate hover:text-navy"
+        >
+          <span aria-hidden>← </span>Back to the lesson
+        </button>
+      )}
     </div>
   );
 }

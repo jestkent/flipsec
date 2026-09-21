@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import About from "./components/About";
+import InjectionDemo from "./components/InjectionDemo";
 import Privacy from "./components/Privacy";
 import Feed from "./components/Feed";
 import Header, { type View } from "./components/Header";
@@ -93,6 +94,36 @@ export default function App() {
         {view === "tools" && (
           <div className="mx-auto max-w-2xl pt-8">
             <SafetyTools />
+
+            {/* Behind a flip, on card one of twelve, under a sign-up box was
+                too well hidden: the person who asked for this could not find
+                it. Ask FlipSec is where a reader brings a suspicious message,
+                so "the AI reading it can be given orders by that message too"
+                belongs directly underneath, in the open, with nothing to turn
+                over first. The card in AI Sec Learn stays; this is the way in
+                that does not depend on finding it. */}
+            <section
+              aria-labelledby="injection-demo-heading"
+              className="mt-10 rounded-card border border-line bg-white"
+            >
+              <div className="border-b border-line px-6 pt-6 pb-4">
+                <p className="text-sm font-semibold tracking-widest text-slate uppercase">
+                  Try it yourself
+                </p>
+                <h2
+                  id="injection-demo-heading"
+                  className="mt-1 text-xl font-semibold text-navy"
+                >
+                  Your AI assistant will do what your email tells it to
+                </h2>
+                <p className="mt-2 text-base leading-relaxed text-ink">
+                  You just asked an AI about a message. Here is the other half
+                  of that: an AI that reads a message can be given orders by
+                  whoever wrote it.
+                </p>
+              </div>
+              <InjectionDemo />
+            </section>
           </div>
         )}
 
