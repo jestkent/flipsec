@@ -1076,6 +1076,26 @@ received mail from this sender, and SPF, DKIM and DMARC are unverified on the
 sending domain. That is infrastructure and it is recorded as item 8, not
 claimed as done.
 
+### 2026-09-21 - say it before the sign-up, not only after
+
+FlipSec.ai sends from a domain with no sending history, and SPF, DKIM and
+DMARC cannot be set up without owning one. The owner has deferred buying a
+domain until after judging, which is a reasonable call and it means the fix is
+simply unavailable. So the mitigation is honesty, moved to the moment it is
+useful.
+
+The success screen and the confirm page already named the spam and junk
+folders. The sign-up form did not, which is the wrong way round: a reader
+decides whether to trust the box before they submit it, and a reader who
+cannot find the confirmation afterwards has no way to tell that from a site
+that is simply broken.
+
+Also wired the sign-up help text to aria-describedby. It was being shown and
+never announced, so a screen reader user got an email input and nothing about
+what happens to the address or where the mail lands - which is exactly the
+reader the warning is for. AUDIT item 8 now records the domain as the blocker
+rather than listing the DNS records as merely outstanding.
+
 ### 2026-09-21 - measured the translation instead of arguing about it
 
 Reported as: News translates fully, Learn and Jobs do not. The data said

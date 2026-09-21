@@ -1172,6 +1172,59 @@ piece.
 
 ---
 
+## 31. Shipped fixes: the last English labels, and tabs that follow you down
+
+Two small changes with one thing in common: both were found by somebody using
+the app rather than by reading it.
+
+### The labels a text sweep could not see
+
+Section 22 recorded that partial translation is worse than none, and section 28
+recorded fixing the last hardcoded card string. Neither was the last one.
+`ScamFlow.tsx` printed "The setup", "The hook" and "The loss" over every
+translated news lesson — on the feed that is the demo.
+
+It survived the sweep because that sweep looked for text in JSX, and these
+strings sat in a **data array** one hop from where they render. `label` now
+holds a dictionary key, the way `FLIP_LABEL` and `BACK_LABEL` already did.
+
+The rule is now: grep for string literals as well as for JSX text. A label
+stored away from its render site is exactly what a text search misses, and
+this is the third time this class of bug has shipped.
+
+It was found by a report that News translated and Learn and Jobs did not. That
+turned out to be two different things at once, and neither was quite the claim:
+Jobs translates fully; the crawled Learn guides translate fully; but the four
+authored lessons are the NEWEST cards in Learn, so they sit at the top and are
+the first thing anybody flips, and their backs are English by design. A reader
+who flips the top card of Learn and sees English is describing something true
+about a feed that is otherwise fine.
+
+Settled by driving the live site in Spanish with headless Chrome rather than
+by arguing from the database, which said the translations existed. Both were
+right; they meant different cards.
+
+### Tabs that follow you down
+
+Reaching the bottom of a feed left no way to switch feeds without scrolling all
+the way back. The tab row is now sticky under the header.
+
+The offset is the part worth keeping. A fixed pixel `top` is wrong three ways
+here: the header **wraps** at narrow widths, and both it and the tab row grow
+with browser zoom and with the in-app larger-text preference. Measured, the
+header is 69px on a desktop and 121px at 320px — any constant would have been
+wrong somewhere. `useStickyVar` publishes both heights from a `ResizeObserver`.
+
+The accessibility half is the one that is easy to skip. A sticky bar covering
+the element you just tabbed to is WCAG 2.2 SC 2.4.11, and this bar sits
+directly over the next card down. Anything scrolled to or focused now clears
+both heights, which also stops a card permalink landing under the chrome.
+
+On an app whose accessibility is the differentiator, shipping a convenience
+that breaks keyboard focus would have cost more than it bought.
+
+---
+
 ## Appendix: the Convex mental model
 
 Worth re-reading when something does not behave.
