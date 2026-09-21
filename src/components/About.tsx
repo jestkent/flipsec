@@ -13,7 +13,7 @@ function Block({
 }) {
   return (
     <section className="flex flex-col gap-2">
-      <h2 className="text-xs font-semibold tracking-wider text-slate uppercase">
+      <h2 className="text-sm font-semibold tracking-wider text-slate uppercase">
         {title}
       </h2>
       {children}
@@ -24,6 +24,10 @@ function Block({
 export default function About({ onBack }: { onBack: () => void }) {
   return (
     <div className="flex flex-col gap-8">
+      <header>
+        <p className="text-sm font-semibold tracking-wider text-slate uppercase">About</p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-navy">About FlipSec.ai</h1>
+      </header>
       <Block title="What this is">
         <p className="text-lg leading-snug font-medium text-navy">
           Scammers started using AI, and the old advice stopped working. Bad
@@ -36,6 +40,12 @@ export default function About({ onBack }: { onBack: () => void }) {
           paying people to work on it. Everything here is a card, and every card
           flips to show you what the front does not tell you.
         </p>
+        <p className="text-base leading-relaxed text-ink">
+          Ask FlipSec is one place to examine something suspicious, attach an
+          image, ask a follow-up, get recovery steps, or ask about AI and
+          privacy. It cannot prove that something is safe or that an image was
+          made by AI.
+        </p>
         <ul className="flex flex-col gap-2 text-base leading-relaxed text-ink">
           <li>
             <span className="font-medium text-navy">AI Sec News</span> —
@@ -43,7 +53,7 @@ export default function About({ onBack }: { onBack: () => void }) {
             trick ran, what gave it away, and why it worked on someone careful.
           </li>
           <li>
-            <span className="font-medium text-navy">AI Sec Edu</span> —
+            <span className="font-medium text-navy">AI Sec Learn</span> —
             free guides to how AI gets attacked and defended. Flip for what you
             will learn and the first thing to do to begin.
           </li>
@@ -53,6 +63,25 @@ export default function About({ onBack }: { onBack: () => void }) {
             to apply.
           </li>
         </ul>
+      </Block>
+
+      <Block title="Mission and vision">
+        <dl className="grid gap-6 border-y border-line py-5 sm:grid-cols-2">
+          <div>
+            <dt className="font-semibold text-navy">Mission</dt>
+            <dd className="mt-2 text-base leading-relaxed text-ink">
+              Make AI security understandable and useful for everyone,
+              especially people without technical training.
+            </dd>
+          </div>
+          <div>
+            <dt className="font-semibold text-navy">Vision</dt>
+            <dd className="mt-2 text-base leading-relaxed text-ink">
+              A world where anyone can recognize AI-enabled threats, respond
+              safely, and see a path into AI security.
+            </dd>
+          </div>
+        </dl>
       </Block>
 
       <Block title="Who it is for">
@@ -92,6 +121,7 @@ export default function About({ onBack }: { onBack: () => void }) {
               className="font-medium text-navy underline underline-offset-2"
             >
               AI Incident Database
+              <span className="sr-only"> (opens in a new tab)</span>
             </a>{" "}
             — a public record of real AI harms, used under{" "}
             <a
@@ -101,6 +131,7 @@ export default function About({ onBack }: { onBack: () => void }) {
               className="underline underline-offset-2"
             >
               CC BY-SA 4.0
+              <span className="sr-only"> (opens in a new tab)</span>
             </a>
             .
           </li>
@@ -112,6 +143,7 @@ export default function About({ onBack }: { onBack: () => void }) {
               className="font-medium text-navy underline underline-offset-2"
             >
               FBI IC3 public service announcements
+              <span className="sr-only"> (opens in a new tab)</span>
             </a>{" "}
             — US government work, public domain.
           </li>
@@ -123,6 +155,7 @@ export default function About({ onBack }: { onBack: () => void }) {
               className="font-medium text-navy underline underline-offset-2"
             >
               FTC consumer alerts
+              <span className="sr-only"> (opens in a new tab)</span>
             </a>{" "}
             — US government work, public domain.
           </li>
@@ -134,6 +167,7 @@ export default function About({ onBack }: { onBack: () => void }) {
               className="font-medium text-navy underline underline-offset-2"
             >
               OWASP Gen AI Security Project
+              <span className="sr-only"> (opens in a new tab)</span>
             </a>{" "}
             — free, openly published guides to AI security from a nonprofit.
           </li>
@@ -183,7 +217,7 @@ export default function About({ onBack }: { onBack: () => void }) {
           is a job you can have. Now they can see the openings next to the
           stories that made them curious.
         </p>
-        <p className="text-sm font-medium text-navy">— JKA</p>
+        <p className="text-base font-medium text-navy">— JKA</p>
       </Block>
 
       <Block title="How it is built">
@@ -204,6 +238,7 @@ export default function About({ onBack }: { onBack: () => void }) {
             className="underline underline-offset-2"
           >
             github.com/jestkent/flipsec
+            <span className="sr-only"> (opens in a new tab)</span>
           </a>
           .
         </p>
@@ -212,7 +247,7 @@ export default function About({ onBack }: { onBack: () => void }) {
       <button
         type="button"
         onClick={onBack}
-        className="self-start text-sm font-medium text-slate hover:text-navy"
+        className="min-h-11 self-start text-base font-medium text-slate hover:text-navy"
       >
         ← Back to the feed
       </button>

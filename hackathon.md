@@ -2,20 +2,105 @@
 
 - **Project:** FlipSec.ai
 - **Event:** Convex All Gas Hackathon
-- **What it does:** Three feeds of AI security - real incidents, free guides, and jobs where AI and security meet - where every card flips to a plain-language explanation built from that exact item, and a daily email carries one card per feed a reader picked.
+- **What it does:** Three feeds of AI security - real incidents, free guides, and jobs where AI and security meet - where every card flips to a plain-language explanation built from that exact item. Ask FlipSec is a conversational AI safety guide for suspicious content, recovery, privacy and AI questions, and a daily email carries one card per feed a reader picked.
 - **Live app:** https://hallowed-nightingale-322.convex.site
 - **Repo:** https://github.com/jestkent/flipsec
 - **Demo video:** not recorded yet
 - **Frontend:** Convex static hosting
 - **Convex deployment:** https://hallowed-nightingale-322.convex.cloud
-- **Components:** @convex-dev/static-hosting
+- **Components:** @convex-dev/static-hosting, @convex-dev/agent
 - **Convex features:** schema, tables, indexes, queries, mutations, actions, HTTP actions, crons, scheduled functions, realtime queries
 - **Auth:** none
 - **AI models:** gpt-4o-mini
 - **Started:** 2026-09-20T17:35:41Z
-- **Last updated:** 2026-09-21T02:58:17Z
+- **Last updated:** 2026-09-21T04:40:01Z
 
 ## Log
+
+### 2026-09-20 - visible read aloud and color vision support
+
+Moved Accessibility options into the main navigation so readers can find them
+without reaching the footer. Added saved red-green, blue-yellow and no-color
+palettes while continuing to identify every status through words, borders and
+icons. News, Learn and Jobs cards now read either visible side aloud with a
+clear Stop reading state; Ask FlipSec responses have the same control. Starting
+another item stops the current voice, and leaving its content stops speech.
+The feature uses browser speech synthesis and keeps the underlying semantic
+screen-reader path intact (`src/components/ReadAloudButton.tsx`,
+`src/components/AccessibilityOptions.tsx`, `src/components/Post.tsx`,
+`src/components/SafetyTools.tsx`, `src/index.css`).
+
+### 2026-09-20 - calmer UI, mission and visible stack
+
+Renamed the three reader tabs to AI Sec News, AI Sec Learn and AI Sec Jobs.
+Simplified the homepage from three hero actions to two, replaced the three
+boxed pathway cards with quiet top-rule sections, shortened the explanation
+from four steps to three, and removed the duplicate implementation card grid.
+The flip and latest real story remain the strongest visual elements.
+
+Added a compact shared footer strip naming Firecrawl, OpenAI, Convex and
+AgentMail with the job each performs. Judges can now see the full integration
+story from every view without interrupting the product flow. Added short
+mission and vision statements to About and preserved the accessibility
+settings, large-text reflow and keyboard behavior
+(`src/App.tsx`, `src/components/Home.tsx`, `src/components/About.tsx`).
+
+### 2026-09-20 - app-wide accessibility
+
+Audited every reader-facing view for keyboard use, screen readers, low vision,
+color vision, motor access, motion sensitivity and text reflow. Route changes
+now announce and move focus, feed tabs support Arrow/Home/End keys, and a card
+flip hands focus to the control on its visible face while the hidden side stays
+inert. Forms gained labels, submit semantics, described help, live busy/results
+and announced errors. Quiz answers now print their state instead of relying on
+green or red.
+
+Removed content clamps, made comparison panels stack at narrow widths, raised
+compact controls to 44px targets, darkened muted and danger colors, hid
+decorative art from assistive technology, and marked new-window links. Added a
+saved Accessibility options panel for larger text, higher contrast and reduced
+motion, alongside support for system motion/contrast preferences and Windows
+forced-colors. Production build and lint pass; the only lint messages remain
+the two pre-existing React advisory warnings
+(`src/components/AccessibilityOptions.tsx`, `src/App.tsx`, `src/index.css`,
+`src/components/`).
+
+### 2026-09-20 - Ask FlipSec
+
+Replaced the separate message and image checker screens with one conversational
+AI safety guide. Ask FlipSec handles pasted suspicious content, temporary image
+attachments, recovery questions, privacy, AI literacy and basic web app
+security. Suggested prompts make the empty state useful, Ctrl + Enter sends,
+Enter adds a line, and a topic match connects the conversation to a real card
+from the live news feed.
+
+The Convex Agent component owns durable text threads, so a follow-up keeps its
+context and a browser refresh can restore the conversation. A local ownership
+table scopes each public message query to the anonymous browser reader. Images
+are resized locally and passed as temporary context, so they are removed after
+the answer and are not written into the thread. Transactional per-reader and
+deployment-wide limits are claimed before each OpenAI call
+(`convex/assistant.ts`, `convex/assistantMessages.ts`, `convex/schema.ts`,
+`src/components/SafetyTools.tsx`).
+The Delete conversation control removes both the component thread and its
+access mapping so an old transcript is not merely hidden from the browser.
+
+### 2026-09-20 - safety tools
+
+Added a fourth top-level view for the moment a reader has something suspicious
+in front of them. The message checker accepts pasted text; the image checker
+resizes JPG, PNG and WebP files in the browser before sending them. Both return
+structured OpenAI output: observable clues, what those clues mean, one way to
+verify the claim through a separately trusted channel, and what the check cannot
+know. The result never calls an item safe and the image path does not pretend to
+prove whether pixels were made by AI. A matching tactic links the result back to
+a real, flippable story from the live news feed.
+
+The submitted content is never inserted into Convex. A `toolChecks` table stores
+only reader id, check kind and time, so a mutation can count and claim both the
+per-reader and deployment-wide hourly limit in one transaction before OpenAI is
+called. Convex features: schema, indexes, mutation, public actions and live query
+(`convex/safetyTools.ts`, `convex/schema.ts`, `src/components/SafetyTools.tsx`).
 
 ### 2026-09-20 - 488533c
 Started the repo with the build plan, a .gitignore written before the first
@@ -225,7 +310,7 @@ one-flip-three-backs rule (`README.md`, `CLAUDE.md`,
 
 ### 2026-09-20 - 50378da
 Narrowed all three feeds to AI security and renamed them AI Sec News, AI Sec
-Edu and AI Sec Jobs. The kind values in the database stay as they were;
+Learn and AI Sec Jobs. The kind values in the database stay as they were;
 migrating every published row for a word on a button was not worth the risk to
 the feed the demo runs on.
 
@@ -452,3 +537,41 @@ real. The button is gone; the primary call to action lives on the home page
 where it belongs. The remaining link is "Read" rather than "Feeds", because it
 says what you would do there and the three feeds have their own tabs once you
 arrive (`src/components/Post.tsx`, `src/components/Header.tsx`).
+
+### 2026-09-21 - finished the multilingual and natural-voice work
+
+The previous session stopped mid-edit and left the project unable to compile.
+The visible errors were spread across five files, including two that had not
+been touched at all, which was the useful clue: `localization.ts` had two
+actions whose handlers had no explicit return type, so TypeScript could not
+resolve `ctx.runQuery` without first resolving the action that called it. That
+circular inference collapsed the generated Convex API surface to `any`, and
+every unrelated file that reads `api` or `internal` started reporting implicit
+`any` on parameters that had always been fine. Two return annotations fixed all
+of it. The same class of bug has bitten this project before and the fix is
+recorded in the project guide.
+
+The natural voice was designed but never connected: the `speak` action existed
+and worked, and the button still called the browser's own speech synthesis.
+`ReadAloudButton.tsx` now tries OpenAI `gpt-4o-mini-tts` first and falls back
+to browser speech on a failure, an hourly limit, or text over the server's
+4,096 character cap, so Read aloud always does something. Generated audio is
+cached in Convex file storage keyed by a hash of language and text, so a card
+read twice costs one generation. "AI-generated voice" shows while that voice is
+playing, which OpenAI's policy for synthetic speech requires.
+
+Story translation was in the same state: the action, the cache table and the
+public query all worked, and nothing on screen called them. A card's title and
+summary now translate on demand when a reader picks Spanish or Filipino,
+generated once per story and language and then read from cache, with an
+"AI translated · View original English" toggle. Card backs are still English;
+that gap is written down rather than papered over.
+
+Verified on the dev deployment rather than assumed: all three feeds still
+return their rows, a real translation call produces good Spanish and the second
+call is served from cache, the assistant answers and creates a durable thread,
+and the TTS action returns a reachable `audio/mpeg` file. None of the
+security-critical backend files changed — the webhook signature check, the
+transactional rate limits and the publishing gates are byte-for-byte what they
+were (`convex/localization.ts`, `src/components/ReadAloudButton.tsx`,
+`src/components/Post.tsx`, `src/localization.tsx`, `src/App.tsx`).

@@ -1,5 +1,5 @@
 import { useMutation } from "convex/react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { api } from "../../convex/_generated/api";
 
 // What the reader is signing up for, per feed. Signing up from a tab asks for
@@ -34,6 +34,8 @@ export default function Subscribe({
   const [state, setState] = useState<"idle" | "sending" | "done" | "error">(
     "idle",
   );
+  const emailId = useId();
+  const errorId = `${emailId}-error`;
 
   const pitch = PITCH[kind] ?? PITCH.scam;
 
@@ -51,41 +53,49 @@ export default function Subscribe({
 
   if (state === "done") {
     return (
-      <p className="rounded-card border border-line bg-white px-5 py-4 text-base text-ink">
+      <p role="status" className="rounded-card border border-line bg-white px-5 py-4 text-base text-ink">
         You are on the list. {pitch.done}
       </p>
     );
   }
 
   return (
-    <div className="rounded-card border border-line bg-white px-5 py-4">
+    <form
+      className="rounded-card border border-line bg-white px-5 py-4"
+      aria-busy={state === "sending"}
+      onSubmit={(event) => { event.preventDefault(); void signUp(); }}
+    >
       <p className="text-base font-medium text-navy">{pitch.title}</p>
       <p className="mt-0.5 text-base text-slate">{pitch.line}</p>
-      <div className="mt-3 flex gap-2">
+      <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+        <label htmlFor={emailId} className="sr-only">Email address</label>
         <input
+          id={emailId}
           type="email"
+          name="email"
+          required
+          autoComplete="email"
+          inputMode="email"
+          aria-invalid={state === "error"}
+          aria-describedby={state === "error" ? errorId : undefined}
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") void signUp();
-          }}
+          onChange={(e) => { setEmail(e.target.value); if (state === "error") setState("idle"); }}
           placeholder="you@example.com"
-          className="min-w-0 flex-1 rounded-control border border-line px-3 py-2 text-base outline-none focus:border-sage"
+          className="min-h-11 min-w-0 flex-1 rounded-control border border-line px-3 py-2 text-base outline-none focus:border-sage"
         />
         <button
-          type="button"
-          onClick={() => void signUp()}
-          disabled={state === "sending" || !email.includes("@")}
-          className="rounded-control bg-sage px-4 py-2 text-base font-semibold text-white hover:bg-sage-deep disabled:opacity-40"
+          type="submit"
+          disabled={state === "sending"}
+          className="min-h-11 rounded-control bg-sage px-4 py-2 text-base font-semibold text-white hover:bg-sage-deep disabled:opacity-40"
         >
-          {state === "sending" ? "…" : "Sign up"}
+          {state === "sending" ? "Signing up…" : "Sign up"}
         </button>
       </div>
       {state === "error" && (
-        <p className="mt-2 text-sm text-danger">
+        <p id={errorId} role="alert" className="mt-2 text-base text-danger">
           That did not go through. Check the address and try again.
         </p>
       )}
-    </div>
+    </form>
   );
 }

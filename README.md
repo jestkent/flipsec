@@ -2,7 +2,7 @@
 
 **Flip the news. Learn the threat. Find the work.** Three feeds of AI security
 - news, learning and work - where every card flips to show you what the front
-does not tell you.
+does not tell you, plus an AI safety guide for the moment you need help.
 
 **Live URL:** https://hallowed-nightingale-322.convex.site
 
@@ -18,13 +18,40 @@ language, and puts it on a card that flips.
 - **AI Sec News** — real reports of AI used against people. Flip for the
   lesson: how the trick ran, what gave it away, why it worked on someone
   careful, and a tutor you can ask questions.
-- **AI Sec Edu** — free guides to how AI gets attacked and defended. Flip for
+- **AI Sec Learn** — free guides to how AI gets attacked and defended. Flip for
   what you will learn, who it is for, and the first thing to do to begin.
 - **AI Sec Jobs** — openings where AI and security meet. Flip for what they
   want, whether you would fit, and how to apply.
 
+**Ask FlipSec** is one conversational safety guide in place of separate message
+and image checkers. A reader can paste something suspicious, attach an image,
+ask about privacy or AI, get recovery steps after a mistake, or discuss a web
+app security plan. Follow-up questions stay in the same durable Convex Agent
+thread, and a relevant question can lead back to a real story in the live feed.
+It never labels an item safe or claims to prove that an image was made by AI.
+
 The home page explains the flip and shows what is in each feed, read live from
 the database rather than written into the page.
+
+## Accessibility
+
+FlipSec.ai is designed for keyboard, screen reader, low vision, color vision,
+motor and motion-sensitive users. Every function is available without a
+pointer. Route changes move focus to the new content, feed tabs support arrow,
+Home and End keys, card flips move focus to the visible face, form labels and
+errors are announced, and live AI or network states use status regions.
+
+The Accessibility options panel in the main navigation offers larger text,
+higher contrast, reduced motion, and color palettes for red-green and
+blue-yellow color vision differences, plus a no-color palette. These settings
+are saved in the browser. Every news, learning, and jobs card has a visible
+Read aloud control on both sides, and each Ask FlipSec answer can be read aloud
+or stopped independently using the browser's built-in speech service. The app
+also honors operating-system reduced-motion and increased-contrast settings,
+supports forced-colors mode, keeps controls at least 44px tall, does not use
+color as the only signal, and allows content to reflow instead of truncating at
+large text sizes. These are implementation safeguards aligned with WCAG 2.2 AA;
+they are not a claim of third-party certification.
 
 Sign up on any tab and one card from each feed you picked arrives in a single
 email each morning. Reply to the news drill in your own words and the reply
@@ -39,11 +66,27 @@ someone wondering whether a job in AI is open to them. Every card is written so 
 work for everyone, and the people losing the most to these scams are usually the
 ones the usual advice was never written for.
 
+## Mission and vision
+
+**Mission:** Make AI security understandable and useful for everyone,
+especially people without technical training.
+
+**Vision:** A world where anyone can recognize AI-enabled threats, respond
+safely, and see a path into AI security.
+
 ## Built with
 
 Convex for the backend, the live feeds and the crons, Firecrawl for the crawl,
-OpenAI for the summaries, lessons, course and job cards and reply grading,
-AgentMail for the daily email and the replies that come back.
+OpenAI for the summaries, lessons, course and job cards, Ask FlipSec and reply
+grading, the Convex Agent component for durable assistant threads, and AgentMail
+for the daily email and the replies that come back.
+
+The same four technologies appear in a compact footer strip on every view so a
+hackathon judge can understand each integration without adding another block of
+cards to the homepage.
+
+The reader can delete an Ask FlipSec conversation from the page. That removes
+its Agent thread and the app's browser-to-thread mapping.
 
 ## Sources and content
 
@@ -78,8 +121,10 @@ qualify. Most candidates fail a gate, so the feeds stay small on purpose.
 ## Privacy and email
 
 FlipSec.ai stores a subscriber email address, the questions readers ask a post,
-and the answers they give. Nothing else, and there are no accounts. A reader on
-the web is a random id kept in their own browser.
+the answers they give, Ask FlipSec's text conversation, and small usage records
+for model calls. An attached image is resized in the browser, sent to OpenAI for
+that answer, and not kept in the conversation or the app's own tables. There are
+no accounts. A reader on the web is a random id kept in their own browser.
 
 Every daily email carries a working unsubscribe link, signed so that only the
 addressee's own link works. Both public HTTP routes require a shared secret and
@@ -100,6 +145,7 @@ npm install -D tailwindcss @tailwindcss/vite
 
 # integrations
 npm install @mendable/firecrawl-js openai
+npm install @convex-dev/agent ai @ai-sdk/openai
 
 # secrets (never commit these)
 npx convex env set OPENAI_API_KEY sk-...

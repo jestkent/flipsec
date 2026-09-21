@@ -8,7 +8,7 @@ const ART: Record<string, { from: string; to: string; glyph: string }> = {
   injection: { from: "#e0efef", to: "#c9e3e3", glyph: "M8 6 3 12l5 6M16 6l5 6-5 6M13 4l-2 16" },
   other: { from: "#f7f5ef", to: "#e7e9ec", glyph: "M12 3v10M12 17v.01M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z" },
 
-  // AI Sec Edu and AI Sec Jobs put a different word in the chip: how hard a
+  // AI Sec Learn and AI Sec Jobs put a different word in the chip: how hard a
   // guide is, or that a role is open. Same art either way, so a tab whose
   // source publishes no pictures still reads as a feed rather than a list of
   // grey rectangles. An open book to learn from, a horizon to head for.
@@ -33,8 +33,8 @@ export default function TacticArt({
   return (
     <svg
       viewBox="0 0 120 63"
-      role="img"
-      aria-label={`${tactic} illustration`}
+      aria-hidden="true"
+      focusable="false"
       className="h-full w-full"
       preserveAspectRatio="xMidYMid slice"
     >

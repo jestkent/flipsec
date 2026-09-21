@@ -22,10 +22,10 @@ const VARIANT: Record<Variant, string> = {
 };
 
 const SIZE: Record<Size, string> = {
-  // 44px and 36px tall. The small one is only for controls that sit inside a
-  // card next to text, never for a lone tap target on a phone.
+  // Every interactive target stays at least 44px high, including compact
+  // controls inside cards.
   md: "min-h-11 px-4 text-base",
-  sm: "min-h-9 px-3 text-sm",
+  sm: "min-h-11 px-3 text-base",
 };
 
 export function Button({
@@ -126,7 +126,7 @@ export function Badge({
       className={[
         "inline-flex items-center px-2.5 py-1",
         pill ? "self-start rounded-full" : "rounded-md",
-        "text-xs font-semibold tracking-wide ring-1 ring-inset",
+        "text-sm font-semibold tracking-wide ring-1 ring-inset",
         TONE[tone],
       ].join(" ")}
     >
@@ -162,7 +162,7 @@ export function Card({
 // because the page only needs three.
 export function Eyebrow({ children }: { children: ReactNode }) {
   return (
-    <p className="text-xs font-semibold tracking-[0.08em] text-slate uppercase">
+    <p className="text-sm font-semibold tracking-[0.08em] text-slate uppercase">
       {children}
     </p>
   );

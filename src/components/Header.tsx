@@ -2,7 +2,10 @@
 // views. The feed tabs live below it rather than inside it, so the header
 // never has to reflow on a phone.
 
-export type View = "home" | "feed" | "about";
+import AccessibilityOptions from "./AccessibilityOptions";
+import { LanguageSelector, useLanguage } from "../localization";
+
+export type View = "home" | "feed" | "tools" | "about";
 
 export default function Header({
   view,
@@ -11,6 +14,7 @@ export default function Header({
   view: View;
   onNavigate: (view: View) => void;
 }) {
+  const { t } = useLanguage();
   const link = (target: View, label: string) => {
     const active = view === target;
     return (
@@ -34,7 +38,7 @@ export default function Header({
 
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-ivory/90 backdrop-blur-sm">
-      <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3 sm:px-6">
+      <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-2 px-4 py-3 sm:flex-nowrap sm:gap-3 sm:px-6">
         {/* Home. The supplied lockup already contains the wordmark, so there
             is no text beside it — repeating "FlipSec.ai" next to a logo that
             says it is how a header ends up saying the name twice.
@@ -76,10 +80,13 @@ export default function Header({
 
             "Read" rather than "Feeds": it says what you would do there, and
             the three feeds have their own tabs once you arrive. */}
-        <nav aria-label="Main" className="ml-auto flex items-center gap-0.5">
-          {link("feed", "Read")}
-          {link("about", "About")}
+        <nav aria-label="Main" className="ml-auto flex flex-wrap items-center justify-end gap-0.5">
+          {link("feed", t("read"))}
+          {link("tools", t("askAi"))}
+          {link("about", t("about"))}
         </nav>
+        <LanguageSelector />
+        <AccessibilityOptions compact />
       </div>
     </header>
   );

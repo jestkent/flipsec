@@ -80,6 +80,46 @@ export default defineSchema({
     // that a caller cannot get around.
     .index("by_time", ["createdAt"]),
 
+  // Only usage metadata is stored. Message text and images sent to the
+  // checker never enter the database.
+  toolChecks: defineTable({
+    userId: v.string(),
+    kind: v.union(
+      v.literal("message"),
+      v.literal("image"),
+      v.literal("chat"),
+      v.literal("speech"),
+    ),
+    createdAt: v.number(),
+  })
+    .index("by_user_time", ["userId", "createdAt"])
+    .index("by_time", ["createdAt"]),
+
+  // Maps an anonymous browser reader to its durable Agent component thread.
+  // The component owns the messages; this table is the access boundary used
+  // by our public query and action.
+  assistantThreads: defineTable({
+    userId: v.string(),
+    threadId: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_thread", ["threadId"])
+    .index("by_user_time", ["userId", "createdAt"]),
+
+  storyTranslations: defineTable({
+    storyId: v.id("stories"),
+    language: v.union(v.literal("es"), v.literal("fil")),
+    content: v.any(),
+    createdAt: v.number(),
+  }).index("by_story_language", ["storyId", "language"]),
+
+  speechAudio: defineTable({
+    contentHash: v.string(),
+    language: v.union(v.literal("en"), v.literal("es"), v.literal("fil")),
+    storageId: v.id("_storage"),
+    createdAt: v.number(),
+  }).index("by_hash_language", ["contentHash", "language"]),
+
   subscribers: defineTable({
     email: v.string(),
     userId: v.optional(v.string()),

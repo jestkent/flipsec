@@ -94,20 +94,20 @@ export default function LessonBack({
 
   if (drill === undefined) {
     return (
-      <p className="min-h-56 p-6 text-sm text-slate">Opening the lesson…</p>
+      <p role="status" aria-busy="true" className="min-h-56 p-6 text-base text-slate">Opening the lesson…</p>
     );
   }
 
   if (drill === null) {
     return (
       <div className="flex min-h-56 flex-col gap-4 p-6">
-        <p className="text-sm text-slate">
+        <p className="text-base text-slate">
           No lesson for this one yet. Check back after the next crawl.
         </p>
         <button
           type="button"
           onClick={onBack}
-          className="self-start text-sm font-medium text-slate hover:text-navy"
+          className="min-h-11 self-start text-base font-medium text-slate hover:text-navy"
         >
           ← Back to the story
         </button>
@@ -117,15 +117,15 @@ export default function LessonBack({
 
   return (
     <div className="flex flex-col gap-5 p-6">
-      <p className="text-xs font-semibold tracking-widest text-slate uppercase">
+      <p className="text-sm font-semibold tracking-widest text-slate uppercase">
         How this works
       </p>
 
-      {/* One place for any of the three network failures. role="status" so a
-          screen reader hears it without the focus moving. */}
+      {/* One place for any of the three network failures. role="alert" makes
+          the failure audible without moving keyboard focus. */}
       {failed !== null && (
         <p
-          role="status"
+          role="alert"
           className="rounded-control bg-[#c94f450d] px-3 py-2 text-base text-danger"
         >
           {failed}
@@ -138,25 +138,25 @@ export default function LessonBack({
           explanation than as a wall of chips above the summary. */}
       {redFlags.length > 0 && (
         <div>
-          <p className="text-xs font-semibold tracking-wider text-slate uppercase">
+          <p className="text-sm font-semibold tracking-wider text-slate uppercase">
             What gives it away
           </p>
-          <div className="mt-2 flex flex-wrap gap-2">
+          <ul className="mt-2 flex flex-wrap gap-2" aria-label="Warning signs">
             {redFlags.map((flag) => (
-              <span
+              <li
                 key={flag}
-                className="rounded-full bg-ivory px-2.5 py-1 text-xs text-slate"
+                className="rounded-full bg-ivory px-2.5 py-1 text-sm text-slate"
               >
                 {flag}
-              </span>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
       )}
 
       {(drill.illusion.length > 0 || drill.whyItWorks) && (
         <div className="flex flex-col gap-3">
-          <p className="text-xs font-semibold tracking-wider text-slate uppercase">
+          <p className="text-sm font-semibold tracking-wider text-slate uppercase">
             Why it works
           </p>
           <Illusion pairs={drill.illusion} tactic={tactic} />
@@ -188,40 +188,43 @@ export default function LessonBack({
         </div>
       )}
 
-      <div className="rounded-card bg-ivory p-3">
+      <form
+        className="rounded-card bg-ivory p-3"
+        onSubmit={(event) => { event.preventDefault(); void sendQuestion(); }}
+      >
         <label
           htmlFor={`ask-${drill._id}`}
-          className="text-sm font-semibold text-slate"
+          className="text-base font-semibold text-slate"
         >
           Ask anything about this scam
         </label>
-        <div className="mt-2 flex gap-2">
+        <p id={`ask-help-${drill._id}`} className="mt-1 text-sm text-slate">
+          Do not include passwords, codes, or account numbers.
+        </p>
+        <div className="mt-2 flex flex-col gap-2 sm:flex-row">
           <input
             id={`ask-${drill._id}`}
+            aria-describedby={`ask-help-${drill._id}`}
             value={question}
             maxLength={200}
             onChange={(e) => setQuestion(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") void sendQuestion();
-            }}
             placeholder="How would I check if it is really them?"
-            className="min-w-0 flex-1 rounded-control border border-line bg-white px-3 py-2 text-base outline-none focus:border-sage"
+            className="min-h-11 min-w-0 flex-1 rounded-control border border-line bg-white px-3 py-2 text-base outline-none focus:border-sage"
           />
           <button
-            type="button"
-            onClick={() => void sendQuestion()}
+            type="submit"
             disabled={asking || question.trim().length < 3}
-            className="rounded-control bg-sage px-4 py-2 text-base font-semibold text-white hover:bg-sage-deep disabled:opacity-40"
+            className="min-h-11 rounded-control bg-sage px-4 py-2 text-base font-semibold text-white hover:bg-sage-deep disabled:opacity-40"
           >
-            {asking ? "…" : "Ask"}
+            {asking ? "Asking…" : "Ask"}
           </button>
         </div>
         {answer !== null && (
-          <p className="mt-3 text-base leading-relaxed text-ink">
+          <p role="status" className="mt-3 text-base leading-relaxed text-ink">
             {answer}
           </p>
         )}
-      </div>
+      </form>
 
       {/* Practice is offered, never a gate. The lesson is the flip. */}
       <div className="border-t border-line pt-4">
@@ -229,15 +232,15 @@ export default function LessonBack({
           <button
             type="button"
             onClick={() => setPractising(true)}
-            className="text-sm font-medium text-slate hover:text-navy"
+            className="min-h-11 text-base font-medium text-slate hover:text-navy"
           >
             Try spotting it yourself →
           </button>
         ) : (
-          <div className="flex flex-col gap-3">
-            <p className="text-[15px] leading-relaxed whitespace-pre-line text-navy">
+          <fieldset className="flex flex-col gap-3">
+            <legend className="text-base leading-relaxed whitespace-pre-line text-navy">
               {drill.prompt}
-            </p>
+            </legend>
 
             <div className="flex flex-col gap-2">
               {drill.choices.map((choice, i) => {
@@ -250,9 +253,10 @@ export default function LessonBack({
                     key={choice}
                     type="button"
                     disabled={result !== null}
+                    aria-pressed={picked === i}
                     onClick={() => void choose(i)}
                     className={[
-                      "rounded-card border px-4 py-3 text-left text-sm transition-colors",
+                      "min-h-11 rounded-card border px-4 py-3 text-left text-base transition-colors",
                       isAnswer
                         ? "border-success bg-[#2f7d5b0d] text-success"
                         : isWrong
@@ -261,27 +265,32 @@ export default function LessonBack({
                     ].join(" ")}
                   >
                     {choice}
+                    {(isAnswer || isWrong) && (
+                      <span className="mt-1 block font-semibold">
+                        {isAnswer ? "Correct answer" : "Your answer"}
+                      </span>
+                    )}
                   </button>
                 );
               })}
             </div>
 
             {result !== null && (
-              <p className="text-base leading-relaxed text-ink">
+              <p role="status" className="text-base leading-relaxed text-ink">
                 <span className="font-semibold text-navy">
                   {result.correct ? "That's the one. " : "Not quite. "}
                 </span>
                 {result.explanation}
               </p>
             )}
-          </div>
+          </fieldset>
         )}
       </div>
 
       <button
         type="button"
         onClick={onBack}
-        className="self-start pt-2 text-sm font-medium text-slate hover:text-navy"
+        className="min-h-11 self-start pt-2 text-base font-medium text-slate hover:text-navy"
       >
         ← Back to the story
       </button>

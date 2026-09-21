@@ -11,8 +11,11 @@
     "deploy": "npx @convex-dev/static-hosting deploy"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^4.0.71",
+    "@convex-dev/agent": "^0.7.3",
     "@convex-dev/static-hosting": "^0.2.1",
     "@mendable/firecrawl-js": "^4.41.0",
+    "ai": "^7.0.107",
     "convex": "^1.46.0",
     "openai": "^7.20.0",
     "react": "^19.2.8",

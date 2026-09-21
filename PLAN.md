@@ -465,6 +465,99 @@ Copy: plain verbs, sentence case, no jargon. If a 7th grader would not use the w
 
 **Later.** A teacher view for assigning posts to a class, which is what this is actually best at and the reason to keep building after the contest ends.
 
+## 18. Shipped extension: Ask FlipSec
+
+The app now also meets the reader at the moment a suspicious item arrives.
+Ask FlipSec replaces separate message and image checkers with one conversation.
+It accepts pasted text and a temporary local image, answers broader questions
+about scams, recovery, privacy, AI and basic web app security, and keeps
+follow-up context in a durable Convex Agent thread. It can connect a question
+to a real story already in the feed. This is guidance, not an AI detector: it
+never promises that media is real, fake, safe, or AI-generated.
+
+Text questions and answers are saved in the Agent component so the conversation
+survives a refresh. Images are resized in the browser, supplied only as
+temporary model context, and not saved in the thread. A small rate-limit record
+is claimed before every model call. The feature is capped per browser and
+across the deployment.
+Deleting a conversation removes its Agent component thread and the local access
+mapping rather than leaving an unreachable transcript behind.
+
+## 19. Shipped extension: app-wide accessibility
+
+Every view now follows one accessibility contract. SPA navigation announces
+the destination, updates the document title and moves focus to main content.
+The feed selector is an ARIA tab set with Arrow, Home and End keys. Flipping a
+card transfers keyboard focus to the newly visible face while the other face
+remains inert and hidden from assistive technology.
+
+Forms have programmatic labels, submit behavior, help and error associations,
+busy text, and live result announcements. Quiz outcomes include written labels
+instead of depending on green and red. External links announce that they open a
+new tab. Decorative graphics stay out of the accessibility tree. Text clamping
+was removed so zoom and larger type do not hide content, comparison layouts
+stack on narrow screens, and interactive targets remain at least 44px tall.
+
+The main navigation has saved preferences for larger text, higher contrast,
+reduced motion and color vision. The CSS also follows operating-system motion and contrast preferences
+and supports forced-colors mode. This work targets WCAG 2.2 AA patterns without
+claiming a formal accessibility certification.
+
+## 20. Shipped extension: calmer presentation
+
+The reader-facing feeds are named AI Sec News, AI Sec Learn and AI Sec Jobs in
+full. The homepage now offers two clear actions, three unboxed pathways, three
+plain steps and one latest-story card. The previous technology card grid was
+removed because it repeated implementation detail and competed with the flip.
+
+A quiet footer strip now names Firecrawl, OpenAI, Convex and AgentMail and gives
+each one a single concrete role. It appears on every view, which gives judges
+the integration evidence they need without turning the reader experience into
+a sponsor wall. About now carries a concise mission and vision in a semantic
+definition list.
+
+## 21. Shipped extension: read aloud and color vision controls
+
+Accessibility options sit in the main navigation so they are discoverable
+before a reader reaches the footer. Saved color-vision presets cover red-green,
+blue-yellow and no-color use while all states continue to carry text, borders
+or icons.
+
+Every visible face of an AI Sec News, AI Sec Learn or AI Sec Jobs card has a
+Read aloud / Stop reading control, and every Ask FlipSec answer has the same
+control. Speech stops when another item starts, and stops if its content
+leaves the page. Semantic screen-reader access remains available regardless of
+which voice path plays.
+
+The voice itself is OpenAI's `gpt-4o-mini-tts` first, not the device's own
+voice: the owner asked for something less robotic than the built-in reader.
+The button shows "Preparing natural voice…" while the clip generates, then an
+"AI-generated voice" line while it plays, which OpenAI's usage policy for
+synthetic speech requires. Audio is cached in Convex storage per exact text and
+language, keyed by a hash, so the same card never pays for the same clip
+twice. Text past 4,096 characters, a failed request, or an hourly limit
+(`toolChecks`, shared with Ask FlipSec) falls back to the browser's built-in
+voice automatically and silently — Read aloud always does something, it just
+is not always the nicer voice.
+
+## 22. Shipped extension: translated headlines
+
+The language selector now does more than relabel buttons. Choosing Spanish or
+Filipino sends a card's title and summary to OpenAI once, in the same call
+shape already defined for the whole card (title, summary, red flags, back,
+drill), and the result is cached in `storyTranslations` keyed by story and
+language so it is generated once and read many times.
+
+Only the front of a card translates today: the headline and the one-line
+summary on every feed. The lesson, the course guide and the job posting on the
+back of a card are still English regardless of language, and that is a known
+gap, not a design decision — extending the same cached call to the back is the
+natural next step. A card that has not been translated yet, or whose
+translation failed, shows the original English with no error surfaced to the
+reader; a small "AI translated · View original English" line appears only once
+a translation exists, and toggles between the two without a second network
+call.
+
 ---
 
 ## Appendix: the Convex mental model

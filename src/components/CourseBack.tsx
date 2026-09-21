@@ -1,4 +1,4 @@
-// The back of an AI Sec Edu card. Deliberately thinner than LessonBack: it
+// The back of an AI Sec Learn card. Deliberately thinner than LessonBack: it
 // answers three questions about a guide and then gets out of the way.
 //
 // No h-full, no overflow-y-auto, no mt-auto anywhere in here. A face is
@@ -32,7 +32,7 @@ export default function CourseBack({
         <button
           type="button"
           onClick={onBack}
-          className="self-start text-sm font-medium text-slate hover:text-navy"
+          className="min-h-11 self-start text-base font-medium text-slate hover:text-navy"
         >
           ← Back to the guide
         </button>
@@ -44,7 +44,7 @@ export default function CourseBack({
 
   return (
     <div className="flex flex-col gap-5 p-6">
-      <p className="text-xs font-semibold tracking-widest text-slate uppercase">
+      <p className="text-sm font-semibold tracking-widest text-slate uppercase">
         What you will learn
       </p>
 
@@ -54,7 +54,7 @@ export default function CourseBack({
             <li key={item} className="flex gap-3">
               <span
                 aria-hidden
-                className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#2f7d5b0d]0"
+                className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-sage"
               />
               <span className="text-base leading-snug text-ink">
                 {item}
@@ -66,7 +66,7 @@ export default function CourseBack({
 
       {back.whoItIsFor && (
         <div>
-          <p className="text-xs font-semibold tracking-wider text-slate uppercase">
+          <p className="text-sm font-semibold tracking-wider text-slate uppercase">
             Who it is for
           </p>
           <p className="mt-1.5 text-base leading-relaxed text-ink">
@@ -77,14 +77,14 @@ export default function CourseBack({
 
       {back.firstStep && (
         <div className="rounded-card bg-ivory p-4">
-          <p className="text-xs font-semibold tracking-wider text-slate uppercase">
+          <p className="text-sm font-semibold tracking-wider text-slate uppercase">
             How to start
           </p>
           <p className="mt-1.5 text-base leading-relaxed text-navy">
             {back.firstStep}
           </p>
           {back.timeCommitment && (
-            <p className="mt-2 text-sm text-slate">
+            <p className="mt-2 text-base text-slate">
               Takes {back.timeCommitment}.
             </p>
           )}
@@ -96,15 +96,15 @@ export default function CourseBack({
         target="_blank"
         rel="noreferrer"
         onClick={(e) => e.stopPropagation()}
-        className="self-start rounded-control bg-navy px-4 py-2.5 text-sm font-medium text-white hover:bg-navy-soft"
+        className="inline-flex min-h-11 items-center self-start rounded-control bg-navy px-4 py-2.5 text-base font-medium text-white hover:bg-navy-soft"
       >
-        Open the guide ↗
+        Open the guide <span aria-hidden>↗</span><span className="sr-only">(opens in a new tab)</span>
       </a>
 
       <button
         type="button"
         onClick={onBack}
-        className="self-start pt-1 text-sm font-medium text-slate hover:text-navy"
+        className="min-h-11 self-start pt-1 text-base font-medium text-slate hover:text-navy"
       >
         ← Back to the guide
       </button>

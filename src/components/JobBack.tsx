@@ -31,7 +31,7 @@ export default function JobBack({
         <button
           type="button"
           onClick={onBack}
-          className="self-start text-sm font-medium text-slate hover:text-navy"
+          className="min-h-11 self-start text-base font-medium text-slate hover:text-navy"
         >
           ← Back to the role
         </button>
@@ -45,7 +45,7 @@ export default function JobBack({
   return (
     <div className="flex flex-col gap-5 p-6">
       <div>
-        <p className="text-xs font-semibold tracking-widest text-slate uppercase">
+        <p className="text-sm font-semibold tracking-widest text-slate uppercase">
           What they want
         </p>
         {back.company && (
@@ -85,7 +85,7 @@ export default function JobBack({
 
       {back.howToApply && (
         <div className="rounded-card bg-ivory p-4">
-          <p className="text-xs font-semibold tracking-wider text-slate uppercase">
+          <p className="text-sm font-semibold tracking-wider text-slate uppercase">
             How to apply
           </p>
           <p className="mt-1.5 text-base leading-relaxed text-navy">
@@ -99,15 +99,15 @@ export default function JobBack({
         target="_blank"
         rel="noreferrer"
         onClick={(e) => e.stopPropagation()}
-        className="self-start rounded-control bg-navy px-4 py-2.5 text-sm font-medium text-white hover:bg-navy-soft"
+        className="inline-flex min-h-11 items-center self-start rounded-control bg-navy px-4 py-2.5 text-base font-medium text-white hover:bg-navy-soft"
       >
-        See the full posting ↗
+        See the full posting <span aria-hidden>↗</span><span className="sr-only">(opens in a new tab)</span>
       </a>
 
       <button
         type="button"
         onClick={onBack}
-        className="self-start pt-1 text-sm font-medium text-slate hover:text-navy"
+        className="min-h-11 self-start pt-1 text-base font-medium text-slate hover:text-navy"
       >
         ← Back to the role
       </button>

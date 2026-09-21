@@ -3,17 +3,28 @@
 An AI security app for ordinary people, built around one move: every card
 flips, and the back is what the front does not tell you. Three feeds use it.
 AI Sec News carries real stories about AI used against people and flips to a
-lesson built from that story. AI Sec Edu carries free guides to attacking and
+lesson built from that story. AI Sec Learn carries free guides to attacking and
 defending AI and flips to what you will learn and how to start. AI Sec Jobs
 carries openings where AI and security meet and flips to what they want and
 how to apply.
 
-The reader-facing names are AI Sec News, AI Sec Edu and AI Sec Jobs. The kind
+The reader-facing names are AI Sec News, AI Sec Learn and AI Sec Jobs. The kind
 values in the database are still scam, course and job, and stay that way:
 migrating every published row for a word on a button is not worth the risk.
 
 The flip is the product. A new feed is a crawler, an OpenAI pass and a back
 component; it is never a second flip.
+
+Ask FlipSec is the moment-of-need side of the same product. It is one
+conversation for suspicious messages, images, recovery steps, privacy, AI
+literacy and basic web app security. `assistant.ts` uses the Convex Agent
+component so text questions and answers form a durable thread. Attached images
+are temporary model context and are not saved in that thread. The assistant
+does not issue a safe/unsafe verdict or claim to detect AI-generated media.
+`toolChecks` holds only reader id, kind and time for transactional per-reader
+and global rate limits.
+The Delete conversation control removes both the Agent thread and its
+`assistantThreads` access row; do not turn it into a local-only reset.
 
 **Stack:** React, Vite, TypeScript, Tailwind v4, Convex, OpenAI (gpt-4o-mini),
 Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
@@ -31,8 +42,9 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
 - A row with no `kind` does not appear under `kind = "scam"`. Any deployment
   must run `backfillKind` **before** a query reads `by_kind_published`, or the
   scam feed comes back empty.
-- AI, crawl and email functions are `internalAction`. The only public writes are
-  `submitAnswer`, `askAboutStory`, `teachLesson`, `subscribe`. Never make
+- AI, crawl and email functions are `internalAction`. Ask FlipSec exposes one
+  rate-limited public action and a thread query scoped to the browser reader. The public
+  writes are `submitAnswer`, `askAboutStory`, `teachLesson`, `subscribe`. Never make
   `sendTestDrill` public: it would mail any address a caller named.
 - **A public function must never take an identifier that names someone else.**
   `attempts.listForUser` was public and took a `userId`. For an emailed reply
@@ -152,6 +164,62 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
 
 ## UI
 
+- The interface is intentionally calm. The homepage has two hero actions,
+  three unboxed feed pathways, a three-step explanation and one latest-story
+  card. Do not restore the duplicate technology card grid or add ornamental
+  dashboards.
+- Firecrawl, OpenAI, Convex and AgentMail appear once in the shared footer with
+  one plain-language role each. This is judge-facing evidence that stays quiet
+  for readers. Keep detailed architecture in About and the repository docs.
+- About owns the short mission and vision statements. Keep each concise; they
+  explain purpose and direction rather than acting as marketing slogans.
+
+- Accessibility is a product requirement across every view. Preserve semantic
+  headings and landmarks, the skip link, route focus management, the polite
+  page announcement, and meaningful document titles.
+- Feed navigation is a real ARIA tab set. Left and Right arrows move between
+  tabs; Home and End jump to the first and last tab. Do not replace it with
+  click-only buttons.
+- A card flip moves keyboard focus to the flip control on the newly visible
+  face. The hidden face stays both `inert` and `aria-hidden`. Never add a focusable
+  control to a hidden face or remove that focus handoff.
+- Controls have a 44px minimum target and a three-pixel visible focus ring.
+  Inline prose links are the only target-size exception. Forms use real labels,
+  submit events, `aria-describedby` help, alert/status regions, and text that
+  names busy states rather than an ellipsis.
+- Never communicate correct, wrong, selected, dangerous or successful states
+  through color alone. Quiz choices print "Correct answer" and "Your answer";
+  badges always carry text.
+- Do not clamp reader content. It must reflow at browser zoom and with the
+  larger-text preference. Side-by-side explanatory content stacks before its
+  columns become narrow.
+- `AccessibilityOptions.tsx` owns the saved larger-text, higher-contrast,
+  reduced-motion and color-vision settings. Keep it visible in the main
+  navigation rather than returning it to the footer. The color presets remap
+  the palette; labels, icons, borders and text must still carry every meaning.
+  CSS also honors `prefers-reduced-motion`,
+  `prefers-contrast` and forced-colors. Any new animation needs both system and
+  in-app reduced-motion behavior.
+- `ReadAloudButton.tsx` tries the natural voice first (`localization.speak`,
+  `gpt-4o-mini-tts`), and only falls back to the browser's own speech
+  synthesis on a failure, a rate limit, or text over the server's 4,096
+  character cap. The control renders unconditionally, since the primary path
+  does not depend on browser speech support at all. A module-level
+  `HTMLAudioElement`, alongside the existing `activeSpeechId` broadcast, keeps
+  natural-voice playback to one at a time the same way `speechSynthesis`
+  already is. The "AI-generated voice" line only shows while natural audio is
+  the one actually playing — OpenAI's usage policy for synthetic speech
+  requires that disclosure. Generated clips are cached in Convex storage by a
+  hash of `language:text`, so the same clip is never paid for twice.
+- Story translation (`localization.translateStory`, cached in
+  `storyTranslations`) covers a card's title and summary on the front only.
+  The lesson, course and job backs are not translated yet — do not assume a
+  reader who switched languages sees a translated back, and do not remove the
+  English fallback in `Post.tsx` if that gap gets closed later.
+- New-window links say so to screen readers. Decorative art and source icons
+  use empty alternatives or `aria-hidden`; submitted image previews name the
+  attached file.
+
 - The flip is 460ms and made of four parts, not one. The rotation overshoots
   slightly and settles (`--flip-ease`); the card scales to 0.955 at 48% and
   back, which is what reads as depth; the shadow deepens at the same instant;
@@ -214,8 +282,8 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
 - Body copy is 16px (`text-base`), never 14px, and muted text stops at
   `neutral-500` on white. Readers include older people, so small grey type is a
   correctness problem here, not a taste one.
-- Two views held in `App.tsx` state, feed and About. A router for one link would
-  not earn itself.
+- Four views are held in `App.tsx` state: home, feed, Ask FlipSec and About. A router
+  still does not earn itself.
 
 ## Voice
 

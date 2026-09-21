@@ -1,5 +1,5 @@
-import { useQuery } from "convex/react";
-import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { useAction, useQuery } from "convex/react";
+import { useEffect, useId, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Doc } from "../../convex/_generated/dataModel";
 import CourseBack from "./CourseBack";
@@ -7,6 +7,8 @@ import JobBack from "./JobBack";
 import LessonBack from "./LessonBack";
 import TacticArt from "./TacticArt";
 import { Badge } from "./ui";
+import ReadAloudButton from "./ReadAloudButton";
+import { useLanguage } from "../localization";
 
 type Story = Omit<Doc<"stories">, "rawText">;
 
@@ -105,19 +107,25 @@ function FlipBadge({
   flipped,
   kind,
   onFlip,
+  controls,
+  buttonRef,
 }: {
   flipped: boolean;
   kind: string;
   onFlip: () => void;
+  controls: string;
+  buttonRef: RefObject<HTMLButtonElement | null>;
 }) {
   return (
     <button
+      ref={buttonRef}
       type="button"
       onClick={(e) => {
         e.stopPropagation();
         onFlip();
       }}
-      aria-expanded={flipped}
+      aria-pressed={flipped}
+      aria-controls={controls}
       aria-label={
         flipped
           ? (BACK_LABEL[kind] ?? BACK_LABEL.scam)
@@ -136,9 +144,11 @@ function FlipBadge({
 function FlipHint({
   kind,
   onFlip,
+  controls,
 }: {
   kind: string;
   onFlip: () => void;
+  controls: string;
 }) {
   const label = FLIP_LABEL[kind] ?? FLIP_LABEL.scam;
 
@@ -149,7 +159,8 @@ function FlipHint({
         e.stopPropagation();
         onFlip();
       }}
-      aria-expanded={false}
+      aria-pressed={false}
+      aria-controls={controls}
       className="inline-flex min-h-11 items-center gap-2 text-base font-semibold text-navy transition-colors hover:text-sage-deep"
     >
       <FlipIcon flipped={false} />
@@ -179,9 +190,52 @@ export default function Post({
   // tutor lesson arrives.
   const frontRef = useRef<HTMLDivElement>(null);
   const backRef = useRef<HTMLDivElement>(null);
+  const frontFlipRef = useRef<HTMLButtonElement>(null);
+  const backFlipRef = useRef<HTMLButtonElement>(null);
   const artId = useId();
+  const safeId = artId.replace(/[^a-zA-Z0-9-]/g, "");
+  const titleId = `story-title-${safeId}`;
+  const frontId = `story-front-${safeId}`;
+  const backId = `story-back-${safeId}`;
 
+  const { t, language } = useLanguage();
   const kind = story.kind ?? "scam";
+
+  // Front-card translation. The backend already returns the whole card
+  // shape (title, summary, red flags, back, drill) for any kind, but this
+  // only swaps the FRONT text for now -- the lesson, course and job backs
+  // stay in English until that gets its own pass. Defaults to English, so a
+  // reader who never touches the language selector never triggers any of
+  // this.
+  const translateStory = useAction(api.localization.translateStory);
+  const cachedTranslation = useQuery(
+    api.localizationData.story,
+    language !== "en" ? { storyId: story._id, language } : "skip",
+  );
+  const [translationFailed, setTranslationFailed] = useState(false);
+  const [showOriginal, setShowOriginal] = useState(false);
+  const requestedTranslation = useRef(false);
+
+  useEffect(() => {
+    // Reset per story or language change, so switching cards or languages
+    // does not carry over a stale failure or override flag.
+    setTranslationFailed(false);
+    setShowOriginal(false);
+    requestedTranslation.current = false;
+  }, [story._id, language]);
+
+  useEffect(() => {
+    if (language === "en" || cachedTranslation === undefined) return;
+    if (cachedTranslation !== null || requestedTranslation.current) return;
+    requestedTranslation.current = true;
+    translateStory({ storyId: story._id, language }).catch(() => {
+      setTranslationFailed(true);
+    });
+  }, [language, cachedTranslation, story._id, translateStory]);
+
+  const translation = language !== "en" ? (cachedTranslation as { title?: string; summary?: string } | null | undefined) : null;
+  const displayTitle = translation && !showOriginal && translation.title ? translation.title : story.title;
+  const displaySummary = translation && !showOriginal && translation.summary ? translation.summary : story.summary;
 
   // Only load the drill once the reader actually flips. Loading one per post
   // would open a subscription for every card in the feed.
@@ -232,7 +286,8 @@ export default function Post({
     return () => clearTimeout(timer);
   }, [flipping]);
 
-  function flip() {
+  function flip(moveFocus = true) {
+    const openingBack = !flipped;
     setFlipping(true);
     setFlipped((f) => !f);
 
@@ -248,6 +303,11 @@ export default function Post({
     // The reader's place is preserved by construction: the card grows
     // downward from a fixed top edge, and nothing above it moves.
     setShownFace(flipped ? "front" : "back");
+    if (moveFocus) {
+      requestAnimationFrame(() => {
+        (openingBack ? backFlipRef.current : frontFlipRef.current)?.focus();
+      });
+    }
   }
 
   const tactic = story.tactic ?? "other";
@@ -261,7 +321,7 @@ export default function Post({
   return (
     // The lift lives out here rather than on the rotating element, because
     // both of them want the transform property and only one can have it.
-    <article className={`post ${flipping ? "lifting" : ""}`}>
+    <article aria-label={displaySummary || displayTitle} className={`post ${flipping ? "lifting" : ""}`}>
       <div
         className={[
           "post-inner rounded-card border border-line bg-white",
@@ -282,12 +342,19 @@ export default function Post({
             accessible name and the keyboard path; this is the convenience,
             and the one link inside it stops the event. */}
         <div
-          onClick={flip}
+          id={frontId}
+          onClick={() => flip(false)}
           className="face face-front cursor-pointer"
           inert={flipped}
           aria-hidden={flipped}
         >
-          <FlipBadge flipped={flipped} kind={kind} onFlip={flip} />
+          <FlipBadge
+            flipped={flipped}
+            kind={kind}
+            onFlip={() => flip(true)}
+            controls={backId}
+            buttonRef={frontFlipRef}
+          />
 
           <div ref={frontRef} className="flex flex-col">
             <div className="h-36 w-full shrink-0 overflow-hidden border-b border-line bg-ivory">
@@ -319,10 +386,10 @@ export default function Post({
                     className="rounded-sm"
                   />
                 )}
-                <span className="text-sm font-semibold text-navy">
+                <span className="text-base font-semibold text-navy">
                   {story.source}
                 </span>
-                <span className="text-sm text-slate" aria-hidden>
+                <span className="text-base text-slate" aria-hidden>
                   ·
                 </span>
                 <time
@@ -332,9 +399,10 @@ export default function Post({
                       : undefined
                   }
                   title={fullDate(story.publishedAt)}
-                  className="text-sm text-slate"
+                  aria-label={story.publishedAt ? `${timeAgo(story.publishedAt)}, ${fullDate(story.publishedAt)}` : "Date unavailable"}
+                  className="text-base text-slate"
                 >
-                  {timeAgo(story.publishedAt)}
+                  {timeAgo(story.publishedAt) || "Date unavailable"}
                 </time>
               </header>
 
@@ -344,34 +412,60 @@ export default function Post({
                   a role are named things a reader is choosing between, so
                   those two lead with the name. */}
               {kind === "scam" ? (
-                <p className="text-lg leading-snug font-medium text-navy">
-                  {story.summary}
-                </p>
+                <h2 id={titleId} className="text-lg leading-snug font-medium text-navy">
+                  {displaySummary}
+                </h2>
               ) : (
                 <div className="flex flex-col gap-1.5">
-                  <h3 className="clamp-2 text-lg leading-snug font-semibold text-navy">
-                    {story.title}
-                  </h3>
-                  <p className="clamp-3 text-base leading-relaxed text-ink">
-                    {story.summary}
+                  <h2 id={titleId} className="text-lg leading-snug font-semibold text-navy">
+                    {displayTitle}
+                  </h2>
+                  <p className="text-base leading-relaxed text-ink">
+                    {displaySummary}
                   </p>
                 </div>
+              )}
+
+              {/* Only appears once a language other than English is chosen
+                  and a translation exists or is on the way. Silent on
+                  failure: displayTitle/displaySummary already fall back to
+                  English, so a broken translation never blocks reading. */}
+              {language !== "en" && (translation || (cachedTranslation === undefined && !translationFailed)) && (
+                <p className="text-sm text-slate">
+                  {translation
+                    ? (
+                      <>
+                        {t("aiTranslated")}
+                        {" · "}
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setShowOriginal((v) => !v); }}
+                          className="underline underline-offset-2 hover:text-navy"
+                        >
+                          {showOriginal ? t("showTranslation") : t("viewEnglish")}
+                        </button>
+                      </>
+                    )
+                    : t("translating")}
+                </p>
               )}
 
               <Badge tone={CHIP_TONE[tactic] ?? "neutral"} pill>
                 {tactic}
               </Badge>
 
+              <ReadAloudButton targetRef={frontRef} label={t("readCard")} />
+
               <footer className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-1">
-                <FlipHint kind={kind} onFlip={flip} />
+                <FlipHint kind={kind} onFlip={() => flip(true)} controls={backId} />
                 <a
                   href={story.url}
                   target="_blank"
                   rel="noreferrer"
                   onClick={(e) => e.stopPropagation()}
-                  className="min-h-11 content-center text-sm font-medium text-slate hover:text-navy"
+                  className="min-h-11 content-center text-base font-medium text-slate hover:text-navy"
                 >
-                  ↗ Source
+                  <span aria-hidden>↗ </span>Source <span className="sr-only">(opens in a new tab)</span>
                 </a>
               </footer>
             </div>
@@ -380,7 +474,7 @@ export default function Post({
 
         {/* The back holds inputs and buttons, so only the explicit control
             flips it back. */}
-        <div className="face face-back" inert={!flipped} aria-hidden={!flipped}>
+        <div id={backId} className="face face-back" inert={!flipped} aria-hidden={!flipped}>
           {/* One flip, three backs. The rotation, the height measuring and
               the reduced-motion handling above are shared; only what is
               printed on the far face changes.
@@ -393,19 +487,26 @@ export default function Post({
 
               They used to be the same word twice, one under the other, which
               is not two affordances but one mistake. */}
-          <FlipBadge flipped={flipped} kind={kind} onFlip={flip} />
+          <FlipBadge
+            flipped={flipped}
+            kind={kind}
+            onFlip={() => flip(true)}
+            controls={frontId}
+            buttonRef={backFlipRef}
+          />
 
           <div ref={backRef}>
             {/* pr-16 keeps a long source name out from under the badge. */}
-            <div className="border-b border-line px-5 py-3 pr-16">
-              <span className="text-sm font-semibold text-navy">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-5 py-3 pr-16">
+              <span className="text-base font-semibold text-navy">
                 {story.source}
               </span>
+              <ReadAloudButton targetRef={backRef} label={t("readLesson")} />
             </div>
             {kind === "course" ? (
-              <CourseBack back={story.back} url={story.url} onBack={flip} />
+              <CourseBack back={story.back} url={story.url} onBack={() => flip(true)} />
             ) : kind === "job" ? (
-              <JobBack back={story.back} url={story.url} onBack={flip} />
+              <JobBack back={story.back} url={story.url} onBack={() => flip(true)} />
             ) : (
               <LessonBack
                 drill={drill}
@@ -413,7 +514,7 @@ export default function Post({
                 tactic={tactic}
                 redFlags={story.redFlags ?? []}
                 userId={userId}
-                onBack={flip}
+                onBack={() => flip(true)}
               />
             )}
           </div>

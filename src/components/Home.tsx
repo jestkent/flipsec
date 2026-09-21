@@ -9,24 +9,26 @@
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { View } from "./Header";
+import ReadAloudButton from "./ReadAloudButton";
+import { useLanguage } from "../localization";
 import { Button, Card, CardSkeleton, Eyebrow, EmptyState } from "./ui";
 
 const PATHWAYS = [
   {
     kind: "scam",
-    name: "AI Security News",
+    name: "AI Sec News",
     benefit:
       "Read what actually happened to someone this week, then turn the card over for the lesson built from that story.",
   },
   {
     kind: "course",
-    name: "AI Security Education",
+    name: "AI Sec Learn",
     benefit:
       "Free guides to how AI gets attacked and defended, each one cut down to what you will learn and where to start.",
   },
   {
     kind: "job",
-    name: "AI Security Jobs",
+    name: "AI Sec Jobs",
     benefit:
       "Open roles where AI and security genuinely meet, with what the employer wants and whether you would fit.",
   },
@@ -34,19 +36,15 @@ const PATHWAYS = [
 
 const STEPS = [
   {
-    title: "Find a story",
+    title: "Read what happened",
     body: "Real reports, rewritten so anyone can read them. No jargon and no background assumed.",
   },
   {
-    title: "Flip the card",
-    body: "The front is what happened. The back is why it worked, which is the part nobody tells you.",
+    title: "Flip for the lesson",
+    body: "See how the threat worked, what gave it away, and why it convinced someone careful.",
   },
   {
-    title: "Understand the threat",
-    body: "How the trick ran, what gave it away, and what the person on the other end was thinking.",
-  },
-  {
-    title: "Do something with it",
+    title: "Use what you learned",
     body: "Ask a question, practise spotting it, or get one card a day by email.",
   },
 ];
@@ -56,6 +54,7 @@ export default function Home({
 }: {
   onNavigate: (view: View, kind?: string) => void;
 }) {
+  const { t } = useLanguage();
   // The same queries the feeds run. Convex keeps these live, so a crawl that
   // publishes while this page is open changes the numbers under the reader
   // without a refresh.
@@ -103,15 +102,15 @@ export default function Home({
           <Button onClick={() => onNavigate("feed", "scam")}>
             Read this week's stories
           </Button>
-          <Button variant="secondary" onClick={() => onNavigate("about")}>
-            How it works
+          <Button variant="secondary" onClick={() => onNavigate("tools")}>
+            Ask FlipSec
           </Button>
         </div>
 
         {/* This was a row of big numbers under four labels, which is the
             house style of every generated landing page and says less than a
             sentence does. Same live data, read as English. */}
-        <p className="mt-8 border-t border-line pt-5 text-base text-slate">
+        <p aria-live="polite" className="mt-8 border-t border-line pt-5 text-base text-slate">
           {loading ? (
             "Counting what is in the feeds…"
           ) : (
@@ -124,8 +123,7 @@ export default function Home({
                     { month: "long", day: "numeric" },
                   )}`
                 : ""}
-              . These numbers are a live query, so they move on their own when
-              a crawl publishes.
+              .
             </>
           )}
         </p>
@@ -143,9 +141,9 @@ export default function Home({
           Pick where to start
         </h2>
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-3">
+        <div className="mt-6 grid gap-6 sm:grid-cols-3">
           {PATHWAYS.map((path) => (
-            <Card key={path.kind} className="flex flex-col p-5">
+            <article key={path.kind} className="flex flex-col border-t border-line pt-4">
               <h3 className="text-base font-semibold text-navy">
                 {path.name}
               </h3>
@@ -159,7 +157,7 @@ export default function Home({
               >
                 Open this feed →
               </button>
-            </Card>
+            </article>
           ))}
         </div>
       </section>
@@ -173,16 +171,16 @@ export default function Home({
           id="how"
           className="mt-2 text-2xl font-semibold tracking-tight text-navy"
         >
-          Four steps, about a minute
+          Three steps, about a minute
         </h2>
 
-        <ol className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <ol className="mt-6 grid gap-6 sm:grid-cols-3">
           {STEPS.map((step, i) => (
             <li
               key={step.title}
               className="border-t-2 border-line pt-4 first:border-amber"
             >
-              <span className="text-sm font-semibold text-slate tabular-nums">
+              <span className="text-base font-semibold text-slate tabular-nums">
                 {String(i + 1).padStart(2, "0")}
               </span>
               <h3 className="mt-1 text-base font-semibold text-navy">
@@ -210,14 +208,17 @@ export default function Home({
 
         <div className="mt-6">
           {loading ? (
-            <CardSkeleton />
+            <div aria-busy="true" aria-live="polite">
+              <span className="sr-only">Loading the latest story</span>
+              <CardSkeleton />
+            </div>
           ) : featured ? (
             <Card className="p-6">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <span className="text-sm font-semibold text-navy">
+                <span className="text-base font-semibold text-navy">
                   {featured.source}
                 </span>
-                <span className="text-sm text-slate" aria-hidden>
+                <span className="text-base text-slate" aria-hidden>
                   ·
                 </span>
                 <time
@@ -226,7 +227,7 @@ export default function Home({
                       ? new Date(featured.publishedAt).toISOString()
                       : undefined
                   }
-                  className="text-sm text-slate"
+                  className="text-base text-slate"
                 >
                   {featured.publishedAt
                     ? new Date(featured.publishedAt).toLocaleDateString(
@@ -236,13 +237,17 @@ export default function Home({
                     : "date unknown"}
                 </time>
               </div>
-              <h3 className="clamp-2 mt-3 text-xl leading-snug font-semibold text-navy">
+              <h3 className="mt-3 text-xl leading-snug font-semibold text-navy">
                 {featured.title}
               </h3>
               <p className="mt-2 max-w-[70ch] text-base leading-relaxed text-ink">
                 {featured.summary}
               </p>
-              <div className="mt-5">
+              <div className="mt-5 flex flex-wrap items-center gap-3">
+                <ReadAloudButton
+                  text={`${featured.source}. ${featured.title}. ${featured.summary ?? ""}`}
+                  label={t("readStory")}
+                />
                 <Button size="sm" onClick={() => onNavigate("feed", "scam")}>
                   Flip this card in the feed
                 </Button>
@@ -257,72 +262,6 @@ export default function Home({
         </div>
       </section>
 
-      {/* ------------------------------------------------------------------ */}
-      {/* What is actually running                                            */}
-      {/* ------------------------------------------------------------------ */}
-      <section aria-labelledby="built">
-        <Eyebrow>What is running underneath</Eyebrow>
-        <h2
-          id="built"
-          className="mt-2 text-2xl font-semibold tracking-tight text-navy"
-        >
-          Where the cards come from
-        </h2>
-
-        <div className="mt-6 grid gap-4 sm:grid-cols-3">
-          <Card className="p-5">
-            <h3 className="text-base font-semibold text-navy">
-              Firecrawl reads the sources
-            </h3>
-            <p className="mt-2 text-base leading-relaxed text-slate">
-              Every six hours it scrapes five public sources, honours each
-              robots.txt and crawl delay, and skips anything already seen. The
-              date on each card is when that page was collected.
-            </p>
-          </Card>
-          <Card className="p-5">
-            <h3 className="text-base font-semibold text-navy">
-              OpenAI writes the card
-            </h3>
-            <p className="mt-2 text-base leading-relaxed text-slate">
-              One call per item produces the summary, the lesson and the gates
-              that decide whether it belongs here at all. Most candidates fail
-              a gate and never reach a feed.
-            </p>
-          </Card>
-          <Card className="p-5">
-            <h3 className="text-base font-semibold text-navy">
-              Convex keeps it live
-            </h3>
-            <p className="mt-2 text-base leading-relaxed text-slate">
-              The counts above are a live query. When a crawl publishes while
-              this page is open, they change on their own, with no refresh and
-              no polling.
-            </p>
-          </Card>
-        </div>
-
-        <Card className="mt-4 p-5">
-          <h3 className="text-base font-semibold text-navy">
-            AgentMail carries it both ways
-          </h3>
-          <p className="mt-2 max-w-[72ch] text-base leading-relaxed text-slate">
-            Sign up on any feed and one card a morning arrives by email. Reply
-            to the practice question in your own words and the reply comes back
-            read and answered, not just acknowledged. Every message carries a
-            working unsubscribe link.
-          </p>
-          <div className="mt-4">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => onNavigate("feed", "scam")}
-            >
-              Sign up on the news feed
-            </Button>
-          </div>
-        </Card>
-      </section>
     </div>
   );
 }
