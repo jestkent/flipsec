@@ -13,7 +13,7 @@
 - **Auth:** none
 - **AI models:** gpt-4o-mini, gpt-4o-mini-tts
 - **Started:** 2026-09-20T17:35:41Z
-- **Last updated:** 2026-09-21T08:05:00Z
+- **Last updated:** 2026-09-21T08:40:00Z
 
 ## Log
 
@@ -785,3 +785,30 @@ teach the opposite of the truth.
 
 Learn went from 14 to 17. News and Jobs unchanged at 8 and 10. A registry now
 holds the one list of lessons, the way TABS holds the one list of feeds.
+
+### 2026-09-21 - translate on write, not on read
+
+The feed had translated and untranslated cards in the same list. Measured:
+six of eight news cards had Japanese, two did not, and none of the four
+authored lesson cards did.
+
+Nothing was broken. Translation happened lazily, on the first reader who asked
+for a language, and the feed only ever looked complete because of a one-off
+warm-up run. Every card published after it - by the six-hourly cron, or by
+seeding a lesson - stayed English until somebody waited through a model call.
+That reader also pays the latency and can hit the hourly cap.
+
+Translation now happens at publish time, scheduled from every point a story
+becomes published. A card is in all ten languages before anyone sees it. The
+lazy path stays as a fallback.
+
+The economics are the argument: publishing is rare and bounded, a handful of
+cards per crawl at ten small calls each. Readers are neither, and making the
+first reader in each language pay for everybody is the wrong way round.
+
+Also added: a query that answers "is the feed fully translated" without
+reading every card by hand, and a staggered backfill for anything published
+before this existed. Both safe to re-run.
+
+After the backfill: 35 published stories, ten languages, zero gaps, verified
+language by language.

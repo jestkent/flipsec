@@ -61,6 +61,20 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
   worse — one reader translating thirty cards spent their own assistant budget.
   `by_kind_time` and `by_user_kind_time` exist for this. If a feature reports
   an hourly limit with no matching traffic, check `toolChecks` by kind first.
+- **Translate on WRITE, not on read.** `translateAllLanguages` is scheduled
+  from every point a story becomes published — `saveProcessed`, `saveCourse`,
+  `saveJob` and `authored.seedLessons` — so a card is in all ten languages
+  before any reader sees it. It used to happen lazily, on the first reader who
+  asked for that language, which meant every card published after the last
+  warm-up run sat in English until somebody waited through a model call. A
+  feed where some cards are translated and some are not reads as broken, and
+  the reader cannot tell which. Publishing is rare and bounded; readers are
+  neither, so the cost belongs on the write.
+  `localizationData.untranslated` answers "is the feed actually fully
+  translated" without reading every card by hand, and
+  `backfillTranslations` catches up anything published before this existed or
+  left behind by a failed run. Both are safe to re-run: a language that already
+  has a row is skipped by the cache check.
 - **Reserve only when the work will actually cost something.**
   `translateStory` reserves AFTER the cache is checked. A hit must stay free
   and unmetered, or a reader switching language on a warm feed spends their

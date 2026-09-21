@@ -211,5 +211,14 @@ export const saveCourse = internalMutation({
         timeCommitment: args.timeCommitment,
       },
     });
+
+    // Translated now, not on the first reader who asks. A card published
+    // after the last warm-up used to sit in English until somebody waited
+    // through ten seconds of model call, which is why some cards in a feed
+    // were translated and some were not. Publishing is rare; readers are not.
+    await ctx.scheduler.runAfter(0, internal.localization.translateAllLanguages, {
+      storyId: args.storyId,
+    });
+
   },
 });

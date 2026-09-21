@@ -873,6 +873,41 @@ pressing play and being told how little that cost.
 
 ---
 
+## 26. Shipped fix: translate on write, not on read
+
+The feed had cards translated and cards not translated, in the same list, and
+a reader had no way to tell which. Measured rather than guessed: six of eight
+news cards had Japanese and two did not, and all four authored lesson cards
+had none.
+
+Nothing was broken. Translation happened lazily, on the first reader who
+asked for a language, and the only reason the feed ever looked complete was a
+one-off warm-up run. Every card published after it — by the six-hourly cron,
+or by seeding a lesson — was English until somebody sat through a model call
+to fill it in. Worse, that reader is the one who pays the latency and the one
+who can hit the hourly cap.
+
+The fix is to move the work to the write. `translateAllLanguages` is
+scheduled from every point a story becomes published, so a card is in all ten
+languages before anybody sees it. The lazy path stays as a fallback for a
+story published before this existed or a language whose turn failed.
+
+The economics are the argument. Publishing is rare and bounded: a handful of
+cards per crawl, ten small calls each. Readers are neither bounded nor rare,
+and making the first one in each language pay for everybody is the wrong way
+round. This is the same reasoning as generating a lesson once per story
+rather than per view, which section 14 already settled for a different feature.
+
+Two supporting pieces, both safe to re-run because a language that already has
+a row is skipped by the cache check: `localizationData.untranslated` answers
+"is the feed actually fully translated" without reading every card by hand,
+and `backfillTranslations` schedules the catch-up, staggered, because 250
+model calls inside one action would run past the time an action is given.
+
+After the backfill: 35 published stories, ten languages, zero gaps.
+
+---
+
 ## Appendix: the Convex mental model
 
 Worth re-reading when something does not behave.

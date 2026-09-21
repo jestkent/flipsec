@@ -41,6 +41,10 @@ export const speechLanguage = v.union(
   v.literal("fr"),
 );
 
+// The set of codes as a TYPE. Without this, a parameter named `language`
+// annotated `typeof language.type` refers to itself and TypeScript refuses it.
+export type LanguageCode = typeof language.type;
+
 // How each language is named to the model. The endonym belongs in the UI;
 // the prompt is in English, so the language is named in English here.
 export const LANGUAGE_NAMES: Record<typeof language.type, string> = {

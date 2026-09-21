@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import { internal } from "./_generated/api";
 import { internalMutation } from "./_generated/server";
 
 // Lesson cards the app writes itself, rather than crawling and summarising
@@ -91,13 +92,21 @@ export const seedLessons = internalMutation({
         crawledAt: Date.now(),
       };
 
+      let storyId;
       if (existing) {
         await ctx.db.patch(existing._id, row);
+        storyId = existing._id;
         done.push(`updated ${card.key}`);
       } else {
-        await ctx.db.insert("stories", row);
+        storyId = await ctx.db.insert("stories", row);
         done.push(`inserted ${card.key}`);
       }
+
+      // Same rule as a crawled card: translated at publish time, not on the
+      // first reader who happens to be reading in Japanese.
+      await ctx.scheduler.runAfter(0, internal.localization.translateAllLanguages, {
+        storyId,
+      });
     }
 
     return done;

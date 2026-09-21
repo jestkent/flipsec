@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery, query } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
 import { reserveSlot } from "./rateLimit";
 
 import { language, speechLanguage } from "./languages";
@@ -57,6 +58,32 @@ export const saveStory = internalMutation({
       .unique();
     if (!existing) await ctx.db.insert("storyTranslations", { ...args, createdAt: Date.now() });
     return null;
+  },
+});
+
+// Published stories that have no row for the given language yet. Used by
+// the backfill, and useful on its own for answering "is the feed actually
+// fully translated" without reading every card by hand.
+export const untranslated = internalQuery({
+  args: { language },
+  returns: v.array(v.id("stories")),
+  handler: async (ctx, args) => {
+    const published = await ctx.db
+      .query("stories")
+      .withIndex("by_published", (q) => q.eq("status", "published"))
+      .take(500);
+
+    const missing: Array<Id<"stories">> = [];
+    for (const story of published) {
+      const row = await ctx.db
+        .query("storyTranslations")
+        .withIndex("by_story_language", (q) =>
+          q.eq("storyId", story._id).eq("language", args.language),
+        )
+        .unique();
+      if (row === null) missing.push(story._id);
+    }
+    return missing;
   },
 });
 
