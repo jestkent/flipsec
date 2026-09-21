@@ -30,8 +30,9 @@ export default function App() {
           >
             FlipSec
           </button>
+          {/* One clause per tab, in tab order: news, edu, jobs. */}
           <p className="mt-1 text-sm text-neutral-500">
-            Flip the news. Learn the threat.
+            Flip the news. Learn the threat. Find the work.
           </p>
         </div>
 

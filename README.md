@@ -1,8 +1,8 @@
 # FlipSec
 
-**Flip the news. Learn the threat.** Three feeds of AI security - news,
-learning and work - where every card flips to show you what the front does not
-tell you.
+**Flip the news. Learn the threat. Find the work.** Three feeds of AI security
+- news, learning and work - where every card flips to show you what the front
+does not tell you.
 
 **Live URL:** https://hallowed-nightingale-322.convex.site
 

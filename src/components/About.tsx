@@ -31,8 +31,9 @@ export default function About({ onBack }: { onBack: () => void }) {
           a face you know, and a voice on the phone can sound like family.
         </p>
         <p className="text-base leading-relaxed text-neutral-700">
-          FlipSec collects what is really happening in AI security and rewrites
-          it so anyone can read it. Everything here is a card, and every card
+          FlipSec follows AI security three ways: what is happening to people
+          right now, how the attacks and defences actually work, and who is
+          paying people to work on it. Everything here is a card, and every card
           flips to show you what the front does not tell you.
         </p>
         <ul className="flex flex-col gap-2 text-base leading-relaxed text-neutral-700">
@@ -62,7 +63,13 @@ export default function About({ onBack }: { onBack: () => void }) {
           something strange last week.
         </p>
         <p className="text-base leading-relaxed text-neutral-700">
-          Every post is written so a 7th grader can read it. That is not
+          And anyone who reads a few of these and starts wondering whether they
+          could do this for a living. That is what the third feed is for. You do
+          not need permission or a degree to start reading the same guides the
+          people in those jobs read.
+        </p>
+        <p className="text-base leading-relaxed text-neutral-700">
+          Every card is written so a 7th grader can read it. That is not
           because this is only for kids. It is because plain words work for
           everyone, and the people losing the most to these scams are usually
           the ones the usual advice was never written for. Advice nobody
@@ -70,11 +77,11 @@ export default function About({ onBack }: { onBack: () => void }) {
         </p>
       </Block>
 
-      <Block title="Where the stories come from">
+      <Block title="Where it all comes from">
         <p className="text-base leading-relaxed text-neutral-700">
-          Every post is a short summary written from a public report, in our own
-          words, with a link to the original. FlipSec does not republish
-          anyone's article.
+          Every card is a short summary written in our own words from something
+          published openly, with a link to the original. FlipSec does not
+          republish anyone's article, guide or job posting.
         </p>
         <ul className="flex flex-col gap-2 text-base text-neutral-700">
           <li>
@@ -161,7 +168,7 @@ export default function About({ onBack }: { onBack: () => void }) {
         </p>
         <p className="text-base leading-relaxed text-neutral-700">
           So I wrote this for my students. If a 7th grader would not say the
-          word, it does not go on the post. That is the rule the whole thing is
+          word, it does not go on the card. That is the rule the whole thing is
           built on.
         </p>
         <p className="text-base leading-relaxed text-neutral-700">
@@ -169,6 +176,12 @@ export default function About({ onBack }: { onBack: () => void }) {
           these scams take the most from are often the ones nobody writes for:
           older people, people who never had a reason to learn any of this.
           The same plain words work for them.
+        </p>
+        <p className="text-base leading-relaxed text-neutral-700">
+          The jobs feed is there for a reason too. Some of my students will
+          spend their working lives on this, and none of them know yet that it
+          is a job you can have. Now they can see the openings next to the
+          stories that made them curious.
         </p>
         <p className="text-sm font-medium text-neutral-900">— JKA</p>
       </Block>
