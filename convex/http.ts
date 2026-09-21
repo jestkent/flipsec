@@ -123,20 +123,60 @@ function actionPage(
 }
 
 // The address arrives in the query string on the GET that draws the button,
-// and in the posted form on the POST that acts.
-async function readParams(request: Request): Promise<{ email: string; token: string }> {
+// and in the posted form on the POST that acts. `kinds` only ever comes from
+// the posted form: it is what the reader ticked.
+async function readParams(
+  request: Request,
+): Promise<{ email: string; token: string; kinds: string[] }> {
   if (request.method === "POST") {
     const form = new URLSearchParams(await request.text());
     return {
       email: (form.get("e") ?? "").trim().toLowerCase(),
       token: form.get("t") ?? "",
+      kinds: form.getAll("k"),
     };
   }
   const url = new URL(request.url);
   return {
     email: (url.searchParams.get("e") ?? "").trim().toLowerCase(),
     token: url.searchParams.get("t") ?? "",
+    kinds: [],
   };
+}
+
+// The feeds, as a reader picks them. Signing up from three tabs merges into
+// one subscription, and the sign-up box has to guess from whichever tab they
+// were on — so the confirm page is where they say what they actually want,
+// with the boxes already ticked for what they asked for.
+const FEED_CHOICES = [
+  { kind: "scam", name: "AI Sec News", line: "A drill from a real AI scam. Reply and it comes back graded." },
+  { kind: "course", name: "AI Sec Learn", line: "One free guide, what it teaches, and where to start." },
+  { kind: "job", name: "AI Sec Jobs", line: "One opening, what they want, and how to apply." },
+];
+
+function choicesPage(email: string, token: string, wanted: string[]): Response {
+  const boxes = FEED_CHOICES.map(({ kind, name, line }) => {
+    const checked = wanted.includes(kind) ? " checked" : "";
+    const id = `feed-${kind}`;
+    return `<label for="${id}" style="display:flex;gap:.75rem;align-items:flex-start;min-height:44px;padding:.5rem 0;cursor:pointer">
+<input type="checkbox" id="${id}" name="k" value="${kind}"${checked} style="width:20px;height:20px;margin-top:.35rem;flex:none;accent-color:#3e6450">
+<span><span style="font-weight:600;color:#102a43">${name}</span><br><span style="color:#52677a">${line}</span></span>
+</label>`;
+  }).join("\n");
+
+  return htmlPage(
+    "Start the daily email?",
+    `<p style="color:#52677a;margin:0 0 1rem">Pick what you want. It arrives as one email each morning, not one per feed, and you can stop any time from the link at the foot of every message.</p>
+<form method="POST" action="/api/confirm">
+<input type="hidden" name="e" value="${escapeHtml(email)}">
+<input type="hidden" name="t" value="${escapeHtml(token)}">
+<fieldset style="border:0;padding:0;margin:0 0 1.25rem">
+<legend style="font-weight:600;color:#102a43;padding:0 0 .25rem">Send me</legend>
+${boxes}
+</fieldset>
+<button type="submit" style="min-height:44px;padding:0 1.25rem;border:0;border-radius:8px;background:#3e6450;color:#fff;font:600 16px system-ui,sans-serif;cursor:pointer">Start the daily email</button>
+</form>`,
+  );
 }
 
 // AgentMail signs every webhook it sends, the way most providers do: an id, a
@@ -314,28 +354,41 @@ http.route({ path: "/unsubscribe", method: "POST", handler: unsubscribeHandler }
 // to press the button, which is what makes this consent rather than a
 // stranger filling in a form with someone else's address.
 const confirmHandler = httpAction(async (ctx, request) => {
-  const { email, token } = await readParams(request);
+  const { email, token, kinds } = await readParams(request);
   if (!email || !token) return message("That link is incomplete", "Nothing was changed.");
 
   if (!secretsMatch(token, await confirmToken(email))) {
     return message("That link is not valid", "Nothing was changed.");
   }
 
-  if (request.method !== "POST") {
-    return actionPage(
-      "Start the daily email?",
-      "Press the button and one card from each feed you picked arrives each morning. You can stop any time from the link at the foot of every email.",
-      "/api/confirm",
-      email,
-      token,
-      "Yes, start the daily email",
+  const row = await ctx.runQuery(internal.subscribers.pendingFor, { email });
+  if (row === null) {
+    // A valid signature for an address that is no longer here: the sign-up
+    // was removed, or this is an old link from before it was. Saying "you are
+    // on the list" would be a lie.
+    return message(
+      "That sign-up is no longer here",
+      "Nothing was changed. You can sign up again from any feed on the site.",
     );
   }
 
-  await ctx.runMutation(internal.subscribers.confirm, { email });
+  if (request.method !== "POST") {
+    return choicesPage(email, token, row.kinds);
+  }
+
+  // Nothing ticked is a real answer, and it means no. Confirming an empty
+  // selection would start a daily email carrying nothing.
+  if (kinds.length === 0) {
+    return message(
+      "Nothing was started",
+      "No feeds were picked, so no email will be sent. Open the link again if you change your mind.",
+    );
+  }
+
+  await ctx.runMutation(internal.subscribers.confirm, { email, kinds });
   return message(
     "You are on the list",
-    "The first email arrives tomorrow morning. Every one of them carries an unsubscribe link at the foot.",
+    "The first email arrives tomorrow morning, carrying the feeds you picked in one message. Every one of them has an unsubscribe link at the foot.",
   );
 });
 

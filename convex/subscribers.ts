@@ -140,11 +140,26 @@ export const subscribe = mutation({
   },
 });
 
+// What this address asked for, so the confirm page can tick the boxes it
+// already wants rather than making the reader start from nothing.
+export const pendingFor = internalQuery({
+  args: { email: v.string() },
+  returns: v.union(v.null(), v.object({ kinds: v.array(v.string()), pending: v.boolean() })),
+  handler: async (ctx, args) => {
+    const row = await ctx.db
+      .query("subscribers")
+      .withIndex("by_email", (q) => q.eq("email", args.email.trim().toLowerCase()))
+      .unique();
+    if (row === null) return null;
+    return { kinds: cleanKinds(row.kinds), pending: row.pending === true };
+  },
+});
+
 // Following the link from the address itself. Idempotent: confirming twice is
 // the same as confirming once, which matters because people forward mail and
 // click things more than once.
 export const confirm = internalMutation({
-  args: { email: v.string() },
+  args: { email: v.string(), kinds: v.optional(v.array(v.string())) },
   returns: v.boolean(),
   handler: async (ctx, args) => {
     const row = await ctx.db
@@ -156,6 +171,11 @@ export const confirm = internalMutation({
       pending: false,
       active: true,
       confirmedAt: row.confirmedAt ?? Date.now(),
+      // What the reader ticked on the confirm page REPLACES what the sign-up
+      // box guessed from whichever tab they happened to be on. Signing up
+      // from three tabs is not the same as wanting three feeds, and the
+      // moment of consent is the right place to say which.
+      ...(args.kinds ? { kinds: cleanKinds(args.kinds) } : {}),
     });
     return true;
   },
