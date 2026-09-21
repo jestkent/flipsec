@@ -13,7 +13,7 @@
 - **Auth:** none
 - **AI models:** gpt-4o-mini, gpt-4o-mini-tts
 - **Started:** 2026-09-20T17:35:41Z
-- **Last updated:** 2026-09-21T07:25:00Z
+- **Last updated:** 2026-09-21T08:05:00Z
 
 ## Log
 
@@ -750,3 +750,38 @@ recognise impersonation, shipping impersonation tools would be indefensible.
 
 Learn went from 11 cards to 12. News and Jobs unchanged at 6 and 10, and the
 11 crawled guides still render the guide back.
+
+### 2026-09-21 - four lessons, and putting them where they can be found
+
+The prompt injection lesson shipped behind a flip, on card one of twelve,
+below a sign-up box that had just grown taller. The person who asked for it
+could not find it, which is the only usability test that counts.
+
+All four interactive lessons now sit on the Ask FlipSec page as well as in the
+feed, one open at a time. That is where they belong on the merits too: a reader
+is there because they brought something suspicious, so the lessons about how
+they are being fooled go directly underneath. One at a time because four
+interactive blocks stacked would bury the conversation they came for.
+
+The three new ones were chosen for the reader this app is written for, ordered
+by how likely they are to meet the thing rather than by how interesting the
+attack is.
+
+The voice on the phone comes first, because the grandparent who gets a call in
+a voice they know is the person losing the most right now. It demonstrates
+without cloning anyone - the same generic voice the app already uses to read
+cards, saying what a scammer would say - and ends on the two things that still
+work: call back on a number you already have, and agree a family word before
+anything is wrong.
+
+Spot the scam is the app's founding premise made checkable: five messages in
+clean English, three of them scams. Bad spelling was real advice about a real
+tell, and that tell is gone.
+
+Confidently wrong asks the reader to pick the invented AI answer out of three,
+and all three are invented. That is the only honest way to teach that
+confidence carries no information; a demo where the fake was findable would
+teach the opposite of the truth.
+
+Learn went from 14 to 17. News and Jobs unchanged at 8 and 10. A registry now
+holds the one list of lessons, the way TABS holds the one list of feeds.

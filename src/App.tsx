@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import About from "./components/About";
-import InjectionDemo from "./components/InjectionDemo";
+import { DEMOS, findDemo } from "./components/demoRegistry";
 import Privacy from "./components/Privacy";
 import Feed from "./components/Feed";
 import Header, { type View } from "./components/Header";
@@ -34,10 +34,14 @@ export default function App() {
   const [view, setView] = useState<View>("home");
   const [kind, setKind] = useState<string>(TABS[0].kind);
   const [announcement, setAnnouncement] = useState("Home page");
+  // Which interactive lesson is open on the Ask FlipSec page. Defaults to the
+  // first, so the section is never an empty row of buttons.
+  const [demo, setDemo] = useState<string>(DEMOS[0].key);
   const mainRef = useRef<HTMLElement>(null);
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const active = TABS.find((t) => t.kind === kind) ?? TABS[0];
+  const openDemo = findDemo(demo);
   const localizedFeedName = active.kind === "scam" ? t("news") : active.kind === "course" ? t("learn") : t("jobs");
 
   useEffect(() => {
@@ -96,33 +100,57 @@ export default function App() {
             <SafetyTools />
 
             {/* Behind a flip, on card one of twelve, under a sign-up box was
-                too well hidden: the person who asked for this could not find
-                it. Ask FlipSec is where a reader brings a suspicious message,
-                so "the AI reading it can be given orders by that message too"
-                belongs directly underneath, in the open, with nothing to turn
-                over first. The card in AI Sec Learn stays; this is the way in
-                that does not depend on finding it. */}
+                too well hidden: the person who asked for it could not find it.
+                Ask FlipSec is where a reader brings something suspicious, so
+                the lessons about how they are being fooled belong directly
+                underneath, in the open, with nothing to turn over first.
+
+                One at a time rather than four stacked, because the page is
+                already long and four interactive blocks would bury the
+                conversation the reader came for. The cards in AI Sec Learn
+                stay; this is the way in that does not depend on finding them. */}
             <section
-              aria-labelledby="injection-demo-heading"
+              aria-labelledby="demos-heading"
               className="mt-10 rounded-card border border-line bg-white"
             >
-              <div className="border-b border-line px-6 pt-6 pb-4">
+              <div className="border-b border-line px-6 pt-6 pb-5">
                 <p className="text-sm font-semibold tracking-widest text-slate uppercase">
                   Try it yourself
                 </p>
-                <h2
-                  id="injection-demo-heading"
-                  className="mt-1 text-xl font-semibold text-navy"
-                >
-                  Your AI assistant will do what your email tells it to
+                <h2 id="demos-heading" className="mt-1 text-xl font-semibold text-navy">
+                  See how it is done to you
                 </h2>
                 <p className="mt-2 text-base leading-relaxed text-ink">
-                  You just asked an AI about a message. Here is the other half
-                  of that: an AI that reads a message can be given orders by
-                  whoever wrote it.
+                  Four short things you can try. None of them need an account
+                  and nothing you do here leaves the page.
                 </p>
+
+                <div className="mt-4 flex flex-col gap-2">
+                  {DEMOS.map((item) => {
+                    const open = item.key === demo;
+                    return (
+                      <button
+                        key={item.key}
+                        type="button"
+                        onClick={() => setDemo(item.key)}
+                        aria-pressed={open}
+                        className={`flex min-h-11 flex-col items-start rounded-control border px-4 py-2 text-left transition-colors ${
+                          open
+                            ? "border-navy bg-ivory"
+                            : "border-line hover:border-navy-soft"
+                        }`}
+                      >
+                        <span className={`text-base ${open ? "font-semibold text-navy" : "font-medium text-navy"}`}>
+                          {item.label}
+                        </span>
+                        <span className="text-sm text-slate">{item.blurb}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-              <InjectionDemo />
+
+              {openDemo && <openDemo.Component />}
             </section>
           </div>
         )}

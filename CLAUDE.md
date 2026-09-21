@@ -393,6 +393,19 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
   borrowing somebody's name, and `url` points at the authority for the concept
   so a reader is one tap from the definitive version. Nothing checks these but
   the person who wrote them.
+- **`demoRegistry.ts` is the one list of interactive lessons**, the same way
+  `TABS` is the one list of feeds. A card back and the Ask FlipSec page both
+  read it, so adding a lesson is an entry plus a component. `key` is what an
+  authored card carries in `back.demo`, so it is a database value and does not
+  change; the label can. They are ordered by how likely the reader in front of
+  us is to meet the thing, not by how interesting it is technically.
+- **The lessons live on the Ask FlipSec page as well as in the feed, one open
+  at a time.** Behind a flip, on card one of twelve, under a sign-up box, was
+  too well hidden — the person who asked for the feature could not find it.
+  Four interactive blocks stacked would bury the conversation a reader came
+  for, so the picker shows one. Do not stack them and do not remove the feed
+  cards: the card is what makes a lesson part of the product rather than a
+  widget bolted to a page.
 - **An interactive lesson's assistant is SCRIPTED, and the interface says so.**
   Calling a real model would be more impressive for a minute and worse
   afterwards: the lesson would depend on the model's mood, cost a call, share
@@ -411,9 +424,11 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
   the reduced-motion path for every kind; a new feed adds a back component and
   nothing else. `CourseBack` and `JobBack` follow the same rule as `LessonBack`:
   no `h-full`, no `overflow-y-auto`, no `mt-auto` anywhere inside a face.
-  `InjectionDemo` is the fourth, chosen when a course card's `back` carries a
-  `demo` name. `back` is `v.any()` precisely so that needed no schema change,
-  which also means `demoName()` has to check the shape rather than trust it.
+  `DemoFace` is the fourth, chosen when a course card's `back` carries a
+  `demo` key that `demoRegistry` recognises. `back` is `v.any()` precisely so
+  that needed no schema change, which also means `demoKey()` has to check the
+  shape rather than trust it, and an unknown key falls through to the guide
+  back rather than rendering nothing.
 - One control, one job, one name. The card back has exactly two exits and they
   are deliberately different: the round badge in the corner, which is the same
   control in the same place as the front and is for a reader who turned the

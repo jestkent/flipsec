@@ -816,6 +816,37 @@ gate to tune, and none of section 5's copyright rules bind it, because there
 is nothing to attribute. The words are ours. What remains is the harder part:
 nothing checks the card but the person who wrote it.
 
+### The four lessons, and why these four
+
+Chosen for the reader this app is actually written for, not for how
+interesting the attack is. Ordered by how likely that reader is to meet it.
+
+**The voice on the phone.** The grandparent who gets a call in a voice they
+know is the person losing the most to AI right now, so it comes first. It
+demonstrates without cloning anyone: the same generic voice the app already
+uses for Read aloud, saying what a scammer would say. The lesson is not "we
+can copy your daughter", it is "a voice is no longer proof of who is
+calling", followed by the two things that still work — hang up and call back
+on a number you already have, and agree a family word before anything is
+wrong.
+
+**Spot the scam.** Five messages in clean English, three of them scams. This
+is the app's founding premise made checkable: bad spelling was real advice
+about a real tell, and that tell is gone because writing well now costs a
+scammer nothing. Most people score badly, and scoring badly is the lesson.
+The two genuine messages ask for nothing, which is the replacement heuristic.
+
+**Confidently wrong.** The everyday harm nobody warns ordinary people about.
+A reader is asked to pick the invented answer out of three, and all three are
+invented — the only honest way to teach that confidence carries no
+information. A demo where the fake was findable would teach the opposite of
+the truth. It matters most for what people ask when they are worried: a
+helpline number, a refund rule, whether a message is really from the bank. An
+invented phone number is somebody else's phone, or a scammer's.
+
+**Hidden orders.** Prompt injection, kept last because it is the one a reader
+is least likely to meet personally and the most likely to interest a judge.
+
 ### Why the assistant in the demo is scripted
 
 Calling a real model would have been more impressive for about a minute and

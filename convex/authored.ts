@@ -23,6 +23,36 @@ import { internalMutation } from "./_generated/server";
 
 const CARDS = [
   {
+    key: "demo-voice-clone",
+    title: "The voice on the phone is not proof any more",
+    summary:
+      "A voice you recognise used to be enough. Hear what a computer can produce now, then learn the two things that still work: hang up and call back on the number you already have, and agree a family word before anything is wrong.",
+    source: "FlipSec.ai",
+    url: "https://www.ic3.gov/PSA/2025/PSA250515",
+    tactic: "voice",
+    back: { demo: "voice-clone" },
+  },
+  {
+    key: "demo-scam-writing",
+    title: "Bad spelling stopped being how you spot a fake",
+    summary:
+      "Five messages, not one spelling mistake between them, and three are scams. Most people get this wrong, and that is the lesson: the tell everybody was taught is gone. What still works is asking what the message wants from you.",
+    source: "FlipSec.ai",
+    url: "https://consumer.ftc.gov/consumer-alerts",
+    tactic: "phishing",
+    back: { demo: "scam-writing" },
+  },
+  {
+    key: "demo-confident-wrong",
+    title: "An AI sounds exactly as sure when it is wrong",
+    summary:
+      "Three answers about a refund rule, a helpline number and your bank. Pick the invented one. There is nothing in the writing to find, which is why an AI answer is a place to start and never the source.",
+    source: "FlipSec.ai",
+    url: "https://genai.owasp.org/llmrisk/llm09-misinformation/",
+    tactic: "other",
+    back: { demo: "confident-wrong" },
+  },
+  {
     key: "demo-prompt-injection",
     title: "Your AI assistant will do what your email tells it to",
     summary:
