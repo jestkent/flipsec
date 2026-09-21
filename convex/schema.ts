@@ -92,6 +92,7 @@ export default defineSchema({
       v.literal("speech"),
       v.literal("translate"),
       v.literal("subscribe"),
+      v.literal("answer"),
     ),
     createdAt: v.number(),
   })

@@ -319,7 +319,9 @@ export const listPublished = query({
         q.eq("kind", kind).eq("status", "published"),
       )
       .order("desc")
-      .take(args.limit ?? 30);
+      // Clamped. limit is caller supplied on a public query, and an
+      // unbounded one lets anyone force a maximum-size read in a loop.
+      .take(Math.min(Math.max(args.limit ?? 30, 1), 100));
 
     // rawText is never sent to a client. It is cleared on publish, but this
     // strips it explicitly so the rule does not depend on that.

@@ -21,6 +21,11 @@
   --color-ink: #17212b;
   --color-slate: #52677a;
   --color-border: #d9e2ec;
+  /* WCAG 2.2 requires 3:1 for the boundary of a control you have to find.
+     --color-border is #d9e2ec, which is 1.31:1 on white: fine as the edge of
+     a card, not fine as the only thing showing where an input is. This is
+     3.73:1 on white and 3.42:1 on ivory, and is used ONLY on form controls. */
+  --color-field: #6e879f;
   --color-danger: #a63c35;
   --color-success: #2f7d5b;
 
@@ -75,6 +80,7 @@
   --color-ink: #17212b;
   --color-slate: #52677a;
   --color-line: #d9e2ec;
+  --color-field: #6e879f;
   --color-danger: #a63c35;
   --color-success: #2f7d5b;
 
@@ -104,6 +110,7 @@ html[data-contrast="high"] {
   --accent-strong: #245238;
   --color-slate: #334e68;
   --color-line: #829ab1;
+  --color-field: #334e68;
   --color-sage: #2f6845;
   --color-sage-deep: #245238;
 }

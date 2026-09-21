@@ -6,6 +6,7 @@ import {
   internalMutation,
   mutation,
 } from "./_generated/server";
+import { reserveSlot } from "./rateLimit";
 
 const MODEL = "gpt-4o-mini";
 
@@ -24,6 +25,13 @@ export const submitAnswer = mutation({
 
     if (args.choice < 0 || args.choice >= drill.choices.length) {
       throw new Error("choice is out of range");
+    }
+
+    // Reserved before the row is written, for the same reason as everything
+    // else that a stranger can call in a loop. Nothing here reaches a model,
+    // so the cap is generous; it exists to bound the table, not the bill.
+    if (!(await reserveSlot(ctx, "answer", args.userId, "answer"))) {
+      throw new Error("That is a lot of answers at once. Try again later.");
     }
 
     const correct = args.choice === drill.correct;

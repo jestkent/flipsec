@@ -91,7 +91,7 @@ export default function AccessibilityOptions({ compact = false }: { compact?: bo
             ...current,
             colorVision: event.target.value as Preferences["colorVision"],
           }))}
-          className="min-h-11 rounded-control border border-line bg-white px-3 text-base text-ink"
+          className="min-h-11 rounded-control border border-field bg-white px-3 text-base text-ink"
         >
           <option value="default">{t("standardColors")}</option>
           <option value="red-green">{t("redGreen")}</option>

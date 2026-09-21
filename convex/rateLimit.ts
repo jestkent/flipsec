@@ -25,10 +25,23 @@ export const BUDGETS = {
   // Sign-ups cost an outbound email and name a third party's address, so this
   // is deliberately the tightest budget in the table.
   subscribe: { kinds: ["subscribe"], perReader: 3, global: 60 },
+  // Answering a drill costs no model call, so this is about unbounded row
+  // insertion rather than money. One attempt per reader per drill is already
+  // deduped, so growing the table means inventing reader ids, which only a
+  // deployment-wide cap can stop. Set well above anything a person does: six
+  // published drills means a real reader writes six rows, ever.
+  answer: { kinds: ["answer"], perReader: 60, global: 600 },
 } as const;
 
 export type BudgetName = keyof typeof BUDGETS;
-export type CheckKind = "message" | "image" | "chat" | "speech" | "translate" | "subscribe";
+export type CheckKind =
+  | "message"
+  | "image"
+  | "chat"
+  | "speech"
+  | "translate"
+  | "subscribe"
+  | "answer";
 
 // userId comes from the browser and can be regenerated, so the per-reader cap
 // is a courtesy. The global cap is the one an attacker cannot get around, and
