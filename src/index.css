@@ -50,8 +50,12 @@
 
   /* The flip is the one place motion carries meaning, so it is the one place
      with a named duration. */
-  --flip-duration: 220ms;
-  --flip-ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+  --flip-duration: 460ms;
+  /* Overshoots a little and settles, which is what makes it read as an
+     object. The soft curve is for anything that must not overshoot, such as
+     a height. */
+  --flip-ease: cubic-bezier(0.34, 1.28, 0.64, 1);
+  --flip-ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
 
   color-scheme: light;
 }
@@ -104,23 +108,69 @@ body {
 }
 
 /* ---------------------------------------------------------------------------
-   The flip. PLAN.md section 7 is the origin of this block; the duration is
-   now 220ms rather than 520ms, which is the brief's range and does read as a
-   deliberate turn rather than a flourish.
+   The flip.
+
+   Four things make a card turn feel like an object rather than a CSS demo,
+   and the old version had one of them.
+
+   1. Weight. 220ms is a blink; the turn is over before the eye has followed
+      it. 460ms is long enough to read as a movement and short enough that a
+      reader who flips ten cards never waits.
+
+   2. Settle. The rotation eases past its mark and comes back, the way a real
+      card overshoots and rocks down. That is the whole difference between
+      "animated" and "physical", and it costs one number in a curve.
+
+   3. Depth. The card shrinks very slightly as it turns edge on and returns to
+      full size as it lands, with the shadow deepest at the same moment. The
+      eye reads that as the card lifting off the page, turning, and settling.
+      Rotation alone reads flat no matter how good the easing is.
+
+   4. No jump. The height used to change in one step at the midpoint, hidden
+      by the card being edge on. It was hidden, but everything below the card
+      still moved in one frame. Height now travels with the rotation, so the
+      feed settles rather than snaps.
+
+   The lift lives on .post and the rotation on .post-inner because both want
+   the transform property and they cannot share it.
    --------------------------------------------------------------------------- */
 
 .post {
   /* Perspective belongs on the parent. On the rotating element itself the
      projection flattens and the effect reads cheap. */
-  perspective: 1600px;
+  perspective: 1800px;
+}
+
+.post.lifting {
+  animation: flip-lift var(--flip-duration) var(--flip-ease-soft);
+}
+
+@keyframes flip-lift {
+  0% {
+    transform: scale(1);
+  }
+  48% {
+    transform: scale(0.955);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .post-inner {
   position: relative;
   transform-style: preserve-3d;
+  transition: transform var(--flip-duration) var(--flip-ease);
+}
+
+/* The height transition only switches on once the card has been measured.
+   Without this every card would animate up from zero on first paint, because
+   both faces are absolutely positioned and the container starts with no
+   natural height at all. */
+.post-inner.sized {
   transition:
     transform var(--flip-duration) var(--flip-ease),
-    box-shadow var(--flip-duration) var(--flip-ease);
+    height var(--flip-duration) var(--flip-ease-soft);
 }
 
 .post-inner.flipped {
@@ -131,7 +181,17 @@ body {
    rotating. Post.tsx adds and removes this class around the transition. */
 .post-inner.flipping {
   will-change: transform;
-  box-shadow: 0 12px 28px -10px rgb(16 42 67 / 0.22);
+  animation: flip-shadow var(--flip-duration) var(--flip-ease-soft);
+}
+
+@keyframes flip-shadow {
+  0%,
+  100% {
+    box-shadow: 0 1px 2px rgb(16 42 67 / 0.05);
+  }
+  48% {
+    box-shadow: 0 22px 46px -14px rgb(16 42 67 / 0.3);
+  }
 }
 
 .face {
@@ -166,19 +226,41 @@ body {
   pointer-events: none;
 }
 
+/* With reduced motion there is no rotation, no lift and no travelling height:
+   the faces cross-fade and the card resizes at once. The blanket reset below
+   flattens every other animation in the app, so the cross-fade is declared
+   after it and marked important, or the one piece of motion we do want under
+   this setting would be flattened too. */
 @media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .post.lifting {
+    animation: none !important;
+  }
+
   .post-inner,
+  .post-inner.sized,
   .post-inner.flipped {
-    transition: none;
-    transform: none;
+    transition: none !important;
+    transform: none !important;
+  }
+
+  .post-inner.flipping {
+    animation: none !important;
   }
 
   .face {
-    transition: opacity 120ms linear;
+    transition: opacity 140ms linear !important;
   }
 
   .face-back {
-    transform: none;
+    transform: none !important;
     opacity: 0;
   }
 
@@ -188,14 +270,6 @@ body {
 
   .post-inner.flipped .face-back {
     opacity: 1;
-  }
-
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
   }
 }
 

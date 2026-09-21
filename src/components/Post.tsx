@@ -97,6 +97,10 @@ function FlipIcon({ flipped }: { flipped: boolean }) {
 //
 // A full width solid button in its place made every card look like a landing
 // page. The label still exists for a screen reader, it is just not printed.
+//
+// The press scale is the tactile half of the interaction: the badge answers
+// the moment a finger lands, before the rotation has begun, so a 460ms turn
+// never feels like a laggy control.
 function FlipBadge({
   flipped,
   kind,
@@ -119,7 +123,7 @@ function FlipBadge({
           ? (BACK_LABEL[kind] ?? BACK_LABEL.scam)
           : (FLIP_LABEL[kind] ?? FLIP_LABEL.scam)
       }
-      className="absolute top-3 right-3 z-10 grid h-11 w-11 place-items-center rounded-full bg-white text-navy shadow-sm ring-1 ring-line transition-colors hover:text-sage-deep"
+      className="absolute top-3 right-3 z-10 grid h-11 w-11 place-items-center rounded-full bg-white text-navy shadow-sm ring-1 ring-line transition-[color,transform,box-shadow] duration-150 hover:text-sage-deep hover:shadow-md active:scale-90"
     >
       <FlipIcon flipped={flipped} />
     </button>
@@ -219,31 +223,34 @@ export default function Post({
     return () => observer.disconnect();
   }, [story._id, drill]);
 
-  // Kept in step with --flip-duration in index.css. The rotation is 220ms, so
-  // the midpoint is 110ms and will-change comes off a little after the end.
-  const FLIP_MS = 220;
+  // Kept in step with --flip-duration in index.css. Changing one without the
+  // other leaves will-change on after the card has stopped, or strips it
+  // while it is still moving.
+  const FLIP_MS = 460;
 
-  // will-change only while the rotation is actually running.
+  // will-change and the lift both last exactly as long as the rotation.
   useEffect(() => {
     if (!flipping) return;
-    const timer = setTimeout(() => setFlipping(false), FLIP_MS + 40);
+    const timer = setTimeout(() => setFlipping(false), FLIP_MS + 30);
     return () => clearTimeout(timer);
   }, [flipping]);
 
   function flip() {
-    const next = flipped ? "front" : "back";
     setFlipping(true);
     setFlipped((f) => !f);
 
-    // The lesson is much taller than the card front, so locking the card to
-    // the taller of the two would leave every card in the feed as tall as its
-    // own lesson. Instead the card is the height of the face being shown, and
-    // the swap happens at the midpoint of the rotation, while the card is edge
-    // on and the change cannot be seen. Still transform-only.
+    // The target height is set at the same instant as the rotation, not at
+    // the midpoint. It used to jump in one frame while the card was edge on:
+    // invisible on the card itself, but everything below it in the feed moved
+    // at once, which is the part that felt cheap. Now the height travels with
+    // the turn and the page settles instead of snapping.
     //
-    // The reader's place on the page is preserved by construction: the card
-    // grows downward from a fixed top edge, and nothing above it moves.
-    window.setTimeout(() => setShownFace(next), FLIP_MS / 2);
+    // Locking both faces to the taller one, as PLAN.md section 7 suggests,
+    // would make every card in the feed as tall as its own lesson.
+    //
+    // The reader's place is preserved by construction: the card grows
+    // downward from a fixed top edge, and nothing above it moves.
+    setShownFace(flipped ? "front" : "back");
   }
 
   const tactic = story.tactic ?? "other";
@@ -255,12 +262,18 @@ export default function Post({
   const showArt = !story.image || imageFailed;
 
   return (
-    <article className="post">
+    // The lift lives out here rather than on the rotating element, because
+    // both of them want the transform property and only one can have it.
+    <article className={`post ${flipping ? "lifting" : ""}`}>
       <div
         className={[
           "post-inner rounded-card border border-line bg-white",
           flipped ? "flipped" : "",
           flipping ? "flipping" : "",
+          // Height only animates once there is a height to animate from.
+          // Before the first measurement the container has none, and the
+          // whole feed would grow up from zero on first paint.
+          measured > 0 ? "sized" : "",
         ].join(" ")}
         style={{ height }}
       >

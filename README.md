@@ -23,6 +23,9 @@ language, and puts it on a card that flips.
 - **AI Sec Jobs** — openings where AI and security meet. Flip for what they
   want, whether you would fit, and how to apply.
 
+The home page explains the flip and shows what is in each feed, read live from
+the database rather than written into the page.
+
 Sign up on any tab and one card from each feed you picked arrives in a single
 email each morning. Reply to the news drill in your own words and the reply
 comes back graded.

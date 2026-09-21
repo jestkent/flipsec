@@ -13,7 +13,7 @@
 - **Auth:** none
 - **AI models:** gpt-4o-mini
 - **Started:** 2026-09-20T17:35:41Z
-- **Last updated:** 2026-09-21T02:45:18Z
+- **Last updated:** 2026-09-21T02:52:18Z
 
 ## Log
 
@@ -409,3 +409,26 @@ the same live figures, and dropped the count chips from the pathway cards. A
 grid of statistics is the house style of a generated landing page and says less
 than a sentence does (`src/components/Post.tsx`, `src/components/Home.tsx`,
 `src/index.css`).
+
+### 2026-09-21 - the flip, properly
+The turn was a single rotation on a 220ms curve, which is a blink: over before
+the eye has followed it, and flat no matter how good the easing. It is now
+four things happening together over 460ms.
+
+The rotation eases past its mark and comes back, the way a real card
+overshoots and rocks down. The card scales to 0.955 as it goes edge on and
+returns to full size as it lands, with the shadow deepest at the same instant,
+which is what the eye reads as lifting off the page rather than spinning in
+it. The lift had to live on the outer element because it and the rotation both
+want the transform property.
+
+The last part matters most and was the least visible. The card's height used
+to change in one step at the midpoint, hidden by the card being edge on - but
+everything below it in the feed still moved in a single frame. Height now
+travels with the rotation, so the page settles instead of snapping. The
+transition waits for the first measurement, or every card would animate up
+from zero on first paint.
+
+The badge answers on press with a scale, before the rotation begins, so a
+longer turn never feels like a slow control. Reduced motion keeps a cross-fade
+and none of the rest (`src/index.css`, `src/components/Post.tsx`).

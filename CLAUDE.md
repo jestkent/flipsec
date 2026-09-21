@@ -152,9 +152,22 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
 
 ## UI
 
-- The card is the height of the face being shown, swapped at the midpoint of
-  the 220ms rotation while it is edge on. FLIP_MS in Post.tsx and
-  --flip-duration in index.css have to agree. Locking to the taller face, as PLAN.md section 7
+- The flip is 460ms and made of four parts, not one. The rotation overshoots
+  slightly and settles (`--flip-ease`); the card scales to 0.955 at 48% and
+  back, which is what reads as depth; the shadow deepens at the same instant;
+  and the height travels with the turn rather than jumping at the midpoint. It
+  used to jump, which was invisible on the card but moved the whole feed below
+  it in one frame.
+- The lift is on `.post` and the rotation on `.post-inner` because both want
+  the transform property and only one can have it.
+- `FLIP_MS` in Post.tsx and `--flip-duration` in index.css have to agree, or
+  will-change outlives the movement or is stripped mid-turn.
+- The height transition waits for the first measurement (`.sized`). Without
+  that, every card animates up from zero on first paint, because both faces
+  are absolutely positioned and the container starts with no height.
+- Reduced motion turns off the rotation, the lift and the travelling height,
+  and keeps only a cross-fade. That cross-fade is declared after the blanket
+  reset and marked important, or the reset flattens it too. Locking to the taller face, as PLAN.md section 7
   says, makes every card as tall as its own lesson. Only `transform` animates.
 - Measure a content-sized wrapper inside each face, never the face. A face is
   `position: absolute; inset: 0`, so its box is whatever height we set and a
