@@ -39,6 +39,66 @@ async function unsubscribeToken(email: string): Promise<string> {
 
 export { unsubscribeToken };
 
+// AgentMail signs every webhook it sends, the way most providers do: an id, a
+// timestamp and an HMAC over "id.timestamp.body", with the signing secret
+// issued per webhook and shown on the webhook object as whsec_...
+//
+// Verifying that signature is strictly better than the shared secret in the
+// URL that this route also accepts. It proves the body was not altered as
+// well as who sent it, the secret never travels in a URL that could turn up
+// in a log, and — the practical part — the webhook already registered with
+// AgentMail keeps working untouched, so there is no window where replies
+// silently stop because a URL somewhere was not updated.
+//
+// Header names differ by vendor between the svix- prefix and the webhook-
+// prefix of the standard-webhooks spec. Both are read.
+function signatureHeaders(request: Request) {
+  const get = (name: string) =>
+    request.headers.get(`svix-${name}`) ?? request.headers.get(`webhook-${name}`);
+  return { id: get("id"), timestamp: get("timestamp"), signature: get("signature") };
+}
+
+async function signatureIsValid(
+  request: Request,
+  body: string,
+): Promise<boolean> {
+  const secret = process.env.AGENTMAIL_WEBHOOK_SECRET;
+  if (!secret) return false;
+
+  const { id, timestamp, signature } = signatureHeaders(request);
+  if (!id || !timestamp || !signature) return false;
+
+  // Reject anything older than five minutes so a captured delivery cannot be
+  // replayed later.
+  const age = Math.abs(Date.now() / 1000 - Number(timestamp));
+  if (!Number.isFinite(age) || age > 300) return false;
+
+  // The secret is base64 after the whsec_ prefix.
+  const raw = secret.startsWith("whsec_") ? secret.slice(6) : secret;
+  const keyBytes = Uint8Array.from(atob(raw), (c) => c.charCodeAt(0));
+
+  const key = await crypto.subtle.importKey(
+    "raw",
+    keyBytes,
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const mac = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    new TextEncoder().encode(`${id}.${timestamp}.${body}`),
+  );
+  const expected = btoa(String.fromCharCode(...new Uint8Array(mac)));
+
+  // The header carries a space-separated list of "v1,<signature>" so a secret
+  // can be rotated without dropping deliveries. Any one matching is enough.
+  return signature
+    .split(" ")
+    .map((part) => part.split(",")[1] ?? "")
+    .some((candidate) => secretsMatch(candidate, expected));
+}
+
 // AgentMail posts here when a reader replies to the daily drill.
 //
 // Static hosting owns the root, so this sits under /api. The full URL to
@@ -53,23 +113,25 @@ http.route({
   handler: httpAction(async (ctx, request) => {
     // Anyone could POST here. With no check, a forged "from" naming a real
     // subscriber wrote an attempt for them and spent an OpenAI call grading
-    // it — free grade spoofing and a free way to run up the bill. The secret
-    // rides in a query string or a header, whichever AgentMail can send.
+    // it — free grade spoofing and a free way to run up the bill.
     //
-    // Fails closed: if WEBHOOK_SECRET is not set, nothing is accepted.
-    const expected = process.env.WEBHOOK_SECRET;
-    if (!expected) {
-      console.error("WEBHOOK_SECRET is not set; refusing inbound mail");
-      return new Response("not configured", { status: 503 });
-    }
+    // Two ways in, and it fails closed if neither is configured. AgentMail's
+    // own signature is the real one. The shared secret in the query string is
+    // kept for a manual curl during a demo, and because it costs nothing.
+    const rawBody = await request.text();
 
+    const shared = process.env.WEBHOOK_SECRET;
     const supplied =
       new URL(request.url).searchParams.get("k") ??
       request.headers.get("x-flipsec-secret") ??
       "";
 
-    if (!secretsMatch(supplied, expected)) {
-      console.warn("inbound webhook rejected: bad or missing secret");
+    const bySignature = await signatureIsValid(request, rawBody);
+    const bySharedSecret =
+      shared !== undefined && supplied !== "" && secretsMatch(supplied, shared);
+
+    if (!bySignature && !bySharedSecret) {
+      console.warn("inbound webhook rejected: no valid signature or secret");
       return new Response("unauthorized", { status: 401 });
     }
 
@@ -84,7 +146,9 @@ http.route({
     };
 
     try {
-      event = await request.json();
+      // Already read as text above, because the signature covers the exact
+      // bytes and the body can only be consumed once.
+      event = JSON.parse(rawBody);
     } catch {
       return new Response("bad json", { status: 400 });
     }

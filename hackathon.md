@@ -13,7 +13,7 @@
 - **Auth:** none
 - **AI models:** gpt-4o-mini
 - **Started:** 2026-09-20T17:35:41Z
-- **Last updated:** 2026-09-21T01:32:56Z
+- **Last updated:** 2026-09-21T01:41:45Z
 
 ## Log
 
@@ -304,3 +304,18 @@ Added an MIT licence and a privacy note (`convex/questions.ts`,
 `convex/subscribers.ts`, `convex/lessons.ts`, `convex/stories.ts`,
 `convex/courses.ts`, `src/components/Post.tsx`,
 `src/components/LessonBack.tsx`, `src/App.tsx`, `LICENSE`).
+
+### 2026-09-21 - webhook signatures
+Replaced the shared secret on the inbound mail route with AgentMail's own
+webhook signature. Their webhook object already carried a signing secret, which
+is the better mechanism: it proves the body was not altered as well as who sent
+it, keeps the secret out of URLs and logs, and needed no change to the URL
+already registered, so there was no window where replies quietly stopped.
+
+HMAC-SHA256 over id.timestamp.body, reading both the svix- and webhook- header
+spellings, with a five minute window so a captured delivery cannot be replayed.
+The shared secret stays accepted as a query parameter for a manual curl during
+a demo. Verified against production: unsigned rejected, valid signature
+accepted under both header spellings, a tampered body carrying a real signature
+rejected, an hour-old replay rejected, and a garbage signature rejected
+(`convex/http.ts`).

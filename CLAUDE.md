@@ -45,9 +45,17 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
   only count, with the OpenAI call sitting between counting and writing, so
   twelve concurrent requests against a cap of ten all passed. Check-then-act is
   not a limit on a public endpoint.
-- Both public HTTP routes carry `WEBHOOK_SECRET` and fail closed. The inbound
-  mail route was unauthenticated, so a forged `from` could write an attempt for
-  a real subscriber and spend an OpenAI call grading it.
+- Both public HTTP routes fail closed. The inbound mail route was
+  unauthenticated, so a forged `from` could write an attempt for a real
+  subscriber and spend an OpenAI call grading it. It now verifies AgentMail's
+  own webhook signature (`AGENTMAIL_WEBHOOK_SECRET`, the `whsec_` value on the
+  webhook object): HMAC-SHA256 over `id.timestamp.body`, both the `svix-` and
+  `webhook-` header spellings, and a five minute window against replay. It
+  also accepts `WEBHOOK_SECRET` as `?k=` for a manual curl. Prefer the
+  signature: it covers the body as well as the sender, keeps the secret out of
+  URLs and logs, and needs no change to the URL registered with AgentMail.
+  Read the raw body once with `request.text()` — the signature is over exact
+  bytes, and the body cannot be consumed twice.
 - `userId` comes from the browser and can be regenerated, so per-reader caps are
   a courtesy. Anything spending money also needs a deployment-wide cap
   (`questions.by_time`).
