@@ -3,6 +3,7 @@ import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import Illusion from "./Illusion";
+import { useLanguage } from "../localization";
 import ScamFlow from "./ScamFlow";
 
 type Drill = {
@@ -32,6 +33,7 @@ export default function LessonBack({
   userId: string;
   onBack: () => void;
 }) {
+  const { t } = useLanguage();
   const submit = useMutation(api.attempts.submitAnswer);
   const ask = useAction(api.questions.askAboutStory);
   const teach = useAction(api.lessons.teachLesson);
@@ -59,7 +61,7 @@ export default function LessonBack({
     try {
       setLesson((await teach({ storyId, userId })).body);
     } catch {
-      setFailed("That did not come through. Try again in a moment.");
+      setFailed(t("sendFailed"));
     } finally {
       setTeaching(false);
     }
@@ -88,13 +90,13 @@ export default function LessonBack({
       setResult(await submit({ userId, drillId: drill!._id, choice: index }));
     } catch {
       setPicked(null);
-      setFailed("That answer did not save. Try again in a moment.");
+      setFailed(t("saveFailed"));
     }
   }
 
   if (drill === undefined) {
     return (
-      <p role="status" aria-busy="true" className="min-h-56 p-6 text-base text-slate">Opening the lesson…</p>
+      <p role="status" aria-busy="true" className="min-h-56 p-6 text-base text-slate">{t("openingLesson")}</p>
     );
   }
 
@@ -118,7 +120,7 @@ export default function LessonBack({
   return (
     <div className="flex flex-col gap-5 p-6">
       <p className="text-sm font-semibold tracking-widest text-slate uppercase">
-        How this works
+        {t("howThisWorks")}
       </p>
 
       {/* One place for any of the three network failures. role="alert" makes
@@ -139,9 +141,9 @@ export default function LessonBack({
       {redFlags.length > 0 && (
         <div>
           <p className="text-sm font-semibold tracking-wider text-slate uppercase">
-            What gives it away
+            {t("whatGivesItAway")}
           </p>
-          <ul className="mt-2 flex flex-wrap gap-2" aria-label="Warning signs">
+          <ul className="mt-2 flex flex-wrap gap-2" aria-label={t("warningSigns")}>
             {redFlags.map((flag) => (
               <li
                 key={flag}
@@ -157,7 +159,7 @@ export default function LessonBack({
       {(drill.illusion.length > 0 || drill.whyItWorks) && (
         <div className="flex flex-col gap-3">
           <p className="text-sm font-semibold tracking-wider text-slate uppercase">
-            Why it works
+            {t("whyItWorks")}
           </p>
           <Illusion pairs={drill.illusion} tactic={tactic} />
           {drill.whyItWorks && (
@@ -176,7 +178,7 @@ export default function LessonBack({
           disabled={teaching}
           className="self-start rounded-control bg-sage px-4 py-2.5 text-base font-semibold text-white hover:bg-sage-deep disabled:opacity-50"
         >
-          {teaching ? "Writing your lesson…" : "Teach me how this works →"}
+          {teaching ? t("writingLesson") : <>{t("teachMe")} <span aria-hidden>→</span></>}
         </button>
       ) : (
         <div className="flex flex-col gap-3 border-l-2 border-navy pl-4">
@@ -196,10 +198,10 @@ export default function LessonBack({
           htmlFor={`ask-${drill._id}`}
           className="text-base font-semibold text-slate"
         >
-          Ask anything about this scam
+          {t("askAnything")}
         </label>
         <p id={`ask-help-${drill._id}`} className="mt-1 text-sm text-slate">
-          Do not include passwords, codes, or account numbers.
+          {t("askHelp")}
         </p>
         <div className="mt-2 flex flex-col gap-2 sm:flex-row">
           <input
@@ -208,7 +210,7 @@ export default function LessonBack({
             value={question}
             maxLength={200}
             onChange={(e) => setQuestion(e.target.value)}
-            placeholder="How would I check if it is really them?"
+            placeholder={t("askPlaceholder")}
             className="min-h-11 min-w-0 flex-1 rounded-control border border-line bg-white px-3 py-2 text-base outline-none focus:border-sage"
           />
           <button
@@ -216,7 +218,7 @@ export default function LessonBack({
             disabled={asking || question.trim().length < 3}
             className="min-h-11 rounded-control bg-sage px-4 py-2 text-base font-semibold text-white hover:bg-sage-deep disabled:opacity-40"
           >
-            {asking ? "Asking…" : "Ask"}
+            {asking ? t("asking") : t("askButton")}
           </button>
         </div>
         {answer !== null && (
@@ -234,7 +236,7 @@ export default function LessonBack({
             onClick={() => setPractising(true)}
             className="min-h-11 text-base font-medium text-slate hover:text-navy"
           >
-            Try spotting it yourself →
+            {t("trySpotting")} <span aria-hidden>→</span>
           </button>
         ) : (
           <fieldset className="flex flex-col gap-3">
@@ -267,7 +269,7 @@ export default function LessonBack({
                     {choice}
                     {(isAnswer || isWrong) && (
                       <span className="mt-1 block font-semibold">
-                        {isAnswer ? "Correct answer" : "Your answer"}
+                        {isAnswer ? t("correctAnswer") : t("yourAnswer")}
                       </span>
                     )}
                   </button>
@@ -278,7 +280,7 @@ export default function LessonBack({
             {result !== null && (
               <p role="status" className="text-base leading-relaxed text-ink">
                 <span className="font-semibold text-navy">
-                  {result.correct ? "That's the one. " : "Not quite. "}
+                  {result.correct ? t("thatsTheOne") : t("notQuite")}{" "}
                 </span>
                 {result.explanation}
               </p>
@@ -292,7 +294,7 @@ export default function LessonBack({
         onClick={onBack}
         className="min-h-11 self-start pt-2 text-base font-medium text-slate hover:text-navy"
       >
-        ← Back to the story
+        <span aria-hidden>← </span>{t("backToStory")}
       </button>
     </div>
   );

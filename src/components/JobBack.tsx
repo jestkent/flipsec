@@ -4,6 +4,8 @@
 // The apply link is the point of the card, and it points at the company's own
 // posting on its own board rather than at any aggregator.
 
+import { useLanguage } from "../localization";
+
 type Back = {
   company?: string;
   locationChip?: string;
@@ -22,18 +24,19 @@ export default function JobBack({
   url: string;
   onBack: () => void;
 }) {
+  const { t } = useLanguage();
   if (!back) {
     return (
       <div className="flex min-h-56 flex-col gap-4 p-6">
         <p className="text-base text-slate">
-          This one is still being written up. Check back after the next crawl.
+          {t("notWrittenUp")}
         </p>
         <button
           type="button"
           onClick={onBack}
           className="min-h-11 self-start text-base font-medium text-slate hover:text-navy"
         >
-          ← Back to the role
+          <span aria-hidden>← </span>{t("backToRole")}
         </button>
       </div>
     );
@@ -46,7 +49,7 @@ export default function JobBack({
     <div className="flex flex-col gap-5 p-6">
       <div>
         <p className="text-sm font-semibold tracking-widest text-slate uppercase">
-          What they want
+          {t("flipJob")}
         </p>
         {back.company && (
           <p className="mt-1 text-base font-medium text-navy">
@@ -86,7 +89,7 @@ export default function JobBack({
       {back.howToApply && (
         <div className="rounded-card bg-ivory p-4">
           <p className="text-sm font-semibold tracking-wider text-slate uppercase">
-            How to apply
+            {t("howToApply")}
           </p>
           <p className="mt-1.5 text-base leading-relaxed text-navy">
             {back.howToApply}
@@ -101,7 +104,7 @@ export default function JobBack({
         onClick={(e) => e.stopPropagation()}
         className="inline-flex min-h-11 items-center self-start rounded-control bg-navy px-4 py-2.5 text-base font-medium text-white hover:bg-navy-soft"
       >
-        See the full posting <span aria-hidden>↗</span><span className="sr-only">(opens in a new tab)</span>
+        {t("seeFullPosting")} <span aria-hidden>↗</span><span className="sr-only">{t("newTab")}</span>
       </a>
 
       <button
@@ -109,7 +112,7 @@ export default function JobBack({
         onClick={onBack}
         className="min-h-11 self-start pt-1 text-base font-medium text-slate hover:text-navy"
       >
-        ← Back to the role
+        <span aria-hidden>← </span>{t("backToRole")}
       </button>
     </div>
   );

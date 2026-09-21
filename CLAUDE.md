@@ -231,10 +231,25 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
   onto logical ones before they would read correctly. Adding one to the list
   without that work produces a mirrored-looking page, not a translated one.
 - Story translation (`localization.translateStory`, cached in
-  `storyTranslations`) covers a card's title and summary on the front only.
-  The lesson, course and job backs are not translated yet — do not assume a
-  reader who switched languages sees a translated back, and do not remove the
-  English fallback in `Post.tsx` if that gap gets closed later.
+  `storyTranslations`) covers the whole card: title, summary, red flags, the
+  course or job `back`, and the drill. One call already returned all of it —
+  `Post.tsx` was reading only the title and summary and discarding the rest,
+  which left a translated headline sitting over an English lesson. Translating
+  a back costs nothing extra; it is the same cached row.
+- `showOriginal` has to return the **whole** card to English, back included.
+  A reader who asked for the original and still gets a translated lesson has
+  been given half a control.
+- The quiz is graded server side from the drill id and the index the reader
+  picked, and the correct index is never sent to the browser. That makes array
+  **order** the one thing a translation must preserve: a reordered `choices`
+  array marks a correct answer wrong. The prompt says so explicitly, and
+  `Post.tsx` refuses translated choices unless the count still matches,
+  falling back to English rather than risking a mis-graded quiz.
+- Every string a reader sees on a card lives in the dictionary, including the
+  flip labels. `FLIP_LABEL` and `BACK_LABEL` hold dictionary **keys**, not
+  text. A hardcoded English label on a translated card is the bug that made
+  the whole feature look broken: the tabs changed language and the cards did
+  not. If a new string is added to a card, add the key at the same time.
 - `translateStory` reserves a rate-limit slot **only on a cache miss**, after
   `storySource` reports no cached row. A hit costs nothing and must never
   consume a slot, or a reader switching language on a warm feed burns their

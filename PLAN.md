@@ -572,6 +572,36 @@ feed fires one call per visible card. Going from two languages to ten
 multiplied the uncached surface by five on a public action that spends money,
 which is what made the limit necessary rather than merely tidy.
 
+### What "translated" first meant, and what it means now
+
+The first version of this shipped translating a card's title and summary and
+nothing else, and it read as broken. The tabs and the navigation changed
+language, the headline changed language, and then the lesson behind the flip
+was still English — as was every label around it, because the interface
+dictionary only ever covered the header and the accessibility panel.
+
+Two separate causes, and only the second was expensive. The card backs were
+already being translated: one cached call returns title, summary, red flags,
+the course or job back and the whole drill, and the component was reading two
+of those fields and throwing the rest away. Reading them costs nothing. The
+labels — the flip prompt, the section headings, the quiz feedback, the ask
+form — were hardcoded English in the components and had to be extracted, about
+thirty strings across four files.
+
+The lesson worth keeping: partial translation is worse than none. A reader who
+picks their language and gets a translated headline over an English lesson
+learns that the feature does not work, and there is no way for them to tell
+which parts are meant to be English. Ship a card translated or leave it alone.
+
+One correctness constraint falls out of translating the drill. Answers are
+graded on the server from the drill id and the index the reader picked, and
+the correct index never reaches the browser, so array order is the only thing
+holding the quiz together. A reordered `choices` array would mark a correct
+answer wrong — a worse failure than an untranslated one, because the reader
+would be told they misread a scam they actually spotted. The prompt is
+explicit about order, and the component refuses translated choices whose count
+does not match, falling back to English.
+
 Only the front of a card translates today: the headline and the one-line
 summary on every feed. The lesson, the course guide and the job posting on the
 back of a card are still English regardless of language, and that is a known

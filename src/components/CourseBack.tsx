@@ -6,6 +6,8 @@
 // reports the height it was given rather than the height of its content, and
 // Post's ResizeObserver then clamps the card and clips the text.
 
+import { useLanguage } from "../localization";
+
 type Back = {
   provider?: string;
   whatYouLearn?: string[];
@@ -23,18 +25,19 @@ export default function CourseBack({
   url: string;
   onBack: () => void;
 }) {
+  const { t } = useLanguage();
   if (!back) {
     return (
       <div className="flex min-h-56 flex-col gap-4 p-6">
         <p className="text-base text-slate">
-          This one is still being written up. Check back after the next crawl.
+          {t("notWrittenUp")}
         </p>
         <button
           type="button"
           onClick={onBack}
           className="min-h-11 self-start text-base font-medium text-slate hover:text-navy"
         >
-          ← Back to the guide
+          <span aria-hidden>← </span>{t("backToGuide")}
         </button>
       </div>
     );
@@ -45,7 +48,7 @@ export default function CourseBack({
   return (
     <div className="flex flex-col gap-5 p-6">
       <p className="text-sm font-semibold tracking-widest text-slate uppercase">
-        What you will learn
+        {t("flipCourse")}
       </p>
 
       {learn.length > 0 && (
@@ -67,7 +70,7 @@ export default function CourseBack({
       {back.whoItIsFor && (
         <div>
           <p className="text-sm font-semibold tracking-wider text-slate uppercase">
-            Who it is for
+            {t("whoItIsFor")}
           </p>
           <p className="mt-1.5 text-base leading-relaxed text-ink">
             {back.whoItIsFor}
@@ -78,14 +81,14 @@ export default function CourseBack({
       {back.firstStep && (
         <div className="rounded-card bg-ivory p-4">
           <p className="text-sm font-semibold tracking-wider text-slate uppercase">
-            How to start
+            {t("howToStart")}
           </p>
           <p className="mt-1.5 text-base leading-relaxed text-navy">
             {back.firstStep}
           </p>
           {back.timeCommitment && (
             <p className="mt-2 text-base text-slate">
-              Takes {back.timeCommitment}.
+              {t("timeNeeded")}: {back.timeCommitment}
             </p>
           )}
         </div>
@@ -98,7 +101,7 @@ export default function CourseBack({
         onClick={(e) => e.stopPropagation()}
         className="inline-flex min-h-11 items-center self-start rounded-control bg-navy px-4 py-2.5 text-base font-medium text-white hover:bg-navy-soft"
       >
-        Open the guide <span aria-hidden>↗</span><span className="sr-only">(opens in a new tab)</span>
+        {t("openGuide")} <span aria-hidden>↗</span><span className="sr-only">{t("newTab")}</span>
       </a>
 
       <button
@@ -106,7 +109,7 @@ export default function CourseBack({
         onClick={onBack}
         className="min-h-11 self-start pt-1 text-base font-medium text-slate hover:text-navy"
       >
-        ← Back to the guide
+        <span aria-hidden>← </span>{t("backToGuide")}
       </button>
     </div>
   );

@@ -28,18 +28,12 @@ const CHIP_TONE: Record<string, "neutral" | "accent" | "highlight" | "danger" | 
 };
 
 // What the flip promises, per feed. The card says what is behind it rather
-// than just offering to turn over.
-const FLIP_LABEL: Record<string, string> = {
-  scam: "See how this works",
-  course: "What you will learn",
-  job: "What they want",
-};
-
-const BACK_LABEL: Record<string, string> = {
-  scam: "Back to the story",
-  course: "Back to the guide",
-  job: "Back to the role",
-};
+// than just offering to turn over. These are dictionary keys, not text: the
+// label is printed on the card front and read out as the badge's accessible
+// name, so leaving it in English put an English control on a translated card.
+const FLIP_LABEL = { scam: "flipScam", course: "flipCourse", job: "flipJob" } as const;
+const BACK_LABEL = { scam: "backToStory", course: "backToGuide", job: "backToRole" } as const;
+type LabelKey = (typeof FLIP_LABEL)[keyof typeof FLIP_LABEL] | (typeof BACK_LABEL)[keyof typeof BACK_LABEL];
 
 // Cards carry a real date as well as a relative one. "3d" tells a reader how
 // fresh it is; the date tells them what they are looking at when they come
@@ -117,6 +111,7 @@ function FlipBadge({
   controls: string;
   buttonRef: RefObject<HTMLButtonElement | null>;
 }) {
+  const { t } = useLanguage();
   return (
     <button
       ref={buttonRef}
@@ -127,11 +122,11 @@ function FlipBadge({
       }}
       aria-pressed={flipped}
       aria-controls={controls}
-      aria-label={
-        flipped
-          ? (BACK_LABEL[kind] ?? BACK_LABEL.scam)
-          : (FLIP_LABEL[kind] ?? FLIP_LABEL.scam)
-      }
+      aria-label={t(
+        (flipped
+          ? (BACK_LABEL[kind as keyof typeof BACK_LABEL] ?? BACK_LABEL.scam)
+          : (FLIP_LABEL[kind as keyof typeof FLIP_LABEL] ?? FLIP_LABEL.scam)) as LabelKey,
+      )}
       className="absolute top-3 right-3 z-10 grid h-11 w-11 place-items-center rounded-full bg-white text-navy shadow-sm ring-1 ring-line transition-[color,transform,box-shadow] duration-150 hover:text-sage-deep hover:shadow-md active:scale-90"
     >
       <FlipIcon flipped={flipped} />
@@ -151,7 +146,8 @@ function FlipHint({
   onFlip: () => void;
   controls: string;
 }) {
-  const label = FLIP_LABEL[kind] ?? FLIP_LABEL.scam;
+  const { t } = useLanguage();
+  const label = t((FLIP_LABEL[kind as keyof typeof FLIP_LABEL] ?? FLIP_LABEL.scam) as LabelKey);
 
   return (
     <button
@@ -202,12 +198,15 @@ export default function Post({
   const { t, language } = useLanguage();
   const kind = story.kind ?? "scam";
 
-  // Front-card translation. The backend already returns the whole card
-  // shape (title, summary, red flags, back, drill) for any kind, but this
-  // only swaps the FRONT text for now -- the lesson, course and job backs
-  // stay in English until that gets its own pass. Defaults to English, so a
-  // reader who never touches the language selector never triggers any of
-  // this.
+  // Card translation. One cached call already returns the whole card shape
+  // for any kind -- title, summary, red flags, the course or job back, and
+  // the drill -- so the back costs nothing extra to translate. It was being
+  // generated and then thrown away, with only the title and summary read,
+  // which left a reader who picked another language with a translated
+  // headline over an English lesson.
+  //
+  // Defaults to English, so a reader who never touches the language selector
+  // never triggers any of this.
   const translateStory = useAction(api.localization.translateStory);
   const cachedTranslation = useQuery(
     api.localizationData.story,
@@ -234,9 +233,25 @@ export default function Post({
     });
   }, [language, cachedTranslation, story._id, translateStory]);
 
-  const translation = language !== "en" ? (cachedTranslation as { title?: string; summary?: string } | null | undefined) : null;
-  const displayTitle = translation && !showOriginal && translation.title ? translation.title : story.title;
-  const displaySummary = translation && !showOriginal && translation.summary ? translation.summary : story.summary;
+  type Translated = {
+    title?: string;
+    summary?: string;
+    redFlags?: string[];
+    back?: unknown;
+    drill?: Record<string, unknown>;
+  };
+  const translation = language !== "en" ? (cachedTranslation as Translated | null | undefined) : null;
+  // One switch for the whole card. "View original English" has to return the
+  // back to English as well, or a reader who asked for the original is still
+  // reading a translated lesson.
+  const useTranslated = Boolean(translation) && !showOriginal;
+  const displayTitle = useTranslated && translation?.title ? translation.title : story.title;
+  const displaySummary = useTranslated && translation?.summary ? translation.summary : story.summary;
+  const displayRedFlags =
+    useTranslated && Array.isArray(translation?.redFlags) && translation.redFlags.length === (story.redFlags ?? []).length
+      ? translation.redFlags
+      : (story.redFlags ?? []);
+  const displayBack = useTranslated && translation?.back ? translation.back : story.back;
 
   // Only load the drill once the reader actually flips. Loading one per post
   // would open a subscription for every card in the feed.
@@ -255,6 +270,23 @@ export default function Post({
   useEffect(() => {
     if (liveDrill !== undefined) setDrill(liveDrill);
   }, [liveDrill]);
+
+  // The translated drill keeps the real row's _id and storyId: grading happens
+  // server side from the drill id and the index the reader picked, and the
+  // correct index is never sent to the browser at all.
+  //
+  // That makes choice ORDER the one thing that has to survive translation. If
+  // the model reordered them, a reader would pick the right sentence and be
+  // graded against a different one. The prompt is explicit about order and
+  // runs at temperature 0, and this refuses the translated choices outright
+  // unless the count still matches, falling back to English rather than
+  // risking a quiz that marks a correct answer wrong.
+  const translatedDrill = useTranslated ? translation?.drill : undefined;
+  const displayDrill =
+    drill && translatedDrill && Array.isArray(translatedDrill.choices)
+      && translatedDrill.choices.length === drill.choices.length
+      ? { ...drill, ...translatedDrill, _id: drill._id, storyId: drill.storyId }
+      : drill;
 
   // Both faces are absolutely positioned, so the container has no natural
   // height. Measure each one separately.
@@ -466,7 +498,7 @@ export default function Post({
                   onClick={(e) => e.stopPropagation()}
                   className="min-h-11 content-center text-base font-medium text-slate hover:text-navy"
                 >
-                  <span aria-hidden>↗ </span>Source <span className="sr-only">(opens in a new tab)</span>
+                  <span aria-hidden>↗ </span>{t("source")} <span className="sr-only">{t("newTab")}</span>
                 </a>
               </footer>
             </div>
@@ -505,15 +537,15 @@ export default function Post({
               <ReadAloudButton targetRef={backRef} label={t("readLesson")} />
             </div>
             {kind === "course" ? (
-              <CourseBack back={story.back} url={story.url} onBack={() => flip(true)} />
+              <CourseBack back={displayBack} url={story.url} onBack={() => flip(true)} />
             ) : kind === "job" ? (
-              <JobBack back={story.back} url={story.url} onBack={() => flip(true)} />
+              <JobBack back={displayBack} url={story.url} onBack={() => flip(true)} />
             ) : (
               <LessonBack
-                drill={drill}
+                drill={displayDrill}
                 storyId={story._id}
                 tactic={tactic}
-                redFlags={story.redFlags ?? []}
+                redFlags={displayRedFlags}
                 userId={userId}
                 onBack={() => flip(true)}
               />

@@ -59,12 +59,18 @@ The interface and every card headline read in eleven languages: English,
 Spanish, Simplified Chinese, Hindi, Filipino, Vietnamese, Russian, Japanese,
 Korean, Brazilian Portuguese and French. Each language ships a full interface
 dictionary rather than translated article text over English buttons, and the
-menu names every language in its own script. Card headlines and summaries are
-translated on demand and cached, so the same card is never translated twice.
-The lesson, course guide and job posting behind a flip are still English in
-every language — a known gap, stated here rather than left for a reader to
-discover. No right-to-left language ships yet, because the layout needs to move
-off physical direction classes before Arabic or Urdu would read correctly.
+menu names every language in its own script. A whole card translates, not just
+its headline: the summary, the warning signs, and the lesson, course guide or
+job posting behind the flip, along with every label around them. Translations
+are generated once per card and language and then cached, so the same card is
+never translated twice.
+
+Two things stay in English on purpose. Source names and links are never
+translated, because the reader needs to recognise what they are clicking
+through to. And the About page and homepage copy are English for now, which is
+an incomplete piece of work rather than a decision. No right-to-left language
+ships yet either, because the layout needs to move off physical direction
+classes before Arabic or Urdu would read correctly rather than mirror.
 
 Sign up on any tab and one card from each feed you picked arrives in a single
 email each morning. Reply to the news drill in your own words and the reply
