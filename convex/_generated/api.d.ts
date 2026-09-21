@@ -25,6 +25,7 @@ import type * as localization from "../localization.js";
 import type * as localizationData from "../localizationData.js";
 import type * as probe from "../probe.js";
 import type * as questions from "../questions.js";
+import type * as rateLimit from "../rateLimit.js";
 import type * as stories from "../stories.js";
 import type * as subscribers from "../subscribers.js";
 
@@ -52,6 +53,7 @@ declare const fullApi: ApiFromModules<{
   localizationData: typeof localizationData;
   probe: typeof probe;
   questions: typeof questions;
+  rateLimit: typeof rateLimit;
   stories: typeof stories;
   subscribers: typeof subscribers;
 }>;

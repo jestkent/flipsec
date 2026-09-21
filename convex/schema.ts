@@ -95,7 +95,12 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index("by_user_time", ["userId", "createdAt"])
-    .index("by_time", ["createdAt"]),
+    .index("by_time", ["createdAt"])
+    // Added so an hourly budget counts only the kinds that belong to it. The
+    // two indexes above are kept: they still back "everything this reader did"
+    // reads, and dropping an index is not an additive change.
+    .index("by_kind_time", ["kind", "createdAt"])
+    .index("by_user_kind_time", ["userId", "kind", "createdAt"]),
 
   // Maps an anonymous browser reader to its durable Agent component thread.
   // The component owns the messages; this table is the access boundary used

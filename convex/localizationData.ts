@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery, query } from "./_generated/server";
+import { reserveSlot } from "./rateLimit";
 
 import { language, speechLanguage } from "./languages";
 
@@ -92,31 +93,11 @@ export const saveSpeech = internalMutation({
 export const reserveTranslation = internalMutation({
   args: { userId: v.string() },
   returns: v.boolean(),
-  handler: async (ctx, args) => {
-    if (args.userId.length < 1 || args.userId.length > 100) return false;
-    const since = Date.now() - 60 * 60 * 1000;
-    const mine = await ctx.db.query("toolChecks")
-      .withIndex("by_user_time", (q) => q.eq("userId", args.userId).gt("createdAt", since)).take(30);
-    if (mine.length >= 30) return false;
-    const all = await ctx.db.query("toolChecks").withIndex("by_time", (q) => q.gt("createdAt", since)).take(300);
-    if (all.length >= 300) return false;
-    await ctx.db.insert("toolChecks", { userId: args.userId, kind: "translate", createdAt: Date.now() });
-    return true;
-  },
+  handler: async (ctx, args) => reserveSlot(ctx, "translate", args.userId, "translate"),
 });
 
 export const reserveSpeech = internalMutation({
   args: { userId: v.string() },
   returns: v.boolean(),
-  handler: async (ctx, args) => {
-    if (args.userId.length < 1 || args.userId.length > 100) return false;
-    const since = Date.now() - 60 * 60 * 1000;
-    const mine = await ctx.db.query("toolChecks")
-      .withIndex("by_user_time", (q) => q.eq("userId", args.userId).gt("createdAt", since)).take(20);
-    if (mine.length >= 20) return false;
-    const all = await ctx.db.query("toolChecks").withIndex("by_time", (q) => q.gt("createdAt", since)).take(300);
-    if (all.length >= 300) return false;
-    await ctx.db.insert("toolChecks", { userId: args.userId, kind: "speech", createdAt: Date.now() });
-    return true;
-  },
+  handler: async (ctx, args) => reserveSlot(ctx, "speech", args.userId, "speech"),
 });
