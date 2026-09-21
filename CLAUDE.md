@@ -52,6 +52,38 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
   stranger wrote back to us, and an unknown address returning `[]` confirmed
   who was subscribed. It was deleted. Anything per-person needs a real session,
   not a caller-supplied key.
+- **Every hourly cap lives in `convex/rateLimit.ts`, and a budget counts only
+  its own kinds.** They used to be three copies counting EVERY row in
+  `toolChecks`, whatever wrote it. The table is shared, so the budgets were
+  not independent: 210 legitimate translations filled `reserveChat`'s ceiling
+  of 160 and took Ask FlipSec offline for every visitor, while `reserveSpeech`
+  read the same rows against 300 and kept passing. The per-reader caps were
+  worse — one reader translating thirty cards spent their own assistant budget.
+  `by_kind_time` and `by_user_kind_time` exist for this. If a feature reports
+  an hourly limit with no matching traffic, check `toolChecks` by kind first.
+- **Reserve only when the work will actually cost something.**
+  `translateStory` reserves AFTER the cache is checked. A hit must stay free
+  and unmetered, or a reader switching language on a warm feed spends their
+  budget on rows that were already paid for.
+- **`subscribers.pending` absent means CONFIRMED.** Anyone can type any
+  address into the sign-up box, so a sign-up now records an unconfirmed row and
+  mails that address a link; nothing is sent until the link is pressed, which
+  puts consent in the mailbox rather than in whoever filled in the form. Every
+  row written before that existed is a real reader, so `listActive` filters
+  `pending !== true` and never `pending === false`. That distinction is the
+  whole safety property — do not tidy it into a boolean with a default.
+- **Both mail routes draw a button on GET and act on POST.** Outlook Safe
+  Links, Proofpoint and Gmail fetch links in mail before a human sees them. A
+  GET that unsubscribed on sight quietly removed real readers, and a GET that
+  confirmed on sight would make double opt-in meaningless because the scanner
+  would be doing the consenting. `confirmToken` signs `confirm:<address>` and
+  `unsubscribeToken` signs the bare address, so neither link can do the
+  other's job; `unsubscribeToken` must keep signing the bare address, because
+  links in already-delivered mail carry those tokens. The address now reaches
+  the hand-built HTML in a hidden field, so `escapeHtml` is not decorative.
+- **A public query does not let the caller choose how much we read.**
+  `listPublished` clamps `limit` to 1..100. Unbounded, it let anyone force a
+  maximum-size read in a loop.
 - **Rate limits must claim the slot in the same transaction that counts it.**
   `questions.reserve` inserts the row before the model is called. It used to
   only count, with the OpenAI call sitting between counting and writing, so
@@ -161,6 +193,30 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
 - Every control has a visible keyboard focus ring, set once in `index.css` on
   `:focus-visible`. Several had none and relied on a browser default a custom
   background swallowed.
+- `border-line` (#d9e2ec) is 1.31:1 on white: correct as the edge of a card,
+  and a WCAG 2.2 1.4.11 failure as the only thing showing where an input is.
+  `border-field` (#6e879f, 3.73:1 on white, 3.42:1 on ivory) exists for the
+  three form controls whose boundary it is and nothing else. Do not move the
+  app onto it wholesale — the quieter card line is deliberate. After adding any
+  `@theme` token, grep the compiled CSS for the utility: a Tailwind v4 token
+  that self-references generates nothing at all and fails silently.
+- `ErrorBoundary.tsx` wraps the app in `main.tsx`. Without it one thrown
+  render error left a blank white page, which for a screen reader announces
+  nothing and for a non-technical reader is indistinguishable from a slow
+  connection. It is a class component because that is still the only way to
+  catch a render error, and it deliberately offers no reload button: a crash
+  that reproduces on mount would loop.
+- Privacy is the fifth view in `App.tsx` state, linked from the footer of
+  every view and from a sentence under the sign-up box. It is written from the
+  schema rather than a template and has to be updated when what is stored
+  changes. A README on GitHub is not notice to someone typing their address
+  into a form.
+- The absolute URLs in `index.html` (canonical, `og:url`, `og:image`,
+  `twitter:image`), `public/sitemap.xml` and `public/robots.txt` all name the
+  production domain and MOVE TOGETHER. Open Graph does not resolve relative
+  paths, which is why they are absolute. The sitemap has one entry because the
+  reading views have no URL of their own; listing `/about` would point a
+  crawler at a path that serves the same shell.
 
 ## UI
 
@@ -335,6 +391,20 @@ security expert, and the people these scams take the most from are usually older
 and were never the reader the usual advice imagined. Plain words serve both. Keep
 school vocabulary out of the app: readers are not marked, graded, or set
 homework.
+
+## Audit
+
+`AUDIT.md` records the pre-production audit, what was fixed and where, what
+is deliberately still open, and the manual checks that cannot be made from
+the repository. Read it before changing anything in the list above: it says
+which behaviours are load-bearing and what breaks if they are "tidied".
+
+Two findings are open on purpose. Security headers (no CSP, HSTS or frame
+protection) cannot be set from the repository — `@convex-dev/static-hosting`
+serves fixed headers — so they belong in a Cloudflare Transform Rule, and
+AUDIT.md carries a starter policy whose `wss:`, `media-src` and `img-src`
+lines are the ones that break the app if got wrong. URL routing stays unbuilt,
+so the site has one indexable URL and returns 200 for unknown paths.
 
 ## Spec
 

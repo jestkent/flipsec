@@ -13,7 +13,7 @@
 - **Auth:** none
 - **AI models:** gpt-4o-mini, gpt-4o-mini-tts
 - **Started:** 2026-09-20T17:35:41Z
-- **Last updated:** 2026-09-21T06:05:00Z
+- **Last updated:** 2026-09-21T06:15:00Z
 
 ## Log
 
@@ -644,3 +644,43 @@ Three feeds still return 6, 11 and 10 rows.
 
 The general lesson: partial translation is worse than none, because a reader
 cannot tell which English is deliberate and which is broken.
+
+### 2026-09-21 - a pre-production audit, and the outage it found
+
+Audited the whole app against the live deployment before launch: secrets,
+headers, injection, input validation, abuse, errors, performance,
+accessibility, SEO and dependencies. Findings and fixes are in AUDIT.md.
+
+It found Ask FlipSec already down in production, unreported. Three reserve
+functions each counted EVERY row in the shared usage table and compared it to
+their own ceiling, so the budgets were never independent. A pre-generation run
+of 210 translations filled the assistant's ceiling of 160 and blocked it for
+every visitor, while the speech budget read the same rows against 300 and kept
+passing. Nothing was under attack. A limit was counting work it was not
+limiting. Budgets now count only their own kinds, through two additive indexes.
+
+The sign-up endpoint was a public write with no rate limit and no consent step,
+so anyone could put a stranger's address on a daily mailing list. A sign-up now
+records an unconfirmed row and mails that address a link; nothing is sent until
+the link is pressed. Both mail routes draw a button on GET and act on POST,
+because Outlook, Proofpoint and Gmail fetch links in mail before a person sees
+them - which already meant a scanner could unsubscribe a real reader.
+
+Also shipped: an error boundary, where one render error had shown a blank page;
+a clamp on a public query whose size the caller chose; a cap on drill answers; a
+form-control border that meets the 3:1 WCAG 2.2 requirement instead of 1.31:1; a
+Privacy page written from the schema; Open Graph tags and a real 1200x630 card,
+where a shared link had rendered as a bare URL; robots.txt and sitemap.xml.
+
+Clean on inspection: no secrets in source, git history or the bundle; no
+sourcemaps; no server SDKs in the client bundle; zero XSS sinks; 0 npm audit
+vulnerabilities; every text contrast pair passing.
+
+Two findings stay open on purpose. Security headers cannot be set from the
+repository - static hosting serves fixed headers, so a CSP belongs in the CDN,
+and one cannot be verified without a browser while a wrong connect-src takes
+the whole app down. URL routing stays unbuilt, so the site has one indexable
+URL. Both are written down rather than quietly left.
+
+Verified against production after every change: three feeds still returning 6,
+11 and 10.

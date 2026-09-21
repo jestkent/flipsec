@@ -145,9 +145,18 @@ for model calls. An attached image is resized in the browser, sent to OpenAI for
 that answer, and not kept in the conversation or the app's own tables. There are
 no accounts. A reader on the web is a random id kept in their own browser.
 
+Signing up does not subscribe anyone. It records an unconfirmed row and mails
+that address a link, and nothing is sent until the link is pressed, so nobody
+can put a stranger on the list. Both the confirm and the unsubscribe page show
+a button rather than acting when they are opened, because mail scanners fetch
+links before a person sees them.
+
 Every daily email carries a working unsubscribe link, signed so that only the
-addressee's own link works. Both public HTTP routes require a shared secret and
-fail closed without one.
+addressee's own link works. The inbound mail route verifies AgentMail's own
+webhook signature and both public HTTP routes fail closed.
+
+The app has a Privacy page, linked from the footer of every view and from the
+sign-up box, written from the schema rather than a template.
 
 ## Local setup
 

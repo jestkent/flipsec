@@ -614,6 +614,61 @@ call.
 
 ---
 
+## 23. Shipped extension: the pre-production audit
+
+A full audit ran against the live deployment before launch. The findings, the
+fixes and the reasoning are in AUDIT.md; this section records the two that
+changed how the app thinks, rather than only what it does.
+
+### A shared table is not three independent limits
+
+Three reserve functions each counted every row in `toolChecks`, whatever
+wrote it, and each compared that count to its own ceiling. They read like
+three limits and behaved like one. A pre-generation run of 210 translations
+filled Ask FlipSec's ceiling of 160 and took the assistant offline for every
+visitor, while the speech budget read the same rows against 300 and kept
+passing.
+
+Nothing was under attack and nothing was misconfigured. The bug was that a
+limit counted work it was not limiting. The per-reader caps had it worse: a
+reader who translated thirty cards spent their own assistant budget doing it,
+so using one feature quietly cost them another.
+
+The lesson generalises past rate limiting. When several features share one
+store, the thing that makes them independent has to be written down in the
+query, not assumed from the fact that they are different features.
+
+### Consent is not a form field
+
+`subscribe` validated the shape of an email address carefully and then
+subscribed it. Anyone could put a stranger on a daily mailing list: unwanted
+mail for them, spam complaints against a shared sending domain for us, and
+nothing that could be called consent.
+
+The fix is not a better form. Nothing is sent to an address until that
+address presses a button in a message we sent it, which moves the decision
+from whoever typed into the box to the person who will receive the mail.
+
+Both mail routes now draw a button on GET and act on POST, because Outlook,
+Proofpoint and Gmail all fetch links in mail before a human sees them. That
+already meant a scanner could unsubscribe a real reader by prefetching their
+own link, and would have meant a scanner could do the consenting.
+
+### What stayed open, and why
+
+Security headers cannot be set from the repository: the static hosting
+component serves fixed headers, so a CSP belongs in the CDN in front. A CSP
+also cannot be verified without a browser, and getting `connect-src` wrong
+takes the whole app down, so shipping one blind would have traded a
+theoretical risk for a real outage.
+
+URL routing stays unbuilt. Section 6 of this plan and CLAUDE.md both record
+that a router does not earn itself here, and that is still true of a router —
+but the cost is now measured rather than assumed: one indexable URL, no deep
+links, an inert back button and HTTP 200 on unknown paths.
+
+---
+
 ## Appendix: the Convex mental model
 
 Worth re-reading when something does not behave.
