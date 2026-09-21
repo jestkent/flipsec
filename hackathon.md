@@ -929,3 +929,45 @@ Still open and written down rather than quietly left: the four demo components
 are themselves English-only. Fixing the key brings the lessons back, and their
 body text is still English in every language.
 
+### 2026-09-21 - English is a language, so it says so
+
+The question was whether the untranslated interactive lessons could be left to
+the browser's own translator, or removed. Neither, and chasing it turned a
+translation gap into an accessibility finding.
+
+html lang already follows the reader's choice. So a reader on Spanish got
+lang="es" wrapped around Home, About, Privacy, the sign-up form and all four
+interactive lessons, every one of which is still written in English. English
+text, declared as Spanish.
+
+Invisible to a sighted reader. For somebody on a screen reader it is close to
+unreadable - the reader switches to a Spanish voice and pronounces English
+words with Spanish phonetics. WCAG 2.2 SC 3.1.2, Language of Parts, failing
+across most of the app's chrome rather than in one corner.
+
+Marking those regions lang="en" fixes it and answers the original question on
+the way: a browser's translator will not offer to translate a section it has
+been told is already in the target language. The attribute that makes a screen
+reader pronounce English correctly is the same one that makes Chrome offer to
+translate it. One change, both results.
+
+ReadAloudButton declares the reader's language back, since every string it
+renders comes from the dictionary and it sits inside those English regions -
+the same fault pointing the other way.
+
+The demo faces also carry a visible line, from the dictionary and so in the
+reader's own language, saying the lesson is in English. A reader who meets an
+English lesson should be told rather than left to conclude the app is broken.
+Removing the lessons was the other option and was the wrong one: they are the
+only thing on AI Sec Learn that is ours rather than a link to somebody else's.
+
+Also closed: the Accessibility panel was 288px wide and anchored right, with
+nothing to spare at a 320px viewport. It now carries a max-width holding a
+16px gutter at any width. The compiled rule was checked in the built CSS
+rather than assumed, which this project has been caught by before.
+
+None of this is translation. The four demos are still English. What changed is
+that the app now tells the truth about which language each part of it is in,
+which is what both a screen reader and a translator need before either can do
+anything sensible.
+

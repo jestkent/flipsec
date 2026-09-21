@@ -9,7 +9,7 @@ import TacticArt from "./TacticArt";
 import { Badge } from "./ui";
 import ReadAloudButton from "./ReadAloudButton";
 import { demoKey, findDemo } from "./demoRegistry";
-import { useLanguage } from "../localization";
+import { languageInfo, useLanguage } from "../localization";
 import { readerId } from "../reader";
 
 type Story = Omit<Doc<"stories">, "rawText">;
@@ -169,11 +169,35 @@ function FlipHint({
 
 // Renders whichever interactive lesson a card's back names. The registry has
 // already been asked whether it exists, so this only has to draw it.
+//
+// The lesson itself is still written in English, so the region carries
+// lang="en" while the rest of the page carries the reader's language. That is
+// not decoration. <html lang> is set to the chosen language, so without this
+// a screen reader reads English words through a Spanish or Japanese voice,
+// which is close to unintelligible -- WCAG 2.2 SC 3.1.2. It is also what lets
+// a browser's own translator see an English island worth offering to
+// translate. The note above it stays in the reader's language, so it needs
+// its own lang back.
 function DemoFace({ demoName }: { demoName: string | null }) {
+  const { t, language } = useLanguage();
   const demo = findDemo(demoName);
   if (!demo) return null;
   const Lesson = demo.Component;
-  return <Lesson />;
+  return (
+    <>
+      {language !== "en" && (
+        <p
+          lang={languageInfo(language).htmlLang}
+          className="px-6 pt-6 text-base text-slate"
+        >
+          {t("lessonInEnglish")}
+        </p>
+      )}
+      <div lang="en">
+        <Lesson />
+      </div>
+    </>
+  );
 }
 
 export default function Post({

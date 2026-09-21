@@ -23,7 +23,12 @@ function Block({
 
 export default function About({ onBack }: { onBack: () => void }) {
   return (
-    <div className="flex flex-col gap-8">
+    <div lang="en" className="flex flex-col gap-8">
+      {/* This whole view is still written in English while <html lang> carries
+    the reader's chosen language, so it declares its own. Without it a
+    screen reader reads English prose through the wrong voice (WCAG 2.2
+    SC 3.1.2), and a browser's translator cannot see anything to offer to
+    translate. Remove lang="en" at the same time as translating it. */}
       <header>
         <p className="text-sm font-semibold tracking-wider text-slate uppercase">About</p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-navy">About FlipSec.ai</h1>

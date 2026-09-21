@@ -1017,6 +1017,53 @@ want translating well rather than quickly.
 
 ---
 
+## 29. Shipped fix: English is a language, so it says so
+
+The question that produced this was whether the untranslated interactive
+lessons could just be left to the browser's own translator, or removed. The
+answer turned out to be neither, and the reason is the same reason it was an
+accessibility fault rather than a translation gap.
+
+`<html lang>` already follows the reader's choice. So a reader on Spanish got
+`<html lang="es">` wrapped around Home, About, Privacy, the sign-up form and
+all four interactive lessons — every one of which is still written in
+English. English text, declared as Spanish.
+
+For a sighted reader that is invisible. For somebody using a screen reader it
+is close to unreadable: the reader switches to a Spanish voice and pronounces
+English words with Spanish phonetics. It is WCAG 2.2 SC 3.1.2, Language of
+Parts, and it was failing across most of the app's chrome rather than in one
+corner.
+
+Marking each of those regions `lang="en"` fixes it, and it answers the
+original question on the way: a browser's translator cannot offer to translate
+a section it has been told is already in the target language. The attribute
+that makes a screen reader pronounce English correctly is the same attribute
+that makes Chrome offer to translate it. The accessible fix and the practical
+one are one change.
+
+`ReadAloudButton` declares the reader's language back, because every string it
+renders comes from the dictionary and it sits inside those English regions —
+the same fault pointing the other way.
+
+The demo faces also carry a visible line, from the dictionary and therefore in
+the reader's own language, saying the lesson is in English. A reader who meets
+an English lesson should be told, not left to conclude the app is broken.
+Removing the lessons was the other option on the table and was the wrong one:
+they are the only thing on AI Sec Learn that is ours rather than a link to
+somebody else's guide.
+
+None of this is translation. The four demos are still English and section 28
+still records that. What changed is that the app now tells the truth about
+which language each part of it is in, which is the precondition for both a
+screen reader and a translator doing anything sensible with it.
+
+Also closed here: the Accessibility panel was 288px wide and anchored right,
+with nothing to spare at a 320px viewport. It now carries a max-width that
+keeps a 16px gutter at any width. AUDIT.md item 12.
+
+---
+
 ## Appendix: the Convex mental model
 
 Worth re-reading when something does not behave.

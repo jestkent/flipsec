@@ -6,7 +6,7 @@ import Feed from "./components/Feed";
 import Header, { type View } from "./components/Header";
 import Home from "./components/Home";
 import SafetyTools from "./components/SafetyTools";
-import { useLanguage } from "./localization";
+import { languageInfo, useLanguage } from "./localization";
 
 // The three feeds, in the order they appear. Reordering the app is editing
 // this array; nothing else reads a hard-coded list of kinds.
@@ -29,7 +29,7 @@ const STACK = [
 
 
 export default function App() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   // Four views in state, still no router.
   const [view, setView] = useState<View>("home");
   const [kind, setKind] = useState<string>(TABS[0].kind);
@@ -109,7 +109,13 @@ export default function App() {
                 already long and four interactive blocks would bury the
                 conversation the reader came for. The cards in AI Sec Learn
                 stay; this is the way in that does not depend on finding them. */}
+            {/* lang="en" because everything in here -- the heading, the four
+                labels and blurbs from demoRegistry, and the lesson itself --
+                is still written in English while <html lang> says otherwise.
+                A screen reader would otherwise pronounce English through the
+                reader's chosen voice. The note below keeps its own lang. */}
             <section
+              lang="en"
               aria-labelledby="demos-heading"
               className="mt-10 rounded-card border border-line bg-white"
             >
@@ -124,6 +130,14 @@ export default function App() {
                   Four short things you can try. None of them need an account
                   and nothing you do here leaves the page.
                 </p>
+                {language !== "en" && (
+                  <p
+                    lang={languageInfo(language).htmlLang}
+                    className="mt-2 text-base text-slate"
+                  >
+                    {t("lessonInEnglish")}
+                  </p>
+                )}
 
                 <div className="mt-4 flex flex-col gap-2">
                   {DEMOS.map((item) => {

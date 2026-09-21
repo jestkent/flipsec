@@ -47,12 +47,17 @@ export default function AccessibilityOptions({ compact = false }: { compact?: bo
     setPreferences((current) => ({ ...current, [key]: !current[key] }));
   }
 
+  // The open panel is 288px wide and anchored to the right edge of its
+  // trigger, which at a 320px viewport leaves it nothing to spare and can
+  // push the page into a horizontal scroll. max-w keeps a 16px gutter on
+  // both sides at any width without changing how it looks anywhere else.
+  // AUDIT.md section 8 item 12.
   return (
     <details className={compact ? "relative" : "w-full rounded-control border border-line bg-white p-4 sm:w-auto sm:min-w-72"}>
       <summary className={compact ? "min-h-11 cursor-pointer content-center rounded-control px-3 text-base font-semibold text-navy" : "min-h-11 cursor-pointer content-center text-base font-semibold text-navy"}>
         {t("accessibility")}
       </summary>
-      <fieldset className={compact ? "absolute right-0 z-40 mt-2 flex w-72 flex-col gap-1 rounded-control border border-line bg-white p-4 shadow-lg" : "mt-3 flex flex-col gap-1 border-t border-line pt-3"}>
+      <fieldset className={compact ? "absolute right-0 z-40 mt-2 flex w-72 max-w-[calc(100vw-2rem)] flex-col gap-1 rounded-control border border-line bg-white p-4 shadow-lg" : "mt-3 flex flex-col gap-1 border-t border-line pt-3"}>
         <legend className="sr-only">{t("displayPreferences")}</legend>
         <label className="flex min-h-11 cursor-pointer items-center gap-3 text-base text-ink">
           <input

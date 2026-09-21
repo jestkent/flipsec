@@ -70,7 +70,12 @@ export default function Home({
     .sort((a, b) => b - a)[0];
 
   return (
-    <div className="flex flex-col gap-16 pb-8">
+    <div lang="en" className="flex flex-col gap-16 pb-8">
+      {/* This whole view is still written in English while <html lang> carries
+    the reader's chosen language, so it declares its own. Without it a
+    screen reader reads English prose through the wrong voice (WCAG 2.2
+    SC 3.1.2), and a browser's translator cannot see anything to offer to
+    translate. Remove lang="en" at the same time as translating it. */}
       {/* ------------------------------------------------------------------ */}
       {/* Hero                                                                */}
       {/* ------------------------------------------------------------------ */}

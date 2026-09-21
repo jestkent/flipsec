@@ -75,7 +75,7 @@ export default function Subscribe({
   // reader to decide the site is broken.
   if (state === "done") {
     return (
-      <div role="status" className="flex flex-col gap-2 rounded-card border border-line bg-white px-5 py-4">
+      <div lang="en" role="status" className="flex flex-col gap-2 rounded-card border border-line bg-white px-5 py-4">
         {sentConfirmation ? (
           <>
             <p className="text-base leading-relaxed text-ink">
@@ -105,6 +105,7 @@ export default function Subscribe({
 
   return (
     <form
+      lang="en"
       className="rounded-card border border-line bg-white px-5 py-4"
       aria-busy={state === "sending"}
       onSubmit={(event) => { event.preventDefault(); void signUp(); }}

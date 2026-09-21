@@ -146,7 +146,13 @@ export default function ReadAloudButton({
   // a browser capable of running this app, so the control always renders.
 
   return (
-    <div className="inline-flex flex-col items-start gap-0.5">
+    // Every string this control renders comes from the dictionary, so it is
+    // always in the reader's language -- including when it sits inside a
+    // region marked lang="en", like the latest-story card on the home page.
+    // Declaring its own language stops a screen reader reading a Spanish
+    // label through an English voice, which is the same SC 3.1.2 fault as
+    // the one the lang="en" regions fix, pointing the other way.
+    <div lang={languageInfo(language).htmlLang} className="inline-flex flex-col items-start gap-0.5">
       <button
         type="button"
         onClick={(event) => void toggle(event)}

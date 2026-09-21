@@ -334,6 +334,18 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
   the schema, the translate action and both caches import. Adding a language is
   one entry in each plus a dictionary; adding a literal to a `v.union` is an
   additive schema change and existing rows keep validating.
+- **English content inside a translated page declares `lang="en"`.**
+  `<html lang>` is set to whatever the reader chose, so any region still
+  written in English is a lie to a screen reader: it reads English words
+  through a Spanish, Japanese or Hindi voice, which is close to
+  unintelligible. That is WCAG 2.2 SC 3.1.2, and it applied to Home, About,
+  Privacy, the sign-up form and all four interactive lessons. The same
+  attribute is what lets a browser's own translator see an English island
+  worth offering to translate, so it is the accessible fix and the practical
+  one at the same time. `ReadAloudButton` declares the reader's language back,
+  because its label always comes from the dictionary and it sits inside those
+  English regions. When a region is translated, delete its `lang="en"` in the
+  same change.
 - Write the language's own name in the menu and never translate it. "Español"
   stays "Español" in the Japanese dictionary, because a reader who cannot read
   English still has to find their own row. Each `<option>` carries its own

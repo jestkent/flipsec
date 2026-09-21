@@ -24,7 +24,12 @@ function Block({ title, children }: { title: string; children: React.ReactNode }
 
 export default function Privacy({ onBack }: { onBack: () => void }) {
   return (
-    <article className="flex flex-col gap-8 px-5 pb-16">
+    <article lang="en" className="flex flex-col gap-8 px-5 pb-16">
+      {/* This whole view is still written in English while <html lang> carries
+    the reader's chosen language, so it declares its own. Without it a
+    screen reader reads English prose through the wrong voice (WCAG 2.2
+    SC 3.1.2), and a browser's translator cannot see anything to offer to
+    translate. Remove lang="en" at the same time as translating it. */}
       <header className="flex flex-col gap-3">
         <h1 className="text-2xl font-semibold text-navy sm:text-3xl">
           Privacy
