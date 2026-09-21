@@ -77,10 +77,10 @@ page is where you pick the feeds, already ticked for whatever tab you signed
 up from, so signing up from three tabs asks once rather than three times. One
 card from each feed you picked then arrives in a single email each morning.
 
-Replying to the news drill in your own words is graded by the model and the
-grade is stored on the attempt. **It is not yet emailed back**, so a reader
-who replies currently hears nothing. That is a known gap, not a claim this
-README should have been making.
+Reply to the news drill in your own words and the grade comes back to your
+inbox: whether you got it, why, and what the strongest sign was. One graded
+answer per drill, which is also what stops an out-of-office reply and our own
+answer to it from talking to each other forever.
 
 ## Who it is for
 

@@ -165,6 +165,61 @@ FlipSec.ai — ${SITE}`,
   },
 });
 
+// The reply the daily drill has been promising. "Just hit reply and tell me
+// which one, in your own words. I will tell you how you did." — and for a
+// long time nothing came back. The grade was produced by the model, written
+// to the attempt, and never shown to the person who wrote in.
+//
+// Plain text and short, because it is read on a phone, often by someone who
+// is not certain they did it right. The verdict is a word, never a symbol,
+// and a wrong answer is told plainly and then explained, never scolded:
+// somebody who gets a scam drill wrong is exactly the reader this is for.
+export const sendGrade = internalAction({
+  args: {
+    to: v.string(),
+    correct: v.boolean(),
+    feedback: v.string(),
+    rightAnswer: v.string(),
+    explanation: v.string(),
+  },
+  returns: v.null(),
+  handler: async (_ctx, args) => {
+    const opening = args.correct
+      ? "You got it."
+      : "Not this time, and that is worth knowing.";
+
+    const answer = args.rightAnswer
+      ? `\n\nThe strongest sign was: ${args.rightAnswer}`
+      : "";
+
+    try {
+      const token = await unsubscribeToken(args.to);
+      await sendMessage(
+        args.to,
+        args.correct ? "You got today's drill right" : "About today's drill",
+        `${opening}
+
+${args.feedback}${answer}
+
+${args.explanation}
+
+Getting one wrong here costs nothing, which is the entire point of practising
+somewhere it is safe. The next one arrives tomorrow.
+
+— FlipSec.ai
+${SITE}
+
+Don't want these? Unsubscribe: ${SITE}/api/unsubscribe?e=${encodeURIComponent(args.to)}&t=${token}`,
+      );
+    } catch (error) {
+      // The grade is already saved, so a failed send loses the message and
+      // not the work. Never rethrow: a retry would mail them twice.
+      console.error("grade reply send failed", error);
+    }
+    return null;
+  },
+});
+
 export const sendDailyDrill = internalAction({
   args: {},
   handler: async (ctx): Promise<{ sent: number; failed: number }> => {

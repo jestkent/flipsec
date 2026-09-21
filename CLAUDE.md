@@ -61,7 +61,16 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
   worse — one reader translating thirty cards spent their own assistant budget.
   `by_kind_time` and `by_user_kind_time` exist for this. If a feature reports
   an hourly limit with no matching traffic, check `toolChecks` by kind first.
-- **Translate on WRITE, not on read.** `translateAllLanguages` is scheduled
+- **One graded answer per reader per drill, and the grade goes BACK.** The
+  daily mail says "I will tell you how you did" and for a long time nothing
+  came back: the model graded the reply, `saveGrade` stored it, and nobody
+  ever saw it. `sendGrade` closes that loop. Once it did, the dedupe in
+  `saveReply` stopped being tidiness and became a loop guard — our reply lands
+  in their inbox, and an out-of-office answering it would arrive as another
+  reply, be graded, and be answered again, spending an OpenAI call each turn.
+  `by_user_drill` is what makes that one lookup. `sendGrade` never rethrows:
+  the grade is already saved, so a failed send loses the message and not the
+  work, and a retry would mail somebody twice. `translateAllLanguages` is scheduled
   from every point a story becomes published — `saveProcessed`, `saveCourse`,
   `saveJob` and `authored.seedLessons` — so a card is in all ten languages
   before any reader sees it. It used to happen lazily, on the first reader who

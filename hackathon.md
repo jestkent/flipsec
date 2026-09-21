@@ -13,7 +13,7 @@
 - **Auth:** none
 - **AI models:** gpt-4o-mini, gpt-4o-mini-tts
 - **Started:** 2026-09-20T17:35:41Z
-- **Last updated:** 2026-09-21T08:40:00Z
+- **Last updated:** 2026-09-21T09:10:00Z
 
 ## Log
 
@@ -812,3 +812,30 @@ before this existed. Both safe to re-run.
 
 After the backfill: 35 published stories, ten languages, zero gaps, verified
 language by language.
+
+### 2026-09-21 - the daily email kept a promise it had been making
+
+Every daily drill ends "just hit reply and tell me which one, in your own
+words. I will tell you how you did." Replies arrived, the webhook verified
+them, the model graded them, the verdict was written to the attempt - and
+nothing was ever sent back. There were graded rows in the database no human
+had seen. Every other gap in this app was a missing feature; this one told a
+reader something would happen and then did not.
+
+The grade now goes back: whether they got it, the model's own words on why,
+the strongest sign in the message, and the explanation. Plain text, short,
+read on a phone by somebody who is not sure they got it right. A wrong answer
+is told plainly and then explained, never scolded, because getting a scam
+drill wrong is exactly the reader this is for.
+
+Closing the loop turned an existing tidiness rule into a safety one. Our reply
+lands in their inbox, so an out-of-office answering it would arrive back here
+as another reply, be graded, and be answered again - a mail loop spending an
+OpenAI call every turn. saveReply now refuses a second answer to the same
+drill, the same rule the web answer already followed.
+
+Tested end to end against production with a reserved .invalid address so no
+real mailbox was touched: the first reply graded correctly and attempted the
+send, the second was refused with one attempt row on file, and an address with
+no drill to grade against still fails closed. Test subscriber removed, two real
+subscribers untouched, feeds unchanged at 8, 17 and 10.

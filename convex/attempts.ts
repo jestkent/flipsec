@@ -99,8 +99,28 @@ export const saveReply = internalMutation({
     const drill = await ctx.db.get(subscriber.lastDrillId);
     if (drill === null) return;
 
+    const userId = subscriber.userId ?? args.from;
+
+    // One graded answer per reader per drill, the same rule the web answer
+    // already follows. This stopped being only tidiness when the grade began
+    // being MAILED BACK: our reply lands in their inbox, and an out-of-office
+    // or any auto-responder answering it would arrive here as another reply,
+    // be graded, and be answered again. A mail loop that also spends an
+    // OpenAI call on every turn.
+    const already = await ctx.db
+      .query("attempts")
+      .withIndex("by_user_drill", (q) =>
+        q.eq("userId", userId).eq("drillId", subscriber.lastDrillId!),
+      )
+      .first();
+
+    if (already !== null) {
+      console.warn(`reply from a reader who already answered this drill, ignored`);
+      return;
+    }
+
     const attemptId = await ctx.db.insert("attempts", {
-      userId: subscriber.userId ?? args.from,
+      userId,
       drillId: subscriber.lastDrillId,
       answer: args.body,
       source: "email",
@@ -109,6 +129,10 @@ export const saveReply = internalMutation({
 
     await ctx.scheduler.runAfter(0, internal.attempts.gradeReply, {
       attemptId,
+      // Carried through so the grade can go back to the person who wrote it.
+      // The reply is the whole point: the daily mail says "I will tell you how
+      // you did", and for a long time it did not.
+      to: args.from,
       answer: args.body,
       prompt: drill.prompt,
       choices: drill.choices,
@@ -151,6 +175,7 @@ Rules you must follow:
 export const gradeReply = internalAction({
   args: {
     attemptId: v.id("attempts"),
+    to: v.string(),
     answer: v.string(),
     prompt: v.string(),
     choices: v.array(v.string()),
@@ -192,6 +217,16 @@ export const gradeReply = internalAction({
       attemptId: args.attemptId,
       correct: grade.correct,
       feedback: grade.feedback,
+    });
+
+    // The half that was missing. The grade was computed, stored, and never
+    // shown to the person who asked for it.
+    await ctx.scheduler.runAfter(0, internal.email.sendGrade, {
+      to: args.to,
+      correct: grade.correct,
+      feedback: grade.feedback,
+      rightAnswer: args.choices[args.correct] ?? "",
+      explanation: args.explanation,
     });
   },
 });
