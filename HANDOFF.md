@@ -86,6 +86,17 @@ move without anybody touching the code. That is normal.
   policy, and flags the three lines that break the app if they are wrong.
 - **API key rotation.** Deferred by the project owner to do last. AUDIT.md
   section 8 item 1.
+- **The sending address is `jestonikent-1696@agentmail.to`**, an inbox name
+  AgentMail generated when the account was made. It should read as FlipSec,
+  not as a person. Nothing in the code builds it — it is `AGENTMAIL_INBOX_ID`
+  read straight from the env vars. To change it: make a new AgentMail inbox
+  called something like `flipsec`, then
+  `npx convex env set AGENTMAIL_INBOX_ID <new-inbox> --prod`.
+  **Deferred on purpose, and not a one-liner.** The webhook has to be
+  re-pointed at the new inbox in the same change, and every drill already
+  delivered carries reply-to headers for the OLD inbox, so replies to that
+  mail would land somewhere nothing is reading them. Do it when no reply is
+  in flight, not against a deadline. It looks unpolished; it breaks nothing.
 - **SEO and HTTP routing.** Hash links now support view/card sharing and
   browser history locally. The app still has one indexable shell, and unknown
   server paths retain the hosting response behaviour.
