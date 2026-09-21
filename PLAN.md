@@ -956,6 +956,67 @@ still failing closed. Test subscriber removed afterwards.
 
 ---
 
+## 28. Shipped fix: the translator ate an identifier
+
+Reported as "it does not translate the whole thing", which turned out to be
+two faults with nothing in common except where they showed up.
+
+### An identifier is not prose
+
+`back.demo` holds the key of an interactive lesson — `prompt-injection`,
+`voice-clone` — and `demoRegistry` matches it exactly. `storySource` sent the
+whole `back` object to the translator, so the key went with it, and the model
+did what it was asked:
+
+| Card | English | Spanish | Chinese | French |
+| --- | --- | --- | --- | --- |
+| Hidden orders | `prompt-injection` | `inserción-de-prompt` | `提示注入` | `injection-de-prompt` |
+| Confidently wrong | `confident-wrong` | `seguro-equivocado` | `自信-错误` | `confiant-faux` |
+
+`findDemo` then matched nothing and the card fell through to `CourseBack` —
+which is the designed fallback for an unrecognised key, and exactly the wrong
+outcome here, because an authored back carries a demo key and **nothing else**.
+No `whatYouLearn`, no `whoItIsFor`, no `firstStep`. The reader got an eyebrow
+heading, an "Open guide" button and a back link. All four interactive lessons,
+in all ten non-English languages, since the day they shipped.
+
+Nothing reported it because nothing could. The fallback is silent by design,
+the English feed was perfect, and `untranslated` returned `[]` for every
+language — the rows existed and were complete. They were complete and wrong,
+which no count can see.
+
+Fixed on both sides, and the order matters. `Post.tsx` now resolves the key
+from the UNTRANSLATED `story.back`, which repairs every row already cached
+with a corrupted key — no re-translation, no model calls, no backfill.
+`storySource` strips `demo` before the model sees it, so we stop paying to
+corrupt a value nobody reads from there.
+
+The general rule is in CLAUDE.md: a translated card must never be the source
+of an identifier. Translation is for what a reader reads. Anything the code
+*matches on* has to come from the original row.
+
+### The last hardcoded heading
+
+`Illusion.tsx` printed "What you saw" and "What was real" as literals. The
+pairs beneath them are translated with the rest of the drill, so a reader in
+any other language got translated content under two English headings — on the
+news card, which is the demo.
+
+Section 22 already recorded that partial translation is worse than none, and
+that the thirty-odd hardcoded strings had been extracted. This was the one
+that got missed, and a grep of the card components for JSX text finds it in a
+second. That grep is now the check, rather than anyone's memory.
+
+### Still open
+
+The four demo components are themselves English-only — none of them imports
+the dictionary. Fixing the key above brings the lessons back; their body text
+is still English in every language. That is a larger piece of work and the
+scripted scam messages inside them are content rather than labels, so they
+want translating well rather than quickly.
+
+---
+
 ## Appendix: the Convex mental model
 
 Worth re-reading when something does not behave.

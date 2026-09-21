@@ -283,6 +283,44 @@ These need one pass on a real device.
 
 ---
 
+## 5a. Step 67 verified on production
+
+`health.recordRun` had shipped but had never executed once against prod, so
+the monitor was trusted on the strength of having compiled. `status` returned
+"no run recorded" for all three jobs, which looks identical to three dead
+crons and was in fact just a 33-minute-old deploy: the code landed at 16:07
+UTC and `crons.interval` restarts its clock from the deploy, so the first
+six-hourly window was still hours away.
+
+Rather than wait for it, `crawlJobs` was triggered by hand at 16:48 UTC. It is
+the cheapest and safest of the three — Greenhouse's JSON list endpoint, no
+Firecrawl, and it does not touch the news feed, which is the demo.
+
+```
+npx convex run jobs:crawlJobs "{limit:25}" --prod
+```
+
+| Checked | Result |
+| --- | --- |
+| `recordRun` writes a row | Yes: `ok: true`, `shortlisted 25, queued 25`, `2026-09-21T16:48:10.028Z` |
+| `status` reads it back | Yes, under "crawl jobs"; the other two still correctly say no run |
+| Three feeds after | 8 / 17 / 10, unchanged |
+
+The run is also a clean demonstration of the rule in §3 that `ok` is judged on
+what a run **found**, never on what it saved. Five boards returned 1,807 open
+roles, 25 survived the title filter, all 25 were handed to `saveRawStory` —
+and **none** were saved, because every one was already in the table.
+Found 25, saved 0, `ok: true`. Judging on saved would have called a perfectly
+healthy run a failure.
+
+It settled a second question on the way. The jobs table already held `job`
+rows created at 09:55 and 15:49 UTC that day, the second of them about twenty
+minutes *before* the step 67 deploy. The crons had been running normally all
+along; only the recording of them was new. "No run recorded" meant exactly
+what it said and nothing worse.
+
+---
+
 ## 6. H-2: security headers — OPEN, and why
 
 Live response headers carry **only** `x-content-type-options: nosniff`.
@@ -295,8 +333,26 @@ site specifically.
 
 **This cannot be fixed from the repository.** `@convex-dev/static-hosting`
 serves files with fixed headers and exposes no configuration hook —
-`dist/component/http.js` builds the header object inline. Cloudflare sits in
-front, so the fix is a Transform Rule there.
+`dist/component/http.js` builds the header object inline. Re-checked against
+`0.2.1` on 2026-09-21: still inline, still no hook.
+
+**It also cannot be fixed from a Cloudflare dashboard, which an earlier
+version of this section got wrong.** A live response does carry
+`Server: cloudflare`, and that is what the first reading of this finding was
+based on — but the site is served from `hallowed-nightingale-322.convex.site`,
+which is **Convex's** domain in **Convex's** Cloudflare account. There is no
+zone here to add a Transform Rule to. The rule below is correct and there is
+currently nowhere to put it.
+
+So H-2 is blocked behind item 5 of §8, the custom domain, and is a larger
+change than "add a header": a domain this project controls, fronted by a CDN
+this project controls, and the absolute URLs in `index.html`,
+`public/sitemap.xml` and `public/robots.txt` all moving with it — see §3,
+*The absolute URLs move together*. That is not a change to make against a
+deadline, which is why it is still open rather than newly urgent.
+
+The starter policy below is kept because it is the researched part and it
+stays valid wherever the headers eventually get set.
 
 A CSP was deliberately **not** added as a `<meta http-equiv>` tag. `frame-ancestors`
 is ignored in meta CSP, so it would not fix the clickjacking gap anyway, and
@@ -364,11 +420,11 @@ IPs to Google. One change, three benefits.
 | --- | --- | --- |
 | 1 | **Rotate every API key** | OpenAI, Firecrawl, AgentMail, and the `whsec_` signing secret all appeared in terminal sessions. Deliberately deferred by the project owner to be done last. |
 | 2 | Prod env vars set | **Verified 2026-09-21**: all six present, `AGENTMAIL_WEBHOOK_SECRET` included, so the inbound route is not failing closed and reply grading runs. Re-check with `npx convex env list --prod` after any key rotation. **Never print values.** |
-| 3 | Security headers | Cloudflare Transform Rule, §6. |
-| 4 | HSTS | Cloudflare → SSL/TLS → Edge Certificates. |
-| 5 | Custom domain | Currently `*.convex.site`. Decide before the absolute URLs harden. |
+| 3 | Security headers | **Blocked behind item 5.** Needs a custom domain on a CDN this project controls; `*.convex.site` is Convex's zone, so there is no Transform Rule to add. §6. |
+| 4 | HSTS | Same block as item 3, and the same reason. |
+| 5 | Custom domain | Currently `*.convex.site`. Decide before the absolute URLs harden — and note items 3 and 4 both wait on it. |
 | 6 | Backups | Convex dashboard → Settings → Backups. **Test a restore**; an untested backup is a hypothesis. |
-| 7 | Failure alerting | **Partly closed `46e3dc2`.** Every cron records what it achieved, and `npx convex run health:status --prod` reports the last run of each. That is detection, not notification: nothing pages anybody, so it only helps if somebody looks. §3 says what must not be tidied. |
+| 7 | Failure alerting | **Partly closed `46e3dc2`, and now verified.** Every cron records what it achieved, and `npx convex run health:status --prod` reports the last run of each. That is detection, not notification: nothing pages anybody, so it only helps if somebody looks. §3 says what must not be tidied. Proven end to end on prod 2026-09-21 — see §5a. |
 | 8 | SPF / DKIM / DMARC | On the AgentMail sending domain. Without DKIM the daily send lands in spam. |
 | 9 | Webhook URL | `https://<deployment>.convex.site/api/agentmail-inbound`, plus one real reply end to end. |
 | 10 | **Double opt-in, end to end** | Not verified with a real mailbox. Sign up with your own address, confirm the mail arrives, press the button, check `pending` clears. This is the one new flow that has never delivered a real message. |

@@ -877,3 +877,55 @@ something broken?" from an archaeology exercise across the log into one
 command, and AUDIT.md says exactly that rather than claiming more.
 
 Deployed to production. Feeds unchanged at 8, 17 and 10 either side.
+
+### 2026-09-21 - the translator ate an identifier
+
+Reported by the owner as "it does not translate the whole thing". Two faults
+with nothing in common except where they surfaced.
+
+back.demo holds the key of an interactive lesson - prompt-injection,
+voice-clone - and demoRegistry matches it exactly. storySource sent the whole
+back object to the translator, so the key went with it, and the model did what
+it was asked. prompt-injection came back as insercion-de-prompt in Spanish and
+as the Chinese for prompt injection in Chinese.
+
+findDemo then matched nothing and the card fell through to CourseBack, which
+is the designed fallback for an unrecognised key and exactly the wrong outcome
+here: an authored back carries a demo key and nothing else. No whatYouLearn,
+no whoItIsFor, no firstStep. The reader got a heading, an "Open guide" button
+and a back link. Four interactive lessons, ten languages, since the day they
+shipped.
+
+Nothing reported it because nothing could. The fallback is silent by design,
+the English feed was perfect, and localizationData.untranslated returned an
+empty list for all ten languages - the rows existed and were complete. They
+were complete and wrong, which no count can see. Measuring coverage is not
+measuring correctness.
+
+Fixed on both sides, and the order mattered. Post.tsx now reads the key from
+the untranslated story.back, which repairs every row already cached with a
+corrupted key - no re-translation, no model calls, no backfill. storySource
+strips demo before the model sees it, so nothing pays to corrupt a value
+nobody should read from there.
+
+Verified before deploying, by replaying the old and the new client logic over
+all forty card-and-language combinations against the real cached translations
+in production: 3 of 40 rendered the lesson before, 40 of 40 after. The three
+that passed were Filipino, which borrows enough English that the model left
+three of the four keys alone.
+
+The second fault was smaller and older. Illusion.tsx printed "What you saw"
+and "What was real" as literals, so translated pairs sat under English
+headings - on the news card, which is the demo. Section 22 had already
+recorded that the thirty-odd hardcoded strings were extracted. This was the
+one that was missed, and a grep of the card components for JSX text finds it
+in a second. That grep is the check now, rather than anyone's memory.
+
+The general rule went into CLAUDE.md: a translated card must never be the
+source of an identifier. Translation is for what a reader reads; anything the
+code matches on comes from the original row.
+
+Still open and written down rather than quietly left: the four demo components
+are themselves English-only. Fixing the key brings the lessons back, and their
+body text is still English in every language.
+

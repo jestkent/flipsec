@@ -17,6 +17,23 @@ export const story = query({
   },
 });
 
+// `back.demo` names an interactive lesson in the client's demoRegistry. It is
+// a database value, matched exactly, and it is the one thing on a back that
+// must NOT be translated: a translated key matches nothing, and the card then
+// renders a course back with no course fields behind it.
+//
+// The reader-facing half of this is fixed in Post.tsx, which reads the key
+// from the untranslated row. This is the other half -- there is no reason to
+// spend a model call corrupting a value nobody reads from here.
+function withoutDemoKey(back: unknown): unknown {
+  if (typeof back !== "object" || back === null || Array.isArray(back)) {
+    return back ?? null;
+  }
+  const rest: Record<string, unknown> = { ...(back as Record<string, unknown>) };
+  delete rest.demo;
+  return rest;
+}
+
 export const storySource = internalQuery({
   args: { storyId: v.id("stories"), language },
   returns: v.union(v.null(), v.object({ source: v.any(), cached: v.union(v.null(), v.any()) })),
@@ -34,7 +51,7 @@ export const storySource = internalQuery({
         title: source.title,
         summary: source.summary ?? "",
         redFlags: source.redFlags ?? [],
-        back: source.back ?? null,
+        back: withoutDemoKey(source.back),
         drill: drill ? {
           prompt: drill.prompt,
           choices: drill.choices,

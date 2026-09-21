@@ -66,9 +66,11 @@ move without anybody touching the code. That is normal.
 ## Still open, on purpose
 
 - **Security headers.** No CSP, HSTS or frame protection. Cannot be set from
-  the repository: static hosting serves fixed headers, so it is a Cloudflare
-  Transform Rule. AUDIT.md section 6 has a starter policy and flags the three
-  lines that break the app if they are wrong.
+  the repository: static hosting serves fixed headers. It cannot be set from a
+  Cloudflare dashboard either, which AUDIT.md used to say — `*.convex.site` is
+  Convex's zone, not ours, so there is no Transform Rule to add. It is blocked
+  behind a custom domain. AUDIT.md section 6 has the reasoning and a starter
+  policy, and flags the three lines that break the app if they are wrong.
 - **API key rotation.** Deferred by the project owner to do last. AUDIT.md
   section 8 item 1.
 - **URL routing.** Views live in `App.tsx` state, so there is one indexable

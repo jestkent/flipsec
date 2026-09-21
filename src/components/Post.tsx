@@ -263,6 +263,17 @@ export default function Post({
       : (story.redFlags ?? []);
   const displayBack = useTranslated && translation?.back ? translation.back : story.back;
 
+  // `back.demo` is an identifier demoRegistry matches on, not prose, so it is
+  // read from the ORIGINAL back and never the translated one. The translator
+  // used to be handed the key along with the rest of the back and duly
+  // translated it -- "prompt-injection" came back as "inserción-de-prompt" in
+  // Spanish and "提示注入" in Chinese -- so findDemo stopped matching and all
+  // four interactive lessons fell through to an empty CourseBack in every one
+  // of the ten languages. Reading the key from story.back makes the lookup
+  // immune to whatever a translation contains, including the rows already
+  // cached with a translated key in them.
+  const demoName = kind === "course" ? demoKey(story.back) : null;
+
   // Only load the drill once the reader actually flips. Loading one per post
   // would open a subscription for every card in the feed.
   //
@@ -546,8 +557,8 @@ export default function Post({
               </span>
               <ReadAloudButton targetRef={backRef} label={t("readLesson")} />
             </div>
-            {kind === "course" && findDemo(demoKey(displayBack)) ? (
-              <DemoFace demoName={demoKey(displayBack)} />
+            {demoName && findDemo(demoName) ? (
+              <DemoFace demoName={demoName} />
             ) : kind === "course" ? (
               <CourseBack back={displayBack} url={story.url} onBack={() => flip(true)} />
             ) : kind === "job" ? (

@@ -354,6 +354,18 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
 - `showOriginal` has to return the **whole** card to English, back included.
   A reader who asked for the original and still gets a translated lesson has
   been given half a control.
+- **A translated card must never be the source of an identifier.** `back.demo`
+  names an interactive lesson in `demoRegistry`, and it was being sent to the
+  translator with the rest of the back: `prompt-injection` came back as
+  `inserción-de-prompt` in Spanish and `提示注入` in Chinese. `findDemo` then
+  matched nothing, and because an authored back holds a demo key and nothing
+  else, all four lessons fell through to a `CourseBack` with no course fields
+  in it — a heading and a button, in every one of the ten languages. Both
+  halves are fixed and both matter: `Post.tsx` reads the key from the
+  UNTRANSLATED `story.back`, which also repairs the rows already cached with a
+  translated key, and `storySource` strips `demo` before the model sees it.
+  Anything else on a card that is matched rather than read belongs on the same
+  list.
 - The quiz is graded server side from the drill id and the index the reader
   picked, and the correct index is never sent to the browser. That makes array
   **order** the one thing a translation must preserve: a reordered `choices`
@@ -365,6 +377,10 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
   text. A hardcoded English label on a translated card is the bug that made
   the whole feature look broken: the tabs changed language and the cards did
   not. If a new string is added to a card, add the key at the same time.
+  `Illusion.tsx` was the last component still breaking that rule — its two
+  column headings were literals, so translated pairs sat under English
+  headings on the news card, which is the demo. Grep the card components for
+  JSX text before believing this is done.
 - `translateStory` reserves a rate-limit slot **only on a cache miss**, after
   `storySource` reports no cached row. A hit costs nothing and must never
   consume a slot, or a reader switching language on a warm feed burns their
@@ -500,10 +516,13 @@ which behaviours are load-bearing and what breaks if they are "tidied".
 
 Two findings are open on purpose. Security headers (no CSP, HSTS or frame
 protection) cannot be set from the repository — `@convex-dev/static-hosting`
-serves fixed headers — so they belong in a Cloudflare Transform Rule, and
-AUDIT.md carries a starter policy whose `wss:`, `media-src` and `img-src`
-lines are the ones that break the app if got wrong. URL routing stays unbuilt,
-so the site has one indexable URL and returns 200 for unknown paths.
+serves fixed headers — and cannot be set at the CDN either while the site
+lives on `*.convex.site`, which is Convex's Cloudflare zone and not ours. They
+are blocked behind a custom domain, which also moves every absolute URL with
+it. AUDIT.md carries the reasoning and a starter policy whose `wss:`,
+`media-src` and `img-src` lines are the ones that break the app if got wrong.
+URL routing stays unbuilt, so the site has one indexable URL and returns 200
+for unknown paths.
 
 ## Spec
 
