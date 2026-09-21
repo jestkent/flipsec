@@ -13,7 +13,7 @@
 - **Auth:** none
 - **AI models:** gpt-4o-mini, gpt-4o-mini-tts
 - **Started:** 2026-09-20T17:35:41Z
-- **Last updated:** 2026-09-21T05:09:34Z
+- **Last updated:** 2026-09-21T06:05:00Z
 
 ## Log
 
@@ -610,3 +610,37 @@ layout still uses physical direction classes that would mirror incorrectly, so
 adding them would produce a broken page rather than a translated one. Card
 backs also remain English in every language. Both gaps are recorded in PLAN.md
 and README.md rather than left for a reader to find.
+
+### 2026-09-21 - a translated headline over an English lesson
+
+Picking a language changed the tabs and the card headline and left everything
+else in English: the lesson behind the flip, the course guide, the job posting,
+and every label around them. Reported as working in the previous entry, which
+was wrong - the dictionary only ever covered the header and the accessibility
+panel, about a third of the strings a reader actually sees.
+
+Two causes, and only one of them cost anything. The backs were already being
+translated: one cached call returns title, summary, red flags, the course or
+job back and the whole drill, and the card component was reading two of those
+fields and discarding the rest. The translated lesson text had been sitting in
+the cache since the pre-generation run. Reading it costs nothing.
+
+The labels were hardcoded in the components - the flip prompt on every card
+front, the section headings, the quiz feedback, the ask form, the outbound link
+text. Thirty-two strings extracted into the dictionary across all eleven
+languages. The flip label constants now hold dictionary keys instead of English.
+
+Translating the quiz brings a correctness constraint worth writing down.
+Answers are graded on the server from the drill id and the index the reader
+picked, and the correct index never reaches the browser, so array order is the
+only thing holding the quiz together. A reordered choices array would tell a
+reader they misread a scam they had actually spotted - a worse failure than an
+untranslated one. The prompt now states the constraint, and the component
+refuses translated choices whose count does not match, falling back to English.
+
+Checked across all sixty cached news translations: no count mismatches, and
+order confirmed position-for-position by hand in Japanese, Russian and French.
+Three feeds still return 6, 11 and 10 rows.
+
+The general lesson: partial translation is worse than none, because a reader
+cannot tell which English is deliberate and which is broken.
