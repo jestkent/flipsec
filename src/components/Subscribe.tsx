@@ -36,6 +36,7 @@ export default function Subscribe({
   );
   const emailId = useId();
   const errorId = `${emailId}-error`;
+  const helpId = `${emailId}-help`;
 
   const pitch = PITCH[kind] ?? PITCH.scam;
 
@@ -121,7 +122,11 @@ export default function Subscribe({
           autoComplete="email"
           inputMode="email"
           aria-invalid={state === "error"}
-          aria-describedby={state === "error" ? errorId : undefined}
+          // The help text below was never announced, only shown. A screen
+          // reader user got the input and nothing about what happens to the
+          // address or where the mail lands, which is the part most likely to
+          // make a sign-up look broken.
+          aria-describedby={state === "error" ? `${helpId} ${errorId}` : helpId}
           value={email}
           onChange={(e) => { setEmail(e.target.value); if (state === "error") setState("idle"); }}
           placeholder="you@example.com"
@@ -135,10 +140,23 @@ export default function Subscribe({
           {state === "sending" ? "Signing up…" : "Sign up"}
         </button>
       </div>
-      <p className="mt-2 text-sm leading-relaxed text-slate">
+      <p id={helpId} className="mt-2 text-sm leading-relaxed text-slate">
         Your address is stored to send a confirmation. Daily email starts after
         you confirm, and preference changes also need confirmation. Every email carries an
         unsubscribe link. See Privacy at the foot of the page.
+      </p>
+      {/* Said BEFORE signing up, not only after. FlipSec.ai sends from a new
+          domain with no sending history, so the first message often lands in
+          spam - and a reader who cannot find the confirmation has no way to
+          tell that from a site that is simply broken. The success screen and
+          the confirm page repeat it. This is a mitigation and not a fix: SPF,
+          DKIM and DMARC on the sending domain are the fix, and they need a
+          domain this project owns. AUDIT.md section 8 item 8. */}
+      <p className="mt-2 text-sm leading-relaxed text-slate">
+        <strong className="font-semibold text-navy">Check your spam or junk folder.</strong>{" "}
+        The first email often lands there, because FlipSec.ai is new and mail
+        from a new sender gets treated that way. Marking it as not spam helps
+        the daily one reach you.
       </p>
       {state === "error" && (
         <p id={errorId} role="alert" className="mt-2 text-base text-danger">

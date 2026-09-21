@@ -109,6 +109,13 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
   valid signature for an address no longer in the table says so rather than
   reporting success, because old links from a removed sign-up were being
   answered with "You are on the list".
+- **Say it BEFORE the sign-up, not only after.** The form itself now warns
+  that the first email often lands in spam, alongside the success screen and
+  the confirm page that already did. A reader who cannot find the confirmation
+  has no way to tell that from a site that is simply broken, and the moment
+  that matters is while they are deciding to trust the box. The sign-up help
+  text is also wired to `aria-describedby`, which it never was — it was shown
+  and never announced.
 - **Say where the mail landed.** Mail from a domain with no sending history
   goes to spam more often than not, and a confirmation nobody can find is a
   sign-up that never happens — the reader cannot tell that from a broken site.
