@@ -440,6 +440,21 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
   column headings were literals, so translated pairs sat under English
   headings on the news card, which is the demo. Grep the card components for
   JSX text before believing this is done.
+  It was not done. `ScamFlow.tsx` printed "The setup", "The hook" and "The
+  loss" over every translated news lesson, and survived that grep because the
+  strings sat in a **data array** rather than in JSX. Its `label` now holds a
+  dictionary key, the same as `FLIP_LABEL` and `BACK_LABEL`. **Grep for string
+  literals as well as for JSX text**, because a label one hop away from where
+  it renders is exactly what a text sweep misses. Known and deliberately left:
+  the three `EMPTY` states in `Feed.tsx` are English, and only render when a
+  feed has no cards at all, which has not happened since launch.
+- **The four authored lessons are the NEWEST cards in AI Sec Learn, so they
+  are the first thing a reader in another language flips.** Their backs are
+  English by design (see `demoRegistry`), which means the top of that feed
+  reads as untranslated even though every crawled guide beneath it is fully
+  translated. The visible `lessonInEnglish` line is the mitigation, not a fix.
+  If Learn is ever reported as "not translating", check whether the card being
+  flipped is one of those four before looking anywhere else.
 - `translateStory` reserves a rate-limit slot **only on a cache miss**, after
   `storySource` reports no cached row. A hit costs nothing and must never
   consume a slot, or a reader switching language on a warm feed burns their

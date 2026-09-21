@@ -1,10 +1,19 @@
 // The infographic. Three stages of the scam, drawn as a flow so the shape of
 // the attack is visible before any of the words are read.
+//
+// `label` holds a dictionary KEY, not text, the same way FLIP_LABEL and
+// BACK_LABEL do. These were three English literals printed over a fully
+// translated Spanish lesson, on the news card, which is the demo. They
+// survived an earlier sweep for hardcoded card strings because that sweep
+// looked for text in JSX and these live in a data array -- so grep the
+// components for string literals as well as for JSX text.
+import { useLanguage } from "../localization";
+
 const STAGE = [
-  { label: "The setup", glyph: "M4 6h16v10H4zM4 6l8 6 8-6" },
-  { label: "The hook", glyph: "M12 3v9m0 0a4 4 0 1 1-4 4M8 6h8" },
-  { label: "The loss", glyph: "M12 3v12m0 0-4-4m4 4 4-4M4 19h16" },
-];
+  { label: "stageSetup", glyph: "M4 6h16v10H4zM4 6l8 6 8-6" },
+  { label: "stageHook", glyph: "M12 3v9m0 0a4 4 0 1 1-4 4M8 6h8" },
+  { label: "stageLoss", glyph: "M12 3v12m0 0-4-4m4 4 4-4M4 19h16" },
+] as const;
 
 const TINT: Record<string, string> = {
   deepfake: "#c94f45",
@@ -25,6 +34,7 @@ export default function ScamFlow({
   steps: string[];
   tactic: string;
 }) {
+  const { t } = useLanguage();
   if (steps.length === 0) return null;
   const tint = TINT[tactic] ?? TINT.other;
 
@@ -65,7 +75,7 @@ export default function ScamFlow({
               <p
                 className="text-sm font-semibold tracking-wider text-navy uppercase"
               >
-                {stage.label}
+                {t(stage.label)}
               </p>
               <p className="mt-0.5 text-base leading-relaxed text-ink">
                 {step}

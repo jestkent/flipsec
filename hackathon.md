@@ -1076,3 +1076,43 @@ received mail from this sender, and SPF, DKIM and DMARC are unverified on the
 sending domain. That is infrastructure and it is recorded as item 8, not
 claimed as done.
 
+### 2026-09-21 - measured the translation instead of arguing about it
+
+Reported as: News translates fully, Learn and Jobs do not. The data said
+otherwise - a Learn card's cached Spanish row carried a fully translated title,
+summary and back - so the disagreement was about what reaches the screen, and
+the only way to settle that was to look at the screen.
+
+Drove the live site with headless Chrome, switched to Spanish, and read the
+front of every feed and then the back of two cards in each.
+
+Fronts: all three feeds translated, 8, 17 and 10 cards, every one carrying the
+"translated by AI" line. Jobs backs translated in full. Crawled Learn guides
+translated in full. So the report was not reproducible as stated.
+
+What was real was two things the report had run together.
+
+The four authored lessons are the NEWEST cards in Learn, so they sit at the top
+of that feed and are the first thing anybody flips. Their backs are English by
+design and carry a line saying so, which is a mitigation rather than a fix. A
+reader who flips the top card of Learn and sees English has every reason to
+report that Learn does not translate, and they are describing something true
+even though the feed beneath is fine.
+
+And a genuine bug, on News, the feed that was said to work. ScamFlow printed
+"The setup", "The hook" and "The loss" over every translated lesson. Those
+survived the earlier sweep for hardcoded card strings because that sweep looked
+for text in JSX and these lived in a data array. label now holds a dictionary
+key, the way FLIP_LABEL and BACK_LABEL already did, and the rule in CLAUDE.md
+now says to grep for string literals as well as for JSX text - a label one hop
+from where it renders is exactly what a text sweep misses.
+
+Swept the rest of the card surface the same way afterwards. One thing left,
+deliberately: the three empty-state messages in Feed.tsx are English and only
+render when a feed has no cards at all, which has not happened since launch.
+
+The lesson is about method rather than about i18n. Two people can both be
+right about a bug and mean different cards. Reading the database proved the
+translation existed; driving the browser proved which one the reader was
+actually looking at.
+
