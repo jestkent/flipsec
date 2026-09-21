@@ -1,7 +1,8 @@
 # FlipSec
 
-**Flip the news. Learn the threat.** Three feeds of real AI news, where every
-card flips to show you what the front does not tell you.
+**Flip the news. Learn the threat.** Three feeds of AI security - news,
+learning and work - where every card flips to show you what the front does not
+tell you.
 
 **Live URL:** https://hallowed-nightingale-322.convex.site
 
@@ -14,16 +15,16 @@ voice on the phone can sound like family.
 FlipSec crawls public sources every six hours, rewrites what it finds in plain
 language, and puts it on a card that flips.
 
-- **Scams** — real reports of AI used against people. Flip for the lesson: how
-  the trick ran, what gave it away, why it worked on someone careful, and a
-  tutor you can ask questions.
-- **Learn AI** — free AI courses. Flip for what you will learn, who it is for,
-  and the first thing to do to begin.
-- **Jobs** — remote AI openings. Flip for what they want, whether you would fit,
-  and how to apply.
+- **AI Sec News** — real reports of AI used against people. Flip for the
+  lesson: how the trick ran, what gave it away, why it worked on someone
+  careful, and a tutor you can ask questions.
+- **AI Sec Edu** — free guides to how AI gets attacked and defended. Flip for
+  what you will learn, who it is for, and the first thing to do to begin.
+- **AI Sec Jobs** — openings where AI and security meet. Flip for what they
+  want, whether you would fit, and how to apply.
 
 Sign up on any tab and one card from each feed you picked arrives in a single
-email each morning. Reply to the scam drill in your own words and the reply
+email each morning. Reply to the news drill in your own words and the reply
 comes back graded.
 
 ## Who it is for
@@ -54,18 +55,22 @@ republish article text, course text or listing text.
   work, public domain.
 - [FTC consumer alerts](https://consumer.ftc.gov/consumer-alerts) — US government
   work, public domain.
-- [Hugging Face](https://huggingface.co/learn) — free, openly published courses.
-  Their robots.txt allows crawling with no crawl-delay.
-- [Remote OK](https://remoteok.com/) — job listings, read through their public
-  JSON feed. Their API terms ask to be named as the source and linked back
-  without `nofollow`, and every job card does both.
+- [OWASP Gen AI Security Project](https://genai.owasp.org/) — free guides to AI
+  security from a nonprofit: the LLM Top 10, agentic security, red teaming and
+  incident response. Their robots.txt allows crawling with no crawl-delay.
+- **Company job boards** — openings read from each employer's own public
+  Greenhouse board, with every card linking back to that employer's own
+  posting. Generalist remote boards were tried first and dropped: across about
+  340 listings from ten queries, four mentioned both AI and security and all
+  four were false positives.
 
 Each source's robots.txt and crawl-delay is honoured. A story only reaches the
-Scams feed if AI was genuinely part of it, if it is a trick a reader could learn
+news feed if AI was genuinely part of it, if it is a trick a reader could learn
 to spot, if it could happen to an ordinary person, and if the subject is fit for
-a classroom screen. A course has to be genuinely free and genuinely about AI; a
-job has to be genuinely about AI and genuinely remote. Most candidates fail a
-gate, so the feeds stay small on purpose.
+a classroom screen. A guide has to be free and about securing AI rather than
+building it. A job only counts when the AI is what is being protected or the AI
+is what does the protecting, so a cloud security role at an AI company does not
+qualify. Most candidates fail a gate, so the feeds stay small on purpose.
 
 ## Local setup
 

@@ -2,7 +2,7 @@
 
 - **Project:** FlipSec
 - **Event:** Convex All Gas Hackathon
-- **What it does:** Three feeds of real AI news - scams, free courses, and remote AI jobs - where every card flips to a plain-language explanation built from that exact item, and a daily email carries one card per feed a reader picked.
+- **What it does:** Three feeds of AI security - real incidents, free guides, and jobs where AI and security meet - where every card flips to a plain-language explanation built from that exact item, and a daily email carries one card per feed a reader picked.
 - **Live app:** https://hallowed-nightingale-322.convex.site
 - **Repo:** https://github.com/jestkent/flipsec
 - **Frontend:** Convex static hosting
@@ -12,7 +12,7 @@
 - **Auth:** none
 - **AI models:** gpt-4o-mini
 - **Started:** 2026-09-20T17:35:41Z
-- **Last updated:** 2026-09-20T23:02:57Z
+- **Last updated:** 2026-09-21T01:05:34Z
 
 ## Log
 
@@ -220,4 +220,40 @@ Brought the docs up to three feeds: the README and the in-app About page both
 described a single-feed app and listed three of the five sources, and the
 project guide gained the new schema rule, the gate-scoping rule and the
 one-flip-three-backs rule (`README.md`, `CLAUDE.md`,
+`src/components/About.tsx`).
+
+### 2026-09-20 - 50378da
+Narrowed all three feeds to AI security and renamed them AI Sec News, AI Sec
+Edu and AI Sec Jobs. The kind values in the database stay as they were;
+migrating every published row for a word on a button was not worth the risk to
+the feed the demo runs on.
+
+Education dropped Hugging Face for OWASP's Gen AI Security Project. Hugging
+Face teaches you to build AI rather than secure it, so under the new name every
+one of its cards was off topic; OWASP publishes the LLM Top 10, agentic
+security guides, red teaming guidance and incident response playbooks, free,
+and allows crawling. Their cards label every link "More", so the crawler now
+takes a provisional title from the URL slug and the model rewrites it from the
+page.
+
+Jobs dropped Remote OK on measurement. Across five of their tags and five
+Remotive searches, about 340 listings, exactly four mentioned both AI and
+security and all four were false positives, because generalist boards tag
+security for loss prevention and door staff. Jobs now come from companies' own
+public Greenhouse boards, which carry the full posting and the canonical apply
+link, filtered by title from the cheap list endpoint before any full fetch.
+
+The job gate needed two rounds. The first pass admitted cloud security, DevOps
+and a customer success role because the model reasoned "AI company, therefore
+AI security"; it now has eleven labelled examples from these same boards and is
+told to strike out the employer's name and read the job again. Thirty-two
+candidates yield ten. Greenhouse lists one role once per office, so the
+shortlist also dedupes on title within a board. Convex features: actions,
+mutations, scheduled functions, indexes (`convex/crawl.ts`, `convex/courses.ts`,
+`convex/jobs.ts`, `convex/stories.ts`, `src/App.tsx`).
+
+### 2026-09-20 - docs pass 2
+Updated the README, the in-app About page and the project guide for the three
+renamed feeds and the two new sources, and recorded why a gate that under-fires
+gets labelled examples rather than a softer rule (`README.md`, `CLAUDE.md`,
 `src/components/About.tsx`).

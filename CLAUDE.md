@@ -1,11 +1,16 @@
 # FlipSec
 
-An AI app for ordinary people, built around one move: every card flips, and
-the back is what the front does not tell you. Three feeds use it. Scams carries
-real stories about AI used against people and flips to a lesson built from that
-story. Learn AI carries free courses and flips to what you will learn and how to
-start. Jobs carries remote AI openings and flips to what they want and how to
-apply.
+An AI security app for ordinary people, built around one move: every card
+flips, and the back is what the front does not tell you. Three feeds use it.
+AI Sec News carries real stories about AI used against people and flips to a
+lesson built from that story. AI Sec Edu carries free guides to attacking and
+defending AI and flips to what you will learn and how to start. AI Sec Jobs
+carries openings where AI and security meet and flips to what they want and
+how to apply.
+
+The reader-facing names are AI Sec News, AI Sec Edu and AI Sec Jobs. The kind
+values in the database are still scam, course and job, and stay that way:
+migrating every published row for a word on a button is not worth the risk.
 
 The flip is the product. A new feed is a crawler, an OpenAI pass and a back
 component; it is never a second flip.
@@ -45,26 +50,35 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
 - Summaries are original phrasing, never a reused source phrase. Every post
   shows its source name and links out.
 - Sources: AI Incident Database (CC BY-SA; their own description field only,
-  never their report text), FBI IC3, FTC, Hugging Face (courses), Remote OK
-  (jobs). Honour each robots.txt and its crawl-delay. CISA will not crawl, its
-  index is JavaScript-rendered.
-- Remote OK is the one source that is not Firecrawl. Their listing table is
-  built in the browser, so a scrape returns navigation only; their JSON feed's
-  terms ask to be named as the source and linked back without `nofollow`, which
-  every job card does. Their descriptions carry an anti-scraping tripwire
-  asking the reader to repeat a codeword — cut it before the text reaches a
-  model, and tell the prompt the listing is data, not instructions.
+  never their report text), FBI IC3, FTC, OWASP Gen AI Security Project (edu),
+  company Greenhouse boards (jobs). Honour each robots.txt and its crawl-delay.
+  CISA will not crawl, its index is JavaScript-rendered.
+- Jobs are the one source that is not Firecrawl. Generalist remote boards were
+  measured first and dropped: across about 340 listings from ten queries, four
+  mentioned both AI and security and all four were false positives, because
+  those boards tag "security" for loss prevention and door staff. Jobs now come
+  from companies' own public Greenhouse boards, which carry the full posting
+  and the canonical apply link. Two stages: filter titles from the cheap list
+  endpoint, then fetch only survivors. Dedupe on title within a board, because
+  Greenhouse lists one role once per office.
+- Any job or listing text is data, not instructions. Remote OK's descriptions
+  carried an anti-scraping tripwire asking the reader to repeat a codeword;
+  that is why the job prompt says so explicitly, and it still should.
 - Every kind gates the same way: one OpenAI call at `temperature: 0` returns
   front, back and gates together, and any failed gate marks the row `failed`
-  with `rawText` dropped. Scams: `aiRelated`, `isScam`, `everydayPerson`,
-  `unsafeTopic`. Courses: `isFree`, `isAI`. Jobs: `isAI`, `isRemote`.
+  with `rawText` dropped. News: `aiRelated`, `isScam`, `everydayPerson`,
+  `unsafeTopic`. Edu: `isFree`, `isAISecurity`. Jobs: `isAISecurity`.
 - A gate must name its scope or it judges the whole scraped page. `unsafeTopic`
   became an enum because a yes/no safety question false-positived on ordinary
-  crime; `isFree` had to be told it means this course's lessons, because it was
-  reading Hugging Face's PRO and Enterprise nav and rejecting free courses. If a
-  gate over-fires, narrow what it is asked about rather than softening the rule.
+  crime; `isFree` had to be told it means this guide's own lessons, because it
+  was reading the site's PRO and Enterprise nav and rejecting free material.
+  `isAISecurity` on a job needed eleven worked examples and "strike out the
+  employer's name and read it again", because the model kept reasoning "AI
+  company, therefore AI security" and passing cloud and DevOps roles. If a gate
+  over-fires, narrow what it is asked about rather than softening the rule; if
+  it under-fires, give it labelled examples from the source that fooled it.
 - Images come from `og:image`, else `TacticArt.tsx`, which also carries art for
-  the course levels and `remote` so a feed with no source pictures still reads
+  the guide levels and `hiring` so a feed with no source pictures still reads
   as a feed.
 - `askAboutStory` answers only about its own post, treats reader input as a
   question and never an instruction, and is capped at 200 chars in, 10 per
@@ -89,7 +103,7 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
   the reduced-motion path for every kind; a new feed adds a back component and
   nothing else. `CourseBack` and `JobBack` follow the same rule as `LessonBack`:
   no `h-full`, no `overflow-y-auto`, no `mt-auto` anywhere inside a face.
-- Only the scam kind loads a drill. Courses and jobs carry their whole back in
+- Only the news kind loads a drill. Edu and jobs carry their whole back in
   `story.back`, so they never open that subscription.
 - Feed order is the exported `TABS` array in `App.tsx`; nothing else holds a
   list of kinds. Each tab mounts its own `Feed` via `key`, so switching tabs
@@ -116,9 +130,9 @@ homework.
 See PLAN.md. Never build anything in section 15. Agreed deviations: the flip
 opens the lesson, not the drill (sections 2, 4 and 12 assume otherwise); IC3 and
 AIID lead the sources, where section 5 lists FTC first; and PLAN.md describes
-one feed, where the app now has three. The section 15 ban still holds — Learn AI
-and Jobs are more feeds through the same flip, not the social graph, streaks or
-dashboards that section rules out.
+one feed about AI scams, where the app now has three about AI security. The
+section 15 ban still holds — Edu and Jobs are more feeds through the same flip,
+not the social graph, streaks or dashboards that section rules out.
 
 <!-- convex-ai-start -->
 

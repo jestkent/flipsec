@@ -31,24 +31,25 @@ export default function About({ onBack }: { onBack: () => void }) {
           a face you know, and a voice on the phone can sound like family.
         </p>
         <p className="text-base leading-relaxed text-neutral-700">
-          FlipSec collects what is really happening with AI and rewrites it so
-          anyone can read it. Everything here is a card, and every card flips to
-          show you what the front does not tell you.
+          FlipSec collects what is really happening in AI security and rewrites
+          it so anyone can read it. Everything here is a card, and every card
+          flips to show you what the front does not tell you.
         </p>
         <ul className="flex flex-col gap-2 text-base leading-relaxed text-neutral-700">
           <li>
-            <span className="font-medium text-neutral-900">Scams</span> — real
-            reports of AI used against people. Flip for the lesson: how the
+            <span className="font-medium text-neutral-900">AI Sec News</span> —
+            real reports of AI used against people. Flip for the lesson: how the
             trick ran, what gave it away, and why it worked on someone careful.
           </li>
           <li>
-            <span className="font-medium text-neutral-900">Learn AI</span> —
-            free courses. Flip for what you will learn and the first thing to do
-            to begin.
+            <span className="font-medium text-neutral-900">AI Sec Edu</span> —
+            free guides to how AI gets attacked and defended. Flip for what you
+            will learn and the first thing to do to begin.
           </li>
           <li>
-            <span className="font-medium text-neutral-900">Jobs</span> — remote
-            AI openings. Flip for what they want and how to apply.
+            <span className="font-medium text-neutral-900">AI Sec Jobs</span> —
+            openings where AI and security meet. Flip for what they want and how
+            to apply.
           </li>
         </ul>
       </Block>
@@ -120,35 +121,32 @@ export default function About({ onBack }: { onBack: () => void }) {
           </li>
           <li>
             <a
-              href="https://huggingface.co/learn"
+              href="https://genai.owasp.org/"
               target="_blank"
               rel="noreferrer"
               className="font-medium text-neutral-900 underline underline-offset-2"
             >
-              Hugging Face
+              OWASP Gen AI Security Project
             </a>{" "}
-            — free courses, openly published.
+            — free, openly published guides to AI security from a nonprofit.
           </li>
           <li>
-            <a
-              href="https://remoteok.com/"
-              target="_blank"
-              rel="noreferrer"
-              className="font-medium text-neutral-900 underline underline-offset-2"
-            >
-              Remote OK
-            </a>{" "}
-            — remote job listings, read through their public feed, which asks to
-            be named as the source and linked back. Every job card does both.
+            <span className="font-medium text-neutral-900">
+              Company job boards
+            </span>{" "}
+            — openings read from each employer's own public board, with every
+            card linking back to that employer's own posting.
           </li>
         </ul>
         <p className="text-base leading-relaxed text-neutral-600">
-          A story only reaches the Scams feed if AI was really part of it, if it
+          A story only reaches the news feed if AI was really part of it, if it
           is a trick a reader could learn to spot, if it could happen to an
-          ordinary person, and if a teacher could show it to a class. A course
-          has to be genuinely free and genuinely about AI. A job has to be
-          genuinely about AI and genuinely remote. Most candidates fail one of
-          those, and the feeds stay small on purpose.
+          ordinary person, and if a teacher could show it to a class. A guide
+          has to be free and has to be about securing AI, not building it. A
+          job only counts if the AI is what is being protected, or the AI is
+          what does the protecting — a cloud security job at an AI company is
+          still just a cloud security job. Most candidates fail one of those,
+          and the feeds stay small on purpose.
         </p>
       </Block>
 
