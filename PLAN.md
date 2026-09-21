@@ -908,6 +908,54 @@ After the backfill: 35 published stories, ten languages, zero gaps.
 
 ---
 
+## 27. Shipped fix: the email loop was open at the far end
+
+Every daily drill ends with "just hit reply and tell me which one, in your own
+words. I will tell you how you did." Replies arrived. The webhook verified the
+signature, the model graded the answer, `saveGrade` wrote the verdict to the
+attempt — and nothing was ever sent back. There were graded rows in the
+database that no human had seen.
+
+Every other gap found in this project was a missing feature. This one was
+different in kind: the product told a reader something would happen and then
+did not. A reader who replied learned that writing in achieves nothing, which
+is worse than never having invited them.
+
+It was also the sponsor integration stopping one function short. AgentMail
+went send, receive, verify, grade — and halted. It now closes: send, receive,
+verify, grade, reply.
+
+### Closing it turned a tidy rule into a safety one
+
+`submitAnswer` on the web has always allowed one attempt per reader per drill.
+`saveReply` on the email side did not; it inserted unconditionally, which was
+harmless while nothing was ever sent back.
+
+The moment the grade goes out, it is not harmless. Our reply lands in their
+inbox. An out-of-office, or any auto-responder, answers it. That answer
+arrives here as a new reply, is graded, and is answered again — a mail loop
+that spends an OpenAI call on every turn and fills a stranger's inbox.
+
+The guard was already built: the `by_user_drill` index existed, and the rule
+existed on the other half of the same feature. It needed applying, not
+inventing. That is worth noticing on its own — a consistency gap between two
+paths through one feature sat harmless for as long as one path was
+incomplete, and became a real fault the moment the feature was finished.
+
+`sendGrade` never rethrows. The grade is saved before the send is attempted,
+so a failure loses the message rather than the work, and a retry would mail
+somebody the same verdict twice.
+
+### How it was tested
+
+End to end against production, on an address in the reserved `.invalid` TLD
+so no real mailbox was touched: a subscriber created, a drill marked as sent,
+a first reply graded correct with real feedback and a send attempted, a second
+reply refused with exactly one attempt row on file, and an unknown address
+still failing closed. Test subscriber removed afterwards.
+
+---
+
 ## Appendix: the Convex mental model
 
 Worth re-reading when something does not behave.

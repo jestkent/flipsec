@@ -20,8 +20,39 @@ language, and puts it on a card that flips.
   careful, and a tutor you can ask questions.
 - **AI Sec Learn** — free guides to how AI gets attacked and defended. Flip for
   what you will learn, who it is for, and the first thing to do to begin.
+  Some of these cards are written here rather than crawled, and they flip to
+  something you can actually do.
 - **AI Sec Jobs** — openings where AI and security meet. Flip for what they
   want, whether you would fit, and how to apply.
+
+## Four things you can try
+
+Reading that a voice can be faked is not the same as hearing one. These are on
+the Ask FlipSec page and in the Learn feed, they need no account, and nothing
+you do in them leaves the page.
+
+- **The voice on the phone.** Press play and hear what a call sounds like now,
+  then the two things that still work: hang up and call back on the number you
+  already have, and agree a family word before anything is wrong.
+- **Spot the scam.** Five messages, not one spelling mistake between them,
+  three are scams. Most people do badly, and doing badly is the lesson: the
+  tell everybody was taught is gone, because writing well costs a scammer
+  nothing now.
+- **Confidently wrong.** Three AI answers about a refund rule, a helpline
+  number and your bank. Pick the invented one. All three are invented, which
+  is the only honest way to show that confidence carries no information.
+- **Hidden orders.** Watch an email tell an AI assistant what to do instead of
+  you, then turn defences on and watch it resist.
+
+The assistant in that last one is scripted, and the interface says so. A real
+model would depend on its own mood, cost a call, fail offline, and hand a
+reader a free-text box that reaches a model. The behaviour demonstrated is
+real; the demonstration is fixed, the way a flight simulator is.
+
+Nothing here clones a voice or swaps a face. A reader can experience an attack
+because nothing they do leaves the page — a tool that generates one would, and
+shipping impersonation tools on an app that teaches people to recognise
+impersonation would be indefensible.
 
 **Ask FlipSec** is one conversational safety guide in place of separate message
 and image checkers. A reader can paste something suspicious, attach an image,

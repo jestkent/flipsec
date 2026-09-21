@@ -1,7 +1,10 @@
 # Production readiness audit
 
 Audit run 2026-09-21 against commit `a0910d6` and the live deployment.
-Fixes are commits `c233aa8`, `9c59bec`, `877f7dc`, `f8235ec`.
+
+Fixes run from `c233aa8` to `00d3312`. The findings table below names the
+commit for each, which is more useful than a list here that goes out of date
+every time something ships.
 
 This file exists so a future debugging session can tell a deliberate choice
 from an accident. Where a fix has a failure mode, it is written down here
@@ -65,6 +68,9 @@ it is blocked by somebody else's, this regression is back.
 | S-1 | No Open Graph tags; a shared link rendered as a bare URL | Medium | Fixed `f8235ec` |
 | L-1 | No robots.txt or sitemap.xml | Low | Fixed `f8235ec` |
 | L-2 | `favicon.svg` + `icons.svg` shipped, referenced by nothing | Low | Fixed `f8235ec` |
+| T-1 | Translation happened on READ, so any card published after a warm-up run stayed English | **High** | Fixed `f68f849` |
+| E-1 | The daily email promised "I will tell you how you did" and never sent the grade | **High** | Fixed `00d3312` |
+| E-2 | `saveReply` inserted unconditionally — once the grade is mailed, an auto-responder makes a mail loop | **High** | Fixed `00d3312` |
 | **H-2** | **No security headers** — no CSP, HSTS, or frame protection | **High** | **OPEN — hosting layer, see §6** |
 | S-3 | No URL routing: one indexable URL, back button inert, soft 404 | Medium | **OPEN — deferred, see §7** |
 | L-3 | No `List-Unsubscribe` header | Low | **OPEN — see §7** |
@@ -113,9 +119,11 @@ verified one.
 | The confirm page only offered agreement, and the feeds had been guessed from whichever tab the reader was on | Signing up from three tabs is not the same as wanting three feeds | `aa0b35a` |
 | A valid signature for a deleted row answered "You are on the list" | Untrue, and the same shape as a real failure: unsubscribe, find an old mail, click it, be told you are subscribed | `aa0b35a` |
 
-The README also claimed emailed replies "come back graded". The grading runs
-and the result is stored on the attempt, but **nothing is sent back** —
-`gradeReply` has zero mail calls. The claim is corrected; the gap is open.
+The README also claimed emailed replies "come back graded". At the time of
+the audit the grading ran and the result was stored on the attempt, and
+**nothing was ever sent back** — `gradeReply` had zero mail calls, and there
+were graded rows in the database no human had seen. **Closed in `00d3312`**;
+see E-1 below.
 
 ## 3. Things a future change could break
 
@@ -232,7 +240,7 @@ Not "it compiled". Each against production:
 | S-1 | Served HTML, and the card URL | Tags present, 200 `image/png` |
 | L-1 | `/robots.txt`, `/sitemap.xml` | 200 |
 | L-2 | `/favicon.svg`, `/icons.svg` | 404 |
-| all | Three feeds after every deploy | 6 / 11 / 10 unchanged |
+| all | Three feeds after every deploy | 6 / 11 / 10 at the time, unchanged by each fix |
 
 Test data created and then removed: three `subscribers` rows on the reserved
 `.invalid` TLD (RFC 2606, never resolves, so no real address was mailed), and
