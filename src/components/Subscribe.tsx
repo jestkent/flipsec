@@ -42,12 +42,18 @@ export default function Subscribe({
   const [error, setError] = useState(
     "That did not go through. Check the address and try again.",
   );
+  const [sentConfirmation, setSentConfirmation] = useState(true);
 
   async function signUp() {
     if (!email.includes("@") || state === "sending") return;
     setState("sending");
     try {
-      await subscribe({ email, userId, kinds: [kind] });
+      // The mutation says whether a confirmation was actually sent. An
+      // address that is already confirmed gets no second message, and telling
+      // that reader to go and look for one sends them to wait for mail that
+      // is never coming.
+      const result = await subscribe({ email, userId, kinds: [kind] });
+      setSentConfirmation(result?.confirm !== false);
       setState("done");
       setEmail("");
     } catch (thrown) {
@@ -66,8 +72,9 @@ export default function Subscribe({
   if (state === "done") {
     return (
       <p role="status" className="rounded-card border border-line bg-white px-5 py-4 text-base text-ink">
-        Check your email and press the button in it. Nothing is sent until you
-        do, so nobody can sign up an address that is not theirs. {pitch.done}
+        {sentConfirmation
+          ? `Check your email and press the button in it. Nothing is sent until you do, so nobody can sign up an address that is not theirs. ${pitch.done}`
+          : `You are already on the list, and this tab has been added to what you get. ${pitch.done}`}
       </p>
     );
   }
