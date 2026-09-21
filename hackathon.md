@@ -11,9 +11,9 @@
 - **Components:** @convex-dev/static-hosting, @convex-dev/agent
 - **Convex features:** schema, tables, indexes, queries, mutations, actions, HTTP actions, crons, scheduled functions, realtime queries
 - **Auth:** none
-- **AI models:** gpt-4o-mini
+- **AI models:** gpt-4o-mini, gpt-4o-mini-tts
 - **Started:** 2026-09-20T17:35:41Z
-- **Last updated:** 2026-09-21T04:40:01Z
+- **Last updated:** 2026-09-21T05:09:34Z
 
 ## Log
 
@@ -575,3 +575,38 @@ security-critical backend files changed — the webhook signature check, the
 transactional rate limits and the publishing gates are byte-for-byte what they
 were (`convex/localization.ts`, `src/components/ReadAloudButton.tsx`,
 `src/components/Post.tsx`, `src/localization.tsx`, `src/App.tsx`).
+
+### 2026-09-21 - eleven languages, and a cap on the call that pays for them
+
+The app reads in eleven languages instead of three: English, Spanish,
+Simplified Chinese, Hindi, Filipino, Vietnamese, Russian, Japanese, Korean,
+Brazilian Portuguese and French. Each one ships a full interface dictionary,
+not translated card text sitting under English buttons, and the menu names
+every language in its own script with its own `lang` attribute so a screen
+reader pronounces it correctly.
+
+The list had been spelled out as `v.union` literals in four files. It now lives
+in two: an array in the frontend carrying the endonym, the `<html lang>` tag
+and the browser-speech locale, and a pair of validators in `convex/languages.ts`
+that the schema, the translate action and both cache modules import. Widening a
+union of literals is additive, so rows written when only Spanish and Filipino
+existed still validate - the deploy reported schema validation complete with no
+migration.
+
+Adding eight languages multiplied the uncached surface of `translateStory` by
+five, and that public action called a paid model with no rate limit at all. It
+now reserves a slot in `toolChecks`, but only after the cache is checked, so a
+cache hit stays free and unmetered; a reader switching language on a warm feed
+would otherwise spend their hourly budget on rows already paid for. Verified by
+reading the table back: the miss wrote a reservation row, the hit wrote nothing.
+
+Checked rather than assumed: the three feeds still return 6, 11 and 10 rows
+after the schema change; real translations into Chinese, Japanese, Russian and
+Korean came back with structure and red-flag arrays intact; the news feed was
+pre-generated in every new language so switching language is instant.
+
+No right-to-left language shipped. Arabic and Urdu belong on this list, and the
+layout still uses physical direction classes that would mirror incorrectly, so
+adding them would produce a broken page rather than a translated one. Card
+backs also remain English in every language. Both gaps are recorded in PLAN.md
+and README.md rather than left for a reader to find.

@@ -1,5 +1,6 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { language, speechLanguage } from "./languages";
 
 export default defineSchema({
   stories: defineTable({
@@ -89,6 +90,7 @@ export default defineSchema({
       v.literal("image"),
       v.literal("chat"),
       v.literal("speech"),
+      v.literal("translate"),
     ),
     createdAt: v.number(),
   })
@@ -108,14 +110,14 @@ export default defineSchema({
 
   storyTranslations: defineTable({
     storyId: v.id("stories"),
-    language: v.union(v.literal("es"), v.literal("fil")),
+    language,
     content: v.any(),
     createdAt: v.number(),
   }).index("by_story_language", ["storyId", "language"]),
 
   speechAudio: defineTable({
     contentHash: v.string(),
-    language: v.union(v.literal("en"), v.literal("es"), v.literal("fil")),
+    language: speechLanguage,
     storageId: v.id("_storage"),
     createdAt: v.number(),
   }).index("by_hash_language", ["contentHash", "language"]),

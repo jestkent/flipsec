@@ -5,9 +5,7 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { action } from "./_generated/server";
 
-const language = v.union(v.literal("es"), v.literal("fil"));
-const speechLanguage = v.union(v.literal("en"), v.literal("es"), v.literal("fil"));
-const LANGUAGE_NAMES = { es: "Spanish", fil: "Filipino (Tagalog)" } as const;
+import { LANGUAGE_NAMES, language, speechLanguage } from "./languages";
 
 function api() {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -21,12 +19,20 @@ async function hashText(text: string) {
 }
 
 export const translateStory = action({
-  args: { storyId: v.id("stories"), language },
+  args: { userId: v.string(), storyId: v.id("stories"), language },
   returns: v.any(),
   handler: async (ctx, args): Promise<unknown> => {
-    const context = await ctx.runQuery(internal.localizationData.storySource, args);
+    const context = await ctx.runQuery(internal.localizationData.storySource, {
+      storyId: args.storyId,
+      language: args.language,
+    });
     if (!context) throw new Error("This story is no longer available.");
     if (context.cached) return context.cached;
+    // Only a miss costs money, so only a miss claims a slot. Ten languages
+    // means ten times as many uncached pairs as two did, and this is a public
+    // action that calls a paid model.
+    const allowed = await ctx.runMutation(internal.localizationData.reserveTranslation, { userId: args.userId });
+    if (!allowed) throw new Error("Translation has reached its hourly limit. Try again later.");
     const completion = await api().chat.completions.create({
       model: "gpt-4o-mini",
       temperature: 0,
@@ -40,7 +46,11 @@ export const translateStory = action({
     if (!raw) throw new Error("The translation could not be created.");
     const content: unknown = JSON.parse(raw);
     if (!content || typeof content !== "object" || Array.isArray(content)) throw new Error("The translation could not be checked.");
-    await ctx.runMutation(internal.localizationData.saveStory, { ...args, content });
+    await ctx.runMutation(internal.localizationData.saveStory, {
+      storyId: args.storyId,
+      language: args.language,
+      content,
+    });
     return content;
   },
 });

@@ -1,8 +1,7 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery, query } from "./_generated/server";
 
-const language = v.union(v.literal("es"), v.literal("fil"));
-const speechLanguage = v.union(v.literal("en"), v.literal("es"), v.literal("fil"));
+import { language, speechLanguage } from "./languages";
 
 export const story = query({
   args: { storyId: v.id("stories"), language },
@@ -84,6 +83,25 @@ export const saveSpeech = internalMutation({
     }
     await ctx.db.insert("speechAudio", { ...args, createdAt: Date.now() });
     return args.storageId;
+  },
+});
+
+// A translation is only paid for on a cache miss, so this is reserved after
+// the cache is checked, never before. A reader switching language on a feed
+// that is already translated spends nothing and is never rate limited.
+export const reserveTranslation = internalMutation({
+  args: { userId: v.string() },
+  returns: v.boolean(),
+  handler: async (ctx, args) => {
+    if (args.userId.length < 1 || args.userId.length > 100) return false;
+    const since = Date.now() - 60 * 60 * 1000;
+    const mine = await ctx.db.query("toolChecks")
+      .withIndex("by_user_time", (q) => q.eq("userId", args.userId).gt("createdAt", since)).take(30);
+    if (mine.length >= 30) return false;
+    const all = await ctx.db.query("toolChecks").withIndex("by_time", (q) => q.gt("createdAt", since)).take(300);
+    if (all.length >= 300) return false;
+    await ctx.db.insert("toolChecks", { userId: args.userId, kind: "translate", createdAt: Date.now() });
+    return true;
   },
 });
 

@@ -9,6 +9,7 @@ import TacticArt from "./TacticArt";
 import { Badge } from "./ui";
 import ReadAloudButton from "./ReadAloudButton";
 import { useLanguage } from "../localization";
+import { readerId } from "../reader";
 
 type Story = Omit<Doc<"stories">, "rawText">;
 
@@ -228,7 +229,7 @@ export default function Post({
     if (language === "en" || cachedTranslation === undefined) return;
     if (cachedTranslation !== null || requestedTranslation.current) return;
     requestedTranslation.current = true;
-    translateStory({ storyId: story._id, language }).catch(() => {
+    translateStory({ userId: readerId(), storyId: story._id, language }).catch(() => {
       setTranslationFailed(true);
     });
   }, [language, cachedTranslation, story._id, translateStory]);

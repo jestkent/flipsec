@@ -46,12 +46,25 @@ higher contrast, reduced motion, and color palettes for red-green and
 blue-yellow color vision differences, plus a no-color palette. These settings
 are saved in the browser. Every news, learning, and jobs card has a visible
 Read aloud control on both sides, and each Ask FlipSec answer can be read aloud
-or stopped independently using the browser's built-in speech service. The app
+or stopped independently. Read aloud uses a natural AI voice, labelled as one
+while it plays, and falls back to the browser's own speech service when that is
+unavailable. The app
 also honors operating-system reduced-motion and increased-contrast settings,
 supports forced-colors mode, keeps controls at least 44px tall, does not use
 color as the only signal, and allows content to reflow instead of truncating at
 large text sizes. These are implementation safeguards aligned with WCAG 2.2 AA;
 they are not a claim of third-party certification.
+
+The interface and every card headline read in eleven languages: English,
+Spanish, Simplified Chinese, Hindi, Filipino, Vietnamese, Russian, Japanese,
+Korean, Brazilian Portuguese and French. Each language ships a full interface
+dictionary rather than translated article text over English buttons, and the
+menu names every language in its own script. Card headlines and summaries are
+translated on demand and cached, so the same card is never translated twice.
+The lesson, course guide and job posting behind a flip are still English in
+every language — a known gap, stated here rather than left for a reader to
+discover. No right-to-left language ships yet, because the layout needs to move
+off physical direction classes before Arabic or Urdu would read correctly.
 
 Sign up on any tab and one card from each feed you picked arrives in a single
 email each morning. Reply to the news drill in your own words and the reply

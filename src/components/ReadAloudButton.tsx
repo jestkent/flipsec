@@ -1,7 +1,7 @@
 import { useAction } from "convex/react";
 import { useEffect, useId, useRef, useState, type MouseEvent, type RefObject } from "react";
 import { api } from "../../convex/_generated/api";
-import { useLanguage } from "../localization";
+import { languageInfo, useLanguage } from "../localization";
 import { readerId } from "../reader";
 
 // Only one voice plays at a time across the whole page. A CustomEvent
@@ -27,7 +27,8 @@ function readableText(target: HTMLElement | null): string {
   return (copy.textContent ?? "").replace(/\s+/g, " ").trim();
 }
 
-const BROWSER_LANG: Record<string, string> = { en: "en-US", es: "es-ES", fil: "fil-PH" };
+// The browser-voice locale tag comes from the same LANGUAGES table the menu
+// is built from, so a new language never needs a second entry here.
 
 // The natural voice is an OpenAI TTS call and has a length cap on the server
 // (4,096 characters). Text past that skips straight to the browser voice
@@ -87,7 +88,7 @@ export default function ReadAloudButton({
     }
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(words);
-    utterance.lang = BROWSER_LANG[language] ?? document.documentElement.lang ?? "en-US";
+    utterance.lang = languageInfo(language).speechLang;
     utterance.rate = 0.95;
     utterance.onend = () => { if (activeSpeechId === id) announce(""); };
     utterance.onerror = () => { if (activeSpeechId === id) announce(""); };

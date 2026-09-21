@@ -19,6 +19,7 @@ import type * as drills from "../drills.js";
 import type * as email from "../email.js";
 import type * as http from "../http.js";
 import type * as jobs from "../jobs.js";
+import type * as languages from "../languages.js";
 import type * as lessons from "../lessons.js";
 import type * as localization from "../localization.js";
 import type * as localizationData from "../localizationData.js";
@@ -45,6 +46,7 @@ declare const fullApi: ApiFromModules<{
   email: typeof email;
   http: typeof http;
   jobs: typeof jobs;
+  languages: typeof languages;
   lessons: typeof lessons;
   localization: typeof localization;
   localizationData: typeof localizationData;

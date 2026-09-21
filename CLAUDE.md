@@ -211,11 +211,36 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
   the one actually playing — OpenAI's usage policy for synthetic speech
   requires that disclosure. Generated clips are cached in Convex storage by a
   hash of `language:text`, so the same clip is never paid for twice.
+- The app reads in eleven languages: English, Spanish, Simplified Chinese,
+  Hindi, Filipino, Vietnamese, Russian, Japanese, Korean, Brazilian Portuguese
+  and French. The list lives in exactly two places and nowhere else — the
+  `LANGUAGES` array in `src/localization.tsx` (endonym, `<html lang>` tag,
+  browser-speech locale) and the two validators in `convex/languages.ts`, which
+  the schema, the translate action and both caches import. Adding a language is
+  one entry in each plus a dictionary; adding a literal to a `v.union` is an
+  additive schema change and existing rows keep validating.
+- Write the language's own name in the menu and never translate it. "Español"
+  stays "Español" in the Japanese dictionary, because a reader who cannot read
+  English still has to find their own row. Each `<option>` carries its own
+  `lang` so a screen reader pronounces it with the right voice.
+- The literals in `convex/languages.ts` are spelled out rather than spread from
+  an array. `v.union(...codes.map(v.literal))` infers `string` instead of the
+  exact union, which silently turns `args.language` into a plain string.
+- No right-to-left language ships yet. Arabic, Hebrew, Urdu and Farsi need the
+  layout moved off physical direction classes (`right-3`, `pl-2`, `ml-auto`)
+  onto logical ones before they would read correctly. Adding one to the list
+  without that work produces a mirrored-looking page, not a translated one.
 - Story translation (`localization.translateStory`, cached in
   `storyTranslations`) covers a card's title and summary on the front only.
   The lesson, course and job backs are not translated yet — do not assume a
   reader who switched languages sees a translated back, and do not remove the
   English fallback in `Post.tsx` if that gap gets closed later.
+- `translateStory` reserves a rate-limit slot **only on a cache miss**, after
+  `storySource` reports no cached row. A hit costs nothing and must never
+  consume a slot, or a reader switching language on a warm feed burns their
+  hourly budget on rows that were already paid for. It is a public action that
+  calls a paid model, so it needs the cap for the same reason `questions` does;
+  the cache bounds the lifetime spend, but not the concurrent spend.
 - New-window links say so to screen readers. Decorative art and source icons
   use empty alternatives or `aria-hidden`; submitted image previews name the
   attached file.

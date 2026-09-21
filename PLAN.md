@@ -542,11 +542,35 @@ is not always the nicer voice.
 
 ## 22. Shipped extension: translated headlines
 
-The language selector now does more than relabel buttons. Choosing Spanish or
-Filipino sends a card's title and summary to OpenAI once, in the same call
-shape already defined for the whole card (title, summary, red flags, back,
-drill), and the result is cached in `storyTranslations` keyed by story and
-language so it is generated once and read many times.
+The language selector now does more than relabel buttons. Choosing one of the
+ten languages beside English sends a card's title and summary to OpenAI once,
+in the same call shape already defined for the whole card (title, summary, red
+flags, back, drill), and the result is cached in `storyTranslations` keyed by
+story and language so it is generated once and read many times.
+
+The list is English, Spanish, Simplified Chinese, Hindi, Filipino, Vietnamese,
+Russian, Japanese, Korean, Brazilian Portuguese and French. It was chosen for
+who actually gets targeted by the scams this feed reports rather than for
+global speaker counts, which is why Vietnamese, Filipino and Korean are on it
+ahead of several larger languages. Every language ships a full interface
+dictionary, not only translated story text: a half-translated page reads as
+broken software, which is worse for trust than staying in English.
+
+It ships without any right-to-left language. Arabic and Urdu both belong on
+this list on the merits, and neither is here, because the layout still uses
+physical direction classes and would mirror incorrectly. That is deferred
+work, not a judgement about those readers.
+
+Two files hold the list: `LANGUAGES` in `src/localization.tsx` and the
+validators in `convex/languages.ts`, which the schema, the translate action
+and both caches import. Widening a `v.union` of literals is additive, so the
+rows written when only Spanish and Filipino existed still validate.
+
+`translateStory` claims a rate-limit slot only when the cache misses. A hit
+returns free and unmetered, which matters because switching language on a warm
+feed fires one call per visible card. Going from two languages to ten
+multiplied the uncached surface by five on a public action that spends money,
+which is what made the limit necessary rather than merely tidy.
 
 Only the front of a card translates today: the headline and the one-line
 summary on every feed. The lesson, the course guide and the job posting on the
