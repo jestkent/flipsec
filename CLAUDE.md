@@ -421,6 +421,13 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
   because its label always comes from the dictionary and it sits inside those
   English regions. When a region is translated, delete its `lang="en"` in the
   same change.
+- **The product is called Ask FlipSec everywhere, including the navigation.**
+  The nav said "Ask AI" while the hero button, the page and the email all said
+  Ask FlipSec, so the same thing had two names depending on where you stood.
+  `askAi` keeps its key, because a key is not a label, but every value now
+  names the product. The brand word never translates; the verb around it does
+  — "Preguntar a FlipSec", "FlipSecに聞く" — the same rule as the endonyms
+  below, pointing the other way.
 - Write the language's own name in the menu and never translate it. "Español"
   stays "Español" in the Japanese dictionary, because a reader who cannot read
   English still has to find their own row. Each `<option>` carries its own

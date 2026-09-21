@@ -35,7 +35,7 @@ const EN = {
   cardLink: "Link to this card",
   language: "Language",
   read: "Read",
-  askAi: "Ask AI",
+  askAi: "Ask FlipSec",
   about: "About",
   accessibility: "Accessibility",
   displayPreferences: "Choose display preferences",
@@ -110,7 +110,7 @@ const EN = {
 
 const ES: Record<Key, string> = {
   cardLink: "Enlace a esta tarjeta",
-  language: "Idioma", read: "Leer", askAi: "Preguntar a la IA", about: "Acerca de",
+  language: "Idioma", read: "Leer", askAi: "Preguntar a FlipSec", about: "Acerca de",
   accessibility: "Accesibilidad", displayPreferences: "Elige tus preferencias de visualización",
   largerText: "Texto más grande", higherContrast: "Mayor contraste", reduceMotion: "Reducir movimiento",
   colorVision: "Visión del color", standardColors: "Colores estándar", redGreen: "Ayuda para rojo y verde",
@@ -168,7 +168,7 @@ const ES: Record<Key, string> = {
 
 const ZH: Record<Key, string> = {
   cardLink: "此卡片的链接",
-  language: "语言", read: "阅读", askAi: "询问 AI", about: "关于",
+  language: "语言", read: "阅读", askAi: "询问 FlipSec", about: "关于",
   accessibility: "无障碍", displayPreferences: "选择显示偏好",
   largerText: "更大的文字", higherContrast: "更高对比度", reduceMotion: "减少动效",
   colorVision: "色觉", standardColors: "标准颜色", redGreen: "红绿色辨识支持",
@@ -226,7 +226,7 @@ const ZH: Record<Key, string> = {
 
 const HI: Record<Key, string> = {
   cardLink: "इस कार्ड का लिंक",
-  language: "भाषा", read: "पढ़ें", askAi: "AI से पूछें", about: "परिचय",
+  language: "भाषा", read: "पढ़ें", askAi: "FlipSec से पूछें", about: "परिचय",
   accessibility: "सुगम्यता", displayPreferences: "प्रदर्शन की पसंद चुनें",
   largerText: "बड़ा टेक्स्ट", higherContrast: "अधिक कंट्रास्ट", reduceMotion: "गति कम करें",
   colorVision: "रंग दृष्टि", standardColors: "सामान्य रंग", redGreen: "लाल-हरे के लिए सहायता",
@@ -284,7 +284,7 @@ const HI: Record<Key, string> = {
 
 const FIL: Record<Key, string> = {
   cardLink: "Link sa card na ito",
-  language: "Wika", read: "Basahin", askAi: "Magtanong sa AI", about: "Tungkol",
+  language: "Wika", read: "Basahin", askAi: "Magtanong sa FlipSec", about: "Tungkol",
   accessibility: "Accessibility", displayPreferences: "Pumili ng mga setting sa display",
   largerText: "Mas malaking teksto", higherContrast: "Mas mataas na contrast", reduceMotion: "Bawasan ang galaw",
   colorVision: "Paningin sa kulay", standardColors: "Karaniwang mga kulay", redGreen: "Tulong sa pula at berde",
@@ -342,7 +342,7 @@ const FIL: Record<Key, string> = {
 
 const VI: Record<Key, string> = {
   cardLink: "Liên kết đến thẻ này",
-  language: "Ngôn ngữ", read: "Đọc", askAi: "Hỏi AI", about: "Giới thiệu",
+  language: "Ngôn ngữ", read: "Đọc", askAi: "Hỏi FlipSec", about: "Giới thiệu",
   accessibility: "Trợ năng", displayPreferences: "Chọn tùy chọn hiển thị",
   largerText: "Chữ lớn hơn", higherContrast: "Tương phản cao hơn", reduceMotion: "Giảm chuyển động",
   colorVision: "Thị giác màu", standardColors: "Màu tiêu chuẩn", redGreen: "Hỗ trợ đỏ và xanh lá",
@@ -400,7 +400,7 @@ const VI: Record<Key, string> = {
 
 const RU: Record<Key, string> = {
   cardLink: "Ссылка на эту карточку",
-  language: "Язык", read: "Читать", askAi: "Спросить ИИ", about: "О проекте",
+  language: "Язык", read: "Читать", askAi: "Спросить FlipSec", about: "О проекте",
   accessibility: "Доступность", displayPreferences: "Выберите настройки отображения",
   largerText: "Крупный текст", higherContrast: "Выше контраст", reduceMotion: "Меньше анимации",
   colorVision: "Цветовое зрение", standardColors: "Обычные цвета", redGreen: "Поддержка красного и зелёного",
@@ -458,7 +458,7 @@ const RU: Record<Key, string> = {
 
 const JA: Record<Key, string> = {
   cardLink: "このカードへのリンク",
-  language: "言語", read: "読む", askAi: "AIに聞く", about: "このサイトについて",
+  language: "言語", read: "読む", askAi: "FlipSecに聞く", about: "このサイトについて",
   accessibility: "アクセシビリティ", displayPreferences: "表示の設定を選ぶ",
   largerText: "文字を大きく", higherContrast: "コントラストを高く", reduceMotion: "動きを減らす",
   colorVision: "色覚", standardColors: "標準の色", redGreen: "赤と緑のサポート",
@@ -516,7 +516,7 @@ const JA: Record<Key, string> = {
 
 const KO: Record<Key, string> = {
   cardLink: "이 카드 링크",
-  language: "언어", read: "읽기", askAi: "AI에게 묻기", about: "소개",
+  language: "언어", read: "읽기", askAi: "FlipSec에게 묻기", about: "소개",
   accessibility: "접근성", displayPreferences: "화면 설정 선택",
   largerText: "더 큰 글자", higherContrast: "더 높은 대비", reduceMotion: "움직임 줄이기",
   colorVision: "색각", standardColors: "기본 색상", redGreen: "빨강-초록 지원",
@@ -574,7 +574,7 @@ const KO: Record<Key, string> = {
 
 const PT: Record<Key, string> = {
   cardLink: "Link para este cartão",
-  language: "Idioma", read: "Ler", askAi: "Perguntar à IA", about: "Sobre",
+  language: "Idioma", read: "Ler", askAi: "Perguntar ao FlipSec", about: "Sobre",
   accessibility: "Acessibilidade", displayPreferences: "Escolha as preferências de exibição",
   largerText: "Texto maior", higherContrast: "Mais contraste", reduceMotion: "Reduzir movimento",
   colorVision: "Visão de cores", standardColors: "Cores padrão", redGreen: "Apoio para vermelho e verde",
@@ -632,7 +632,7 @@ const PT: Record<Key, string> = {
 
 const FR: Record<Key, string> = {
   cardLink: "Lien vers cette carte",
-  language: "Langue", read: "Lire", askAi: "Demander à l'IA", about: "À propos",
+  language: "Langue", read: "Lire", askAi: "Demander à FlipSec", about: "À propos",
   accessibility: "Accessibilité", displayPreferences: "Choisissez vos préférences d'affichage",
   largerText: "Texte plus grand", higherContrast: "Plus de contraste", reduceMotion: "Réduire les animations",
   colorVision: "Vision des couleurs", standardColors: "Couleurs standard", redGreen: "Aide pour le rouge et le vert",
