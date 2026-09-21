@@ -51,6 +51,50 @@ async function sendMessage(to: string, subject: string, text: string, idempotenc
   return { message_id: result.message_id };
 }
 
+// Answering IN the thread the reader replied in, rather than starting a new
+// one. messages/send always creates a fresh message with its own subject, so
+// a reader who did exactly what the mail told them -- hit reply and wait --
+// watched that conversation and saw nothing arrive, three times over. The
+// grade was being delivered the whole time, to a separate thread they were
+// not looking at.
+//
+// AgentMail threads this for us from the message id in the path, so there is
+// no In-Reply-To or References field to get right by hand:
+// POST /inboxes/{inbox}/messages/{message_id}/reply
+//
+// The caller falls back to sendMessage when there is no message id to reply
+// to, which is any grade scheduled before this shipped.
+async function replyToMessage(messageId: string, text: string, idempotencyKey?: string) {
+  const apiKey = process.env.AGENTMAIL_API_KEY;
+  if (!apiKey) throw new Error("AGENTMAIL_API_KEY is not set in Convex env vars");
+
+  const response = await fetch(
+    `${API}/inboxes/${encodeURIComponent(inboxId())}/messages/${encodeURIComponent(messageId)}/reply`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
+      },
+      body: JSON.stringify({ text }),
+      signal: AbortSignal.timeout(20_000),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `AgentMail reply failed: ${response.status} ${await response.text()}`,
+    );
+  }
+
+  const result: unknown = await response.json();
+  if (!result || typeof result !== "object" || !("message_id" in result) || typeof result.message_id !== "string") {
+    throw new Error("AgentMail returned no message ID");
+  }
+  return { message_id: result.message_id };
+}
+
 function drillSection(drill: {
   prompt: string;
   choices: string[];
@@ -185,6 +229,7 @@ export const sendGrade = internalAction({
   args: {
     attemptId: v.optional(v.id("attempts")),
     to: v.string(),
+    replyToMessageId: v.optional(v.string()),
     correct: v.boolean(),
     feedback: v.string(),
     rightAnswer: v.string(),
@@ -207,10 +252,8 @@ export const sendGrade = internalAction({
 
     try {
       const token = await unsubscribeToken(args.to);
-      const sent = await sendMessage(
-        args.to,
-        args.correct ? "You got today's drill right" : "About today's drill",
-        `${opening}
+      const key = args.attemptId ? `grade-${args.attemptId}` : undefined;
+      const body = `${opening}
 
 ${args.feedback}${answer}
 
@@ -222,9 +265,19 @@ somewhere it is safe. The next one arrives tomorrow.
 — FlipSec.ai
 ${SITE}
 
-Don't want these? Unsubscribe: ${SITE}/api/unsubscribe?e=${encodeURIComponent(args.to)}&t=${token}`,
-        args.attemptId ? `grade-${args.attemptId}` : undefined,
-      );
+Don't want these? Unsubscribe: ${SITE}/api/unsubscribe?e=${encodeURIComponent(args.to)}&t=${token}`;
+
+      // In the reader's own thread when we know which message to answer.
+      // A grade scheduled before this shipped has no id, and still goes out
+      // as its own message rather than not at all.
+      const sent = args.replyToMessageId
+        ? await replyToMessage(args.replyToMessageId, body, key)
+        : await sendMessage(
+            args.to,
+            args.correct ? "You got today's drill right" : "About today's drill",
+            body,
+            key,
+          );
       if (args.attemptId) await ctx.runMutation(internal.attempts.finishDelivery, { attemptId: args.attemptId, messageId: sent.message_id });
     } catch (error) {
       // The saved grade and scheduled watchdog survive a send failure.

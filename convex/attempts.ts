@@ -85,7 +85,7 @@ export const submitAnswer = mutation({
 // judge it. The reply is matched to a drill through the subscriber's last
 // send, so the reader never has to quote the question back.
 export const saveReply = internalMutation({
-  args: { from: v.string(), body: v.string(), inReplyTo: v.optional(v.string()), references: v.optional(v.array(v.string())) },
+  args: { from: v.string(), body: v.string(), inReplyTo: v.optional(v.string()), references: v.optional(v.array(v.string())), messageId: v.optional(v.string()) },
   returns: v.null(),
   handler: async (ctx, args) => {
     const subscriber = await ctx.db
@@ -141,6 +141,9 @@ export const saveReply = internalMutation({
       // The reply is the whole point: the daily mail says "I will tell you how
       // you did", and for a long time it did not.
       to: args.from,
+      // Threaded onto the reader's own message, so the grade lands in the
+      // conversation they are already looking at.
+      replyToMessageId: args.messageId,
       answer: args.body,
       prompt: drill.prompt,
       choices: drill.choices,
@@ -185,6 +188,7 @@ export const gradeReply = internalAction({
   args: {
     attemptId: v.id("attempts"),
     to: v.string(),
+    replyToMessageId: v.optional(v.string()),
     answer: v.string(),
     prompt: v.string(),
     choices: v.array(v.string()),
@@ -241,6 +245,7 @@ export const saveGrade = internalMutation({
     correct: v.boolean(),
     feedback: v.string(),
     to: v.optional(v.string()),
+    replyToMessageId: v.optional(v.string()),
     rightAnswer: v.optional(v.string()),
     explanation: v.optional(v.string()),
   },
@@ -255,6 +260,7 @@ export const saveGrade = internalMutation({
     });
     if (args.to) await ctx.scheduler.runAfter(0, internal.email.sendGrade, {
       attemptId: args.attemptId, to: args.to, correct: args.correct,
+      replyToMessageId: args.replyToMessageId,
       feedback: args.feedback, rightAnswer: args.rightAnswer ?? "", explanation: args.explanation ?? "",
     });
     return null;
@@ -262,7 +268,7 @@ export const saveGrade = internalMutation({
 });
 
 export const claimDelivery = internalMutation({
-  args: { attemptId: v.id("attempts"), to: v.string(), correct: v.boolean(), feedback: v.string(), rightAnswer: v.string(), explanation: v.string() },
+  args: { attemptId: v.id("attempts"), to: v.string(), correct: v.boolean(), feedback: v.string(), rightAnswer: v.string(), explanation: v.string(), replyToMessageId: v.optional(v.string()) },
   returns: v.boolean(),
   handler: async (ctx, args) => {
     const row = await ctx.db.get(args.attemptId);

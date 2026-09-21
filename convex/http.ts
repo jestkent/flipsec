@@ -293,7 +293,8 @@ http.route({
 
     if (!("message" in event) || !event.message || typeof event.message !== "object") return new Response("bad message", { status: 400 });
     const incoming = event.message as Record<string, unknown>;
-    if (typeof incoming.from !== "string" ||
+    if ((incoming.message_id !== undefined && typeof incoming.message_id !== "string") ||
+      typeof incoming.from !== "string" ||
       (incoming.text !== undefined && typeof incoming.text !== "string") ||
       (incoming.html !== undefined && typeof incoming.html !== "string") ||
       (incoming.in_reply_to !== undefined && typeof incoming.in_reply_to !== "string") ||
@@ -313,6 +314,12 @@ http.route({
       body: stripQuoted(body).slice(0, 2000),
       inReplyTo: typeof incoming.in_reply_to === "string" ? incoming.in_reply_to : undefined,
       references: Array.isArray(incoming.references) ? (incoming.references as string[]).slice(-20) : undefined,
+      // The reader's own message id, so the grade can be sent as a REPLY to
+      // it rather than as a new message. The daily mail says "hit reply and
+      // I will tell you how you did"; answering in a separate thread with a
+      // different subject means the reader watches the conversation they
+      // replied in and sees nothing at all.
+      messageId: typeof incoming.message_id === "string" ? incoming.message_id : undefined,
     });
 
     return new Response("ok", { status: 200 });
