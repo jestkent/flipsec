@@ -183,6 +183,19 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
 - Edu gates on `isLearningMaterial` as well as `isFree` and `isAISecurity`. A
   vendor landscape or solutions directory is a catalogue of a market, not
   something a reader can learn from.
+- PLAN.md section 24 is a researched backlog of further sources: robots.txt
+  and index checked, licence stated where it could be established, and the
+  ones already rejected with the reason. Read it before researching a source
+  from scratch. Two rejections are worth knowing about in advance: MITRE
+  ATLAS is the best fit on the internet for this feed and serves a 3.7 KB
+  JavaScript shell, and the large AI companies' academies mostly teach using
+  AI rather than securing it, which `isAISecurity` should refuse.
+- **Add a source on dev, then read every card it produced before promoting.**
+  Every source this project has added needed gate tuning after its first
+  crawl and never before: `isFree` read Hugging Face's PRO nav, `isAISecurity`
+  passed cloud roles, `isScam` tagged a lawsuit as phishing. Each fault was
+  invisible until real cards from that source were read one at a time. On a
+  security feed a wrong card is worse than a missing one.
 
 ## Design system
 

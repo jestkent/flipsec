@@ -669,6 +669,119 @@ links, an inert back button and HTTP 200 on unknown paths.
 
 ---
 
+## 24. Researched backlog: widening the crawl
+
+Not built. Researched on 2026-09-21 so the work is ready rather than
+speculative, and deliberately not shipped before the submission deadline —
+the reasoning for that is at the end and matters more than the list.
+
+Every candidate below was checked the way section 5 requires: fetch
+`robots.txt`, read the `User-agent: *` block, confirm the path we would read
+is not disallowed, note any crawl-delay, then fetch the index itself and look
+at what actually came back. A source is only listed as ready if all of that
+passed. Where something could not be established it says so rather than
+guessing.
+
+### Ready to add
+
+| Source | Feed | robots.txt | Index fetched | Licence |
+| --- | --- | --- | --- | --- |
+| Google SAIF | Learn | allows `/`, no delay | 200, 131 KB and 190 KB | Google's, summarise and link |
+| NIST AI RMF | Learn | allows path, no delay | 200, 93 KB | US federal, public domain |
+| IRS tax scam alerts | News | allows `/newsroom`, no delay | 200, 125 KB | US federal, public domain |
+| Scamwatch (AU) | News | allows `/news-alerts`, no delay | 200, 92 KB | **not established, see below** |
+
+**Google SAIF** — `saif.google/secure-ai-framework/components` and
+`/controls`. The Secure AI Framework: risks, components and controls for
+securing AI systems. This is the one large-AI-company source that genuinely
+fits, because it is about defending AI rather than building with it. Expect
+`isLearningMaterial` to be the gate that argues: a controls catalogue is
+closer to a reference than a lesson, and section 5 already rejects vendor
+landscapes for exactly that reason. Read the first crawl before deciding
+whether that rejection is right here.
+
+**NIST AI Risk Management Framework** —
+`nist.gov/itl/ai-risk-management-framework`. Public domain, so no attribution
+constraint beyond our own habit of linking out. Watch `isAISecurity`: the RMF
+is about AI *risk*, which is broader than security and includes fairness and
+transparency. Some of it belongs on this feed and some does not, and the gate
+is the right place to draw that line rather than the crawler.
+
+**IRS tax scam alerts** — `irs.gov/newsroom/tax-scams-consumer-alerts`.
+Public domain. AI voice cloning of IRS agents is a real and current tactic, so
+the `aiRelated` gate will carry most of the filtering. Expect a low pass rate
+and treat that as the gate working, not as a broken source.
+
+**Scamwatch (Australia)** — `scamwatch.gov.au/news-alerts`. Good alert
+quality and a useful widening past US-only reporting. **The licence could not
+be located**: `/copyright` and `/copyright-statement` both 404 and the
+homepage carries no Creative Commons statement. Australian government content
+is usually CC BY, but usually is not a licence. Establish the terms before
+adding this one.
+
+### Checked and rejected
+
+**MITRE ATLAS** — `atlas.mitre.org`. No `robots.txt` at all, which permits
+crawling, and it is probably the single most on-topic AI security resource in
+existence for this feed. The index returns 200 and **3.7 KB**: a JavaScript
+shell with no content in the HTML. That is the same failure that already
+defeated CISA in section 5. Firecrawl can render JavaScript, so this is worth
+one timeboxed attempt with `indexAllContent`, but it goes in this column
+until that attempt succeeds rather than on the strength of how good a fit it
+is.
+
+**FTC press releases and SEC investor alerts** — both return **403 on
+`robots.txt` itself**. The rule is to check robots.txt before adding a
+source; if it cannot be read, permission cannot be claimed. Skip. Note this
+is only the `www.ftc.gov` host — `consumer.ftc.gov`, which the app already
+crawls, serves its robots.txt normally and sets `Crawl-delay: 10`.
+
+**FBI press releases** — a genuine conflict rather than a technical block.
+`fbi.gov/robots.txt` returns 200 and **allows** `/news/press-releases`, but
+the page itself returns **403** to a non-browser agent. Firecrawl drives a
+real browser and would likely get through. Whether doing so respects the
+operator's intent is a judgement about their wishes, not a question the code
+can answer, so it stays here until a person decides.
+
+**OpenAI Academy, Anthropic's learn pages, Microsoft Learn** — all three
+allow the relevant paths. They are listed as rejected anyway, because they
+mostly teach people to *use* AI rather than to secure it, and
+`isAISecurity` exists precisely to refuse that inference. Section 5 records
+that the jobs gate needed eleven worked examples before it stopped reasoning
+"AI company, therefore AI security". Crawling these would spend budget on
+material the gate should, and hopefully would, throw away. Microsoft Learn is
+the partial exception: it carries real AI security modules, but they have to
+be reached by a specific learning path rather than by pointing at the site.
+
+### Why none of this shipped before submission
+
+Every source this project has added needed gate tuning *after* its first
+crawl, never before. `isFree` over-fired by reading Hugging Face's PRO and
+Enterprise navigation. `isAISecurity` passed cloud and DevOps roles until it
+was given labelled examples. `isScam` tagged a product liability lawsuit as
+phishing. In each case the fault was invisible until real cards from that
+source were read one by one.
+
+A gate cannot be tuned against material nobody has looked at. Adding sources
+shortly before a deadline means either shipping untuned cards into a feed
+that is about to be read by judges, or spending the remaining hours on
+crawler tuning instead of on the submission. Six, eleven and ten cards that
+have each survived a gate is a better feed than thirty where four are wrong,
+because on a security feed a wrong card is worse than a missing one.
+
+### How to add one when the time comes
+
+1. Confirm `robots.txt` and the licence again; both change.
+2. Add the source and run the crawl **on dev**, never prod.
+3. Read every card it produced. All of them, not a sample.
+4. Tune the gate that misfired by narrowing what it is asked about if it
+   over-fires, or by giving it labelled examples from the material that
+   fooled it if it under-fires. Section 5 has the reasoning; do not soften
+   the rule itself.
+5. Only then promote, and check the three feed counts before and after.
+
+---
+
 ## Appendix: the Convex mental model
 
 Worth re-reading when something does not behave.
