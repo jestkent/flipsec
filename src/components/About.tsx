@@ -31,7 +31,7 @@ export default function About({ onBack }: { onBack: () => void }) {
           a face you know, and a voice on the phone can sound like family.
         </p>
         <p className="text-base leading-relaxed text-neutral-700">
-          FlipSec follows AI security three ways: what is happening to people
+          FlipSec.ai follows AI security three ways: what is happening to people
           right now, how the attacks and defences actually work, and who is
           paying people to work on it. Everything here is a card, and every card
           flips to show you what the front does not tell you.
@@ -80,7 +80,7 @@ export default function About({ onBack }: { onBack: () => void }) {
       <Block title="Where it all comes from">
         <p className="text-base leading-relaxed text-neutral-700">
           Every card is a short summary written in our own words from something
-          published openly, with a link to the original. FlipSec does not
+          published openly, with a link to the original. FlipSec.ai does not
           republish anyone's article, guide or job posting.
         </p>
         <ul className="flex flex-col gap-2 text-base text-neutral-700">

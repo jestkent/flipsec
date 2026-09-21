@@ -90,7 +90,7 @@ const COURSE_SCHEMA = {
   },
 } as const;
 
-const COURSE_PROMPT = `You write learning cards for AI Sec Edu, a FlipSec feed about how to understand AI security.
+const COURSE_PROMPT = `You write learning cards for AI Sec Edu, a FlipSec.ai feed about how to understand AI security.
 
 Your readers are not security engineers. Many are teachers, parents, students, and people changing careers later in life. Some are curious after seeing an AI scam in the news. Nobody has a computer science degree.
 

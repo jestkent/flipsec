@@ -1,4 +1,4 @@
-# FlipSec
+# FlipSec.ai
 
 **Flip the news. Learn the threat. Find the work.** Three feeds of AI security
 - news, learning and work - where every card flips to show you what the front
@@ -12,7 +12,7 @@ Scammers started using AI, and the old advice stopped working. Bad spelling used
 to be how you spotted a fake. Now a video call can show a face you know, and a
 voice on the phone can sound like family.
 
-FlipSec crawls public sources every six hours, rewrites what it finds in plain
+FlipSec.ai crawls public sources every six hours, rewrites what it finds in plain
 language, and puts it on a card that flips.
 
 - **AI Sec News** — real reports of AI used against people. Flip for the
@@ -44,7 +44,7 @@ AgentMail for the daily email and the replies that come back.
 
 ## Sources and content
 
-FlipSec publishes original summaries and links to the source. It does not
+FlipSec.ai publishes original summaries and links to the source. It does not
 republish article text, course text or listing text.
 
 - [AI Incident Database](https://incidentdatabase.ai/) — a public record of real
@@ -74,7 +74,7 @@ qualify. Most candidates fail a gate, so the feeds stay small on purpose.
 
 ## Privacy and email
 
-FlipSec stores a subscriber email address, the questions readers ask a post,
+FlipSec.ai stores a subscriber email address, the questions readers ask a post,
 and the answers they give. Nothing else, and there are no accounts. A reader on
 the web is a random id kept in their own browser.
 

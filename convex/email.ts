@@ -111,7 +111,7 @@ const SITE = "https://hallowed-nightingale-322.convex.site";
 function dailyEmail(sections: string[], unsubscribeUrl: string): string {
   return `${sections.join("\n\n———\n\n")}
 
-— FlipSec
+— FlipSec.ai
 ${SITE}
 
 Don't want these? Unsubscribe: ${unsubscribeUrl}`;
@@ -181,7 +181,7 @@ export const sendDailyDrill = internalAction({
       const subject =
         wants.includes("scam") && mine !== null
           ? "Spot the scam — today's drill"
-          : "Today from FlipSec";
+          : "Today from FlipSec.ai";
 
       try {
         const token = await unsubscribeToken(subscriber.email);

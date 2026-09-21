@@ -28,7 +28,7 @@ export default function App() {
             onClick={() => setView("feed")}
             className="block text-left text-2xl font-semibold tracking-tight text-neutral-900"
           >
-            FlipSec
+            FlipSec<span className="font-normal text-neutral-400">.ai</span>
           </button>
           {/* One clause per tab, in tab order: news, edu, jobs. */}
           <p className="mt-1 text-sm text-neutral-500">

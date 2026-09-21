@@ -81,7 +81,7 @@ export const crawlJobs = internalAction({
         const response = await fetch(`${GREENHOUSE}/${board}/jobs`, {
           headers: {
             "User-Agent":
-              "FlipSec/1.0 (+https://hallowed-nightingale-322.convex.site)",
+              "FlipSec.ai/1.0 (+https://hallowed-nightingale-322.convex.site)",
             Accept: "application/json",
           },
         });
@@ -122,7 +122,7 @@ export const crawlJobs = internalAction({
           const response = await fetch(`${GREENHOUSE}/${board}/jobs/${job.id}`, {
             headers: {
               "User-Agent":
-                "FlipSec/1.0 (+https://hallowed-nightingale-322.convex.site)",
+                "FlipSec.ai/1.0 (+https://hallowed-nightingale-322.convex.site)",
               Accept: "application/json",
             },
           });
@@ -219,7 +219,7 @@ const JOB_SCHEMA = {
   },
 } as const;
 
-const JOB_PROMPT = `You write job cards for AI Sec Jobs, a FlipSec feed about work where AI and security meet.
+const JOB_PROMPT = `You write job cards for AI Sec Jobs, a FlipSec.ai feed about work where AI and security meet.
 
 Your readers are curious about this field but are not all engineers. Some are students, some are changing careers, some are wondering whether any of this is open to them.
 

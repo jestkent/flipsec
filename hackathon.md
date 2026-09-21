@@ -1,6 +1,6 @@
 # Hackathon log
 
-- **Project:** FlipSec
+- **Project:** FlipSec.ai
 - **Event:** Convex All Gas Hackathon
 - **What it does:** Three feeds of AI security - real incidents, free guides, and jobs where AI and security meet - where every card flips to a plain-language explanation built from that exact item, and a daily email carries one card per feed a reader picked.
 - **Live app:** https://hallowed-nightingale-322.convex.site
@@ -13,7 +13,7 @@
 - **Auth:** none
 - **AI models:** gpt-4o-mini
 - **Started:** 2026-09-20T17:35:41Z
-- **Last updated:** 2026-09-21T01:41:45Z
+- **Last updated:** 2026-09-21T02:13:44Z
 
 ## Log
 
@@ -319,3 +319,19 @@ a demo. Verified against production: unsigned rejected, valid signature
 accepted under both header spellings, a tampered body carrying a real signature
 rejected, an hour-old replay rejected, and a garbage signature rejected
 (`convex/http.ts`).
+
+### 2026-09-21 - rename to FlipSec.ai
+Renamed the product to FlipSec.ai across the app, the emails, the unsubscribe
+page, the model prompts, the crawler's user agent and the docs. The header
+renders the suffix in a lighter weight so it reads as the domain it is.
+
+Two things were deliberately left alone. PLAN.md keeps the original name
+because it is the spec as written, and the dated entries in this log were not
+rewritten to use a name the project did not have at the time. The browser
+storage key that identifies a returning reader also keeps its old value;
+renaming it would discard every existing reader's id for a cosmetic change.
+
+Note for submission: the flipsec.ai domain does not currently resolve
+(`NXDOMAIN`). The live app is the convex.site URL in the header above, and the
+name is branding only until the domain is registered and pointed at the
+deployment (`src/App.tsx`, `index.html`, `convex/`, `README.md`, `CLAUDE.md`).

@@ -77,7 +77,7 @@ const SOURCES: Source[] = [
     depth: 14,
   },
   {
-    // Public domain, and already written close to the reading level FlipSec
+    // Public domain, and already written close to the reading level FlipSec.ai
     // targets. Fewer AI stories, so it runs second.
     name: "FTC Consumer Alerts",
     indexUrl: "https://consumer.ftc.gov/consumer-alerts",

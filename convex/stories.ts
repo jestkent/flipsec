@@ -136,7 +136,7 @@ const PROCESS_SCHEMA = {
   },
 } as const;
 
-const PROCESS_PROMPT = `You write short posts for FlipSec, a security awareness feed.
+const PROCESS_PROMPT = `You write short posts for FlipSec.ai, a security awareness feed.
 
 Your readers are ordinary people. Many are middle school students, their parents, and their teachers. Nobody has a security background.
 
@@ -156,7 +156,7 @@ Rules you must follow:
 - Set isScam FALSE for lawsuits, consumer complaints and regulatory action about a product being oversold. Those are disputes, not tricks, and there is nothing for a reader to spot.
 - Set it false for a system making a mistake, unfair treatment by software, a staff member misusing access, a company behaving badly, harassment, hoaxes or threats aimed at a school or an organisation, and anything where there is no trick for the reader to spot.
 - Set everydayPerson true only if this is a scam a 12 year old or their parent could actually meet, on their own phone, their own email, or their own social media, in their own life.
-- Set it false if telling the story needs any of these words: token, credential, kit, tool, exploit, server, network, endpoint, admin, enterprise, infrastructure, or the name of a piece of hacking software. Those stories are written for IT staff, and FlipSec is not for IT staff.
+- Set it false if telling the story needs any of these words: token, credential, kit, tool, exploit, server, network, endpoint, admin, enterprise, infrastructure, or the name of a piece of hacking software. Those stories are written for IT staff, and FlipSec.ai is not for IT staff.
 - Set it false when the victim is a company, a government network, a utility, or the people who run them, however serious the story is.
 - A useful test: could this land on a 12 year old's phone at the dinner table? If you have to explain what a piece of software is before the story makes sense, the answer is no.
 

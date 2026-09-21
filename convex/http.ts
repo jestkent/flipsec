@@ -198,7 +198,7 @@ http.route({
 <div style="max-width:32rem;margin:4rem auto;padding:0 1.25rem">
 <h1 style="font-size:1.5rem;margin:0 0 .5rem">${title}</h1>
 <p style="color:#525252;margin:0 0 1.5rem">${line}</p>
-<a href="/" style="color:#171717">← Back to FlipSec</a>
+<a href="/" style="color:#171717">← Back to FlipSec.ai</a>
 </div></body>`,
         { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } },
       );
@@ -213,7 +213,7 @@ http.route({
     await ctx.runMutation(internal.subscribers.deactivate, { email });
     return page(
       "You are unsubscribed",
-      "No more daily mail from FlipSec. You can read the feed any time without signing up.",
+      "No more daily mail from FlipSec.ai. You can read the feed any time without signing up.",
     );
   }),
 });

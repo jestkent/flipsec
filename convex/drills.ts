@@ -64,7 +64,7 @@ const DRILL_SCHEMA = {
   },
 } as const;
 
-const DRILL_PROMPT = `You write practice questions for FlipSec, a security awareness feed.
+const DRILL_PROMPT = `You write practice questions for FlipSec.ai, a security awareness feed.
 
 The reader just read a short post about a real scam. Now give them one question that puts them inside that same scam.
 

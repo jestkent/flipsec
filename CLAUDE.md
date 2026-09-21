@@ -1,4 +1,4 @@
-# FlipSec
+# FlipSec.ai
 
 An AI security app for ordinary people, built around one move: every card
 flips, and the back is what the front does not tell you. Three feeds use it.
