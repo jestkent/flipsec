@@ -1116,3 +1116,33 @@ right about a bug and mean different cards. Reading the database proved the
 translation existed; driving the browser proved which one the reader was
 actually looking at.
 
+### 2026-09-21 - the feed tabs follow you down
+
+Reported plainly: reach the bottom of a feed and there is no way to reach
+another one without scrolling all the way back up. True, and on a phone the
+scroll back is long.
+
+The tab row is now sticky under the header. The part worth writing down is the
+offset. The header is already sticky at top 0, so the tabs have to sit exactly
+beneath it, and the obvious version - a fixed pixel top - is wrong three
+different ways here: the header WRAPS at narrow widths, and both it and the
+tabs grow with browser zoom and with the in-app larger-text preference.
+Measured, it is 69px on a desktop and 121px at 320px, so any constant would
+have been wrong on one of them.
+
+So useStickyVar publishes both heights as CSS custom properties from a
+ResizeObserver, and the tabs stick at var(--header-h).
+
+The second half is the accessibility one and it is easy to miss. A sticky bar
+that covers the element you just tabbed to is WCAG 2.2 SC 2.4.11, Focus Not
+Obscured, and this bar sits directly over the next card down. Anything scrolled
+to or focused now clears the header plus the tabs, which also fixes card
+permalinks landing underneath the chrome.
+
+Checked in headless Chrome at 1280, 390 and 320 wide: with the last card of the
+feed on screen the tabs are pinned and visible at all three, and no width
+gained a horizontal scrollbar. They do scroll away once you are down in the
+footer, because a sticky element stops at the bottom of its container and the
+footer is outside the feed. That is the right answer rather than a limitation -
+you have left the feed.
+

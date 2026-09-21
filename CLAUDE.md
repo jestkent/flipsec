@@ -342,6 +342,19 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
 - Feed navigation is a real ARIA tab set. Left and Right arrows move between
   tabs; Home and End jump to the first and last tab. Do not replace it with
   click-only buttons.
+- **The feed tabs are sticky under the header, and the offset is MEASURED.**
+  A reader at the bottom of a feed should be able to switch feeds without
+  scrolling back up. `useStickyVar` in `src/stickyChrome.ts` publishes the
+  header's height as `--header-h` and the tab row's as `--tabs-h`, both from a
+  `ResizeObserver`. Do not replace either with a fixed pixel offset: the
+  header **wraps** at narrow widths and both grow with browser zoom and the
+  larger-text preference, so a hardcoded number is wrong in all three cases —
+  measured 69px on desktop and 121px at 320px.
+  The `scroll-margin-top` rule in `index.css` is part of the same change, not
+  decoration. A sticky bar that covers the element you just tabbed to is WCAG
+  2.2 SC 2.4.11, so anything scrolled to or focused clears
+  `--header-h + --tabs-h`. The tabs stop at the bottom of the feed container
+  and are gone inside the footer, which is correct — you have left the feed.
 - A card flip moves keyboard focus to the flip control on the newly visible
   face. The hidden face stays both `inert` and `aria-hidden`. Never add a focusable
   control to a hidden face or remove that focus handoff.

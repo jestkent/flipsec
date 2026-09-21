@@ -176,8 +176,21 @@ label[for] {
   touch-action: manipulation;
 }
 
-#main {
-  scroll-margin-top: 5rem;
+/* Set from JS by useStickyVar, with values here so the first paint and any
+   view without feed tabs still land somewhere sensible. */
+:root {
+  --header-h: 4rem;
+  --tabs-h: 0px;
+}
+
+/* Anything scrolled to, or focused by keyboard, has to clear the sticky
+   header AND the sticky feed tabs. Without this a reader tabbing through the
+   feed lands on a card sitting underneath the tab bar, which is WCAG 2.2
+   SC 2.4.11 Focus Not Obscured, and the same applies to a card permalink. */
+#main,
+.post,
+[id^="story-"] {
+  scroll-margin-top: calc(var(--header-h) + var(--tabs-h) + 1rem);
 }
 
 #main:focus {

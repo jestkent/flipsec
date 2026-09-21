@@ -8,6 +8,7 @@ import Home from "./components/Home";
 import SafetyTools from "./components/SafetyTools";
 import { languageInfo, useLanguage } from "./localization";
 import { navigateTo, useRoute } from "./navigation";
+import { useStickyVar } from "./stickyChrome";
 
 // The three feeds, in the order they appear. Reordering the app is editing
 // this array; nothing else reads a hard-coded list of kinds.
@@ -39,6 +40,12 @@ export default function App() {
   const [demo, setDemo] = useState<string>(DEMOS[0].key);
   const mainRef = useRef<HTMLElement>(null);
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const tabsRef = useRef<HTMLElement>(null);
+  // Published so index.css can keep a focused or linked card clear of the
+  // sticky chrome. WCAG 2.2 SC 2.4.11: a sticky bar that covers the thing you
+  // just tabbed to is a failure, and this one would sit right over the top of
+  // the next card down.
+  useStickyVar(tabsRef, "--tabs-h");
 
   const active = TABS.find((t) => t.kind === kind) ?? TABS[0];
   const openDemo = findDemo(demo);
@@ -204,11 +211,23 @@ export default function App() {
             </p>
 
             {/* Wraps, because three labels at these widths overflowed a 360px
-                phone when the row could not break. */}
+                phone when the row could not break.
+
+                Sticky under the header, so a reader who has scrolled to the
+                bottom of a feed can switch to another one without scrolling
+                all the way back up. The offset is --header-h, measured rather
+                than hardcoded: the header wraps at narrow widths and grows
+                with browser zoom and the larger-text preference, and any fixed
+                number would be wrong in all three cases.
+
+                z-10 keeps it under the header's z-20, and the background is
+                opaque enough that cards do not show through as they pass. */}
             <nav
+              ref={tabsRef}
               aria-label="Feeds"
               role="tablist"
-              className="mt-5 mb-7 flex flex-wrap gap-2 border-b border-line pb-px"
+              className="sticky z-10 mt-5 mb-7 flex flex-wrap gap-2 border-b border-line bg-ivory/95 pb-px backdrop-blur-sm"
+              style={{ top: "var(--header-h, 4rem)" }}
             >
               {TABS.map((tab, index) => {
                 const selected = tab.kind === kind;

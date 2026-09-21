@@ -2,8 +2,10 @@
 // views. The feed tabs live below it rather than inside it, so the header
 // never has to reflow on a phone.
 
+import { useRef } from "react";
 import AccessibilityOptions from "./AccessibilityOptions";
 import { LanguageSelector, useLanguage } from "../localization";
+import { useStickyVar } from "../stickyChrome";
 
 export type View = "home" | "feed" | "tools" | "about" | "privacy";
 
@@ -15,6 +17,10 @@ export default function Header({
   onNavigate: (view: View) => void;
 }) {
   const { t } = useLanguage();
+  const headerRef = useRef<HTMLElement>(null);
+  // The feed tabs stick directly beneath this, so its height has to be a
+  // value CSS can read rather than a number somebody guessed.
+  useStickyVar(headerRef, "--header-h");
   const link = (target: View, label: string) => {
     const active = view === target;
     return (
@@ -37,7 +43,7 @@ export default function Header({
   };
 
   return (
-    <header className="sticky top-0 z-20 border-b border-line bg-ivory/90 backdrop-blur-sm">
+    <header ref={headerRef} className="sticky top-0 z-20 border-b border-line bg-ivory/90 backdrop-blur-sm">
       <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-2 px-4 py-3 sm:flex-nowrap sm:gap-3 sm:px-6">
         {/* Home. The supplied lockup already contains the wordmark, so there
             is no text beside it — repeating "FlipSec.ai" next to a logo that
