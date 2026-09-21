@@ -1,13 +1,12 @@
-import { useAction, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { useRef, useState } from "react";
 import { api } from "../../convex/_generated/api";
 import { readerId } from "../reader";
+import { savedSession, saveSession } from "../privateSession";
 import { useLanguage } from "../localization";
 import Post from "./Post";
 import ReadAloudButton from "./ReadAloudButton";
 import { Badge, Button, Card, ErrorNotice } from "./ui";
-
-const THREAD_KEY = "flipsec-assistant-thread";
 
 const SUGGESTIONS = [
   "Is this message a scam?",
@@ -15,14 +14,6 @@ const SUGGESTIONS = [
   "Explain deepfakes in simple words",
   "Check my web app security plan",
 ];
-
-function savedThreadId() {
-  try {
-    return window.localStorage.getItem(THREAD_KEY);
-  } catch {
-    return null;
-  }
-}
 
 async function smallJpeg(file: File): Promise<string> {
   if (!["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 12_000_000) {
@@ -81,7 +72,9 @@ function AnswerText({ text }: { text: string }) {
 
 export default function SafetyTools() {
   const { t } = useLanguage();
-  const [threadId, setThreadId] = useState<string | null>(() => savedThreadId());
+  const [session, setSession] = useState(savedSession);
+  const createSession = useMutation(api.browserSessions.create);
+  const [threadId, setThreadId] = useState<string | null>(() => session?.threadId ?? null);
   const [question, setQuestion] = useState("");
   const [image, setImage] = useState<string | null>(null);
   const [imageName, setImageName] = useState("");
@@ -96,7 +89,7 @@ export default function SafetyTools() {
   const userId = readerId();
   const messages = useQuery(
     api.assistantMessages.list,
-    threadId ? { userId, threadId } : "skip",
+    threadId && session ? { sessionToken: session.token, threadId } : "skip",
   );
 
   async function selectImage(file: File | undefined) {
@@ -120,19 +113,28 @@ export default function SafetyTools() {
     setPendingQuestion(submitted);
     setQuestion("");
     try {
+      let current = session;
+      let currentThread = threadId;
+      if (!current || current.expiresAt <= Date.now()) {
+        current = await createSession({});
+        saveSession(current);
+        setSession(current);
+        currentThread = null;
+        setThreadId(null);
+      }
       const result = await ask({
-        userId,
-        threadId: threadId ?? undefined,
+        sessionToken: current.token,
+        threadId: currentThread ?? undefined,
         question: submitted,
         imageDataUrl: image ?? undefined,
       });
       setThreadId(result.threadId);
       setLastAnswer(result.answer);
-      try {
-        window.localStorage.setItem(THREAD_KEY, result.threadId);
-      } catch {
-        // Conversation still works for this page when storage is unavailable.
-      }
+      // Store the credential/reference together so two tabs cannot pair one
+      // session's credential with the other session's conversation on reload.
+      const updated = { ...current, threadId: result.threadId };
+      saveSession(updated);
+      setSession(updated);
       setImage(null);
       setImageName("");
     } catch (cause) {
@@ -150,11 +152,11 @@ export default function SafetyTools() {
     setBusy(true);
     setError(null);
     try {
-      await removeConversation({ userId, threadId });
-      try {
-        window.localStorage.removeItem(THREAD_KEY);
-      } catch {
-        // The server thread is still deleted when browser storage is blocked.
+      await removeConversation({ sessionToken: session?.token, threadId });
+      if (session) {
+        const cleared = { token: session.token, expiresAt: session.expiresAt };
+        saveSession(cleared);
+        setSession(cleared);
       }
       setThreadId(null);
       setQuestion("");
@@ -184,6 +186,10 @@ export default function SafetyTools() {
           <p className="mt-3 max-w-[65ch] text-base leading-relaxed text-slate">
             Ask about a suspicious message, an image, scams, privacy, AI, or web app security.
             FlipSec explains the clues and gives you a safer next step.
+          </p>
+          <p lang="en" className="mt-2 max-w-[65ch] text-sm text-slate">
+            Conversations stay available in this browser for seven days. Delete yours when finished,
+            especially on a shared device. Older conversations cannot be restored after the privacy upgrade.
           </p>
         </div>
         {threadId && (

@@ -1,8 +1,10 @@
 # FlipSec.ai
 
-**Flip the news. Learn the threat. Find the work.** Three feeds of AI security
-- news, learning and work - where every card flips to show you what the front
-does not tell you, plus an AI safety guide for the moment you need help.
+**Flip the news. Learn the threat.** Real incidents become short lessons,
+practice and an email conversation. Career listings are an optional next step.
+
+See [READINESS.md](READINESS.md) for verified status, local changes awaiting
+rollout, and remaining submission evidence.
 
 **Live URL:** https://hallowed-nightingale-322.convex.site
 
@@ -36,7 +38,7 @@ speech service as Read aloud.
   then the two things that still work: hang up and call back on the number you
   already have, and agree a family word before anything is wrong.
 - **Spot the scam.** Five messages, not one spelling mistake between them,
-  three are scams. Most people do badly, and doing badly is the lesson: the
+  three are scams. The lesson is about verification: the
   tell everybody was taught is gone, because writing well costs a scammer
   nothing now.
 - **Confidently wrong.** Three AI answers about a refund rule, a helpline
@@ -87,10 +89,9 @@ color as the only signal, and allows content to reflow instead of truncating at
 large text sizes. These are implementation safeguards aligned with WCAG 2.2 AA;
 they are not a claim of third-party certification.
 
-The interface and every card headline read in eleven languages: English,
+Home, signup, feed controls and card translations support eleven languages: English,
 Spanish, Simplified Chinese, Hindi, Filipino, Vietnamese, Russian, Japanese,
-Korean, Brazilian Portuguese and French. Each language ships a full interface
-dictionary rather than translated article text over English buttons, and the
+Korean, Brazilian Portuguese and French. Each language ships feed/interface dictionaries, and the
 menu names every language in its own script. A whole card translates, not just
 its headline: the summary, the warning signs, and the lesson, course guide or
 job posting behind the flip, along with every label around them. Translations
@@ -100,8 +101,9 @@ can be regenerated; concurrent cache misses can still make duplicate model calls
 
 Some content remains in English. Source names and links are never
 translated, because the reader needs to recognise what they are clicking
-through to. The home page, About, Privacy, sign-up form and interactive lessons remain
-English for now. These regions declare their language for assistive technology. No right-to-left language
+through to. About, Privacy, email and some assistant controls remain English. Home, signup
+and shorter localized exercises are translated in the current local follow-up.
+English regions declare their language for assistive technology. No right-to-left language
 ships yet either, because the layout needs to move off physical direction
 classes before Arabic or Urdu would read correctly rather than mirror.
 
@@ -243,3 +245,21 @@ links open only published content. Hash routing does not add per-card SEO.
 
 MIT, see [LICENSE](LICENSE). That covers the code. Content shown in the app is
 summarised from public sources and linked back, never redistributed.
+
+## Current language, privacy and evidence boundaries
+
+The current local follow-up adds translated Home/signup and four shorter
+localized exercises. The longer English demonstrations remain. About, Privacy,
+email and some assistant controls are still English; no native-speaker review
+or user-outcome study has been recorded.
+
+Private web conversations now require a server-issued anonymous session token,
+expire after seven days, and are scheduled for deletion on expiry. The server
+stores a hash of the token. This is not an OAuth account or cross-device login.
+Old reader identifiers cannot recover legacy conversations. Shared-device and
+same-origin script risks remain because the token is kept in browser storage.
+
+Successful employer snapshots retire closed jobs. Failed requests do not imply
+closure. Verify the employer's current posting before applying.
+[USER_TESTING.md](USER_TESTING.md) contains an unfilled observation protocol and
+fresh-mailbox checklist. Production rollout of this follow-up is pending.

@@ -1,17 +1,12 @@
 # Production readiness audit
 
-## Latest local reliability update
+## Current status
 
-See [RELIABILITY.md](RELIABILITY.md) for new consent, translation, email matching,
-delivery recovery, pagination and navigation fixes. They are implemented and
-validated locally, not yet deployed to production. Historical statuses below
-refer to their named commits. URL sharing/history are now implemented locally;
-per-card SEO and hosting response headers remain open.
-
-The follow-up review found that existing-address sign-up could bypass consent,
-translation could cache a missing drill, and late email replies used the wrong
-drill. Regression tests cover these paths. The earlier audit did not establish
-that those behaviours were correct.
+[READINESS.md](READINESS.md) is the current status summary. Earlier reliability
+fixes are committed; section 5b below records production email-loop verification.
+The new session, localization and job-availability follow-up is tested locally,
+not deployed in this session. Historical findings below refer to their named
+commits and must not be read as a current deployment manifest.
 
 Audit run 2026-09-21 against commit `a0910d6` and the live deployment.
 
@@ -355,7 +350,7 @@ what it said and nothing worse.
 mail that reaches a real mailbox, a reply written by a person, a grade that
 comes back. Now also an emailed question answered by Ask FlipSec.
 
-Run against `cerus112016@gmail.com`, a real mailbox, with a fresh subscriber
+Run against a real Gmail mailbox (address omitted from public notes), with a fresh subscriber
 each round so the one-graded-answer-per-drill guard did not mask a result.
 
 | Checked | Evidence |
@@ -518,11 +513,11 @@ IPs to Google. One change, three benefits.
 | 5 | Custom domain | Currently `*.convex.site`. Decide before the absolute URLs harden — and note items 3 and 4 both wait on it. |
 | 6 | Backups | Convex dashboard → Settings → Backups. **Test a restore**; an untested backup is a hypothesis. |
 | 7 | Failure alerting | **Partly closed `46e3dc2`, and now verified.** Every cron records what it achieved, and `npx convex run health:status --prod` reports the last run of each. That is detection, not notification: nothing pages anybody, so it only helps if somebody looks. §3 says what must not be tidied. Proven end to end on prod 2026-09-21 — see §5a. |
-| 8 | SPF / DKIM / DMARC | **Blocked behind owning a domain**, which the project owner has deferred until after judging. Until then the mitigation is honesty: the sign-up form, the success screen and the confirm page all say the first email often lands in spam. On the AgentMail sending domain. Without DKIM the daily send lands in spam. **2026-09-21: now the leading suspect for a real failure, not a theoretical one.** A drill sent at 19:58 UTC arrived; the grade reply for it, sent at 20:02 UTC, was accepted by AgentMail with SES message id `<010001a0c5900170-...>` and `deliveryStatus: "sent"`, and never appeared in the recipient's inbox or spam. `deliveryStatus` records that AgentMail ACCEPTED the message, never that a mailbox received it, and `messages/send` is the only AgentMail call in the codebase, so nothing here can see a bounce. Check that message id in the AgentMail dashboard. |
+| 8 | Sending-domain authentication and cold-mailbox delivery | Authentication configuration remains unverified in this review; this is not proof the records are absent or that a custom domain is required. The earlier apparent missing message was diagnosed as threading, not delivery failure (section 5b). A real signup using a previously unused mailbox is still needed; see USER_TESTING.md. |
 | 14 | **`sendTestDrill` sends the same drill all day** | `pickTodaysDrill` is a single global pick, so two test drills on the same day carry the same `drillId`. The one-graded-answer-per-reader-per-drill guard then silently drops the second reply — correct behaviour, invisible outcome. Observed 2026-09-21: a second reply produced no attempt row and no grade. To retest the reply loop the same day, use a different subscriber address, not a second send to the same one. |
 | 9 | Webhook URL | `https://<deployment>.convex.site/api/agentmail-inbound`, plus one real reply end to end. **Done 2026-09-21, see §5b:** several real replies, graded and answered, signature verified on every one. |
 | 10 | **Double opt-in, end to end** | Sign up with your own address, confirm the mail arrives, press the button, check `pending` clears. Drill and reply delivery to real mailboxes is now proven (§5b), but the CONFIRMATION message and the `pending` transition still have not been walked by hand. |
 | 11 | Cron timing | `0 14 * * *` is **UTC** — 7am PT. Confirm that is intended. |
 | 12 | Mobile at 320px | **Closed, and now measured in a browser.** The Accessibility dropdown was `w-72` (288px) `absolute right-0`, with nothing to spare at a 320px viewport; it now carries `max-w-[calc(100vw-2rem)]`, compiled rule confirmed. Headless Chrome at 320, 390 and 1280 wide on 2026-09-21 found **no horizontal scroll at any width**. The earlier "needs one look on a real handset" is now narrowed to touch behaviour and real-device font rendering, which a headless browser cannot speak for. |
 | 15 | **Focus Not Obscured (WCAG 2.2 SC 2.4.11)** | **Handled when the risk was introduced, not after.** The feed tabs became sticky under an already-sticky header, and a sticky bar sitting over the next card down is exactly what 2.4.11 forbids. `#main`, `.post` and every `story-*` element carry `scroll-margin-top: calc(var(--header-h) + var(--tabs-h) + 1rem)`, both values measured by `ResizeObserver` rather than hardcoded, because the header wraps at narrow widths and both grow with zoom and the larger-text preference. Also fixes a card permalink landing underneath the chrome. |
-| 13 | **Language of Parts (WCAG 2.2 SC 3.1.2)** | **Closed in code.** `<html lang>` follows the reader's choice, but Home, About, Privacy, the sign-up form and all four interactive lessons are still written in English, so they were English text declared as Spanish, Japanese or Hindi — a screen reader read them through the wrong voice. Each now declares `lang="en"`, and `ReadAloudButton` declares the reader's language back. Delete each `lang="en"` when that region is actually translated. |
+| 13 | **Language of Parts** | English regions declare their language. The current local follow-up translates Home/signup and adds shorter localized exercises; About, Privacy and some assistant controls remain English. See READINESS.md for rollout scope. |

@@ -151,13 +151,15 @@ where to start.`;
 function jobSection(card: Card): string {
   const where = [card.company, card.locationChip].filter(Boolean).join(" · ");
 
-  return `A remote AI job that opened up.
+  return `An AI security role to explore.
 
 ${card.title}${where ? `\n${where}` : ""}
 ${card.summary}
 
 Listed on ${card.source}:
 ${card.url}
+
+Check the employer's page for current availability and requirements before applying.
 
 Wondering whether you are close enough to apply? Reply and ask. I will tell
 you what the role really needs and what to learn first.`;

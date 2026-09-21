@@ -2,6 +2,7 @@ import { listUIMessages } from "@convex-dev/agent";
 import { v } from "convex/values";
 import { components } from "./_generated/api";
 import { query } from "./_generated/server";
+import { sessionOwner } from "./browserSessions";
 
 const messageValidator = v.object({
   id: v.string(),
@@ -10,14 +11,16 @@ const messageValidator = v.object({
 });
 
 export const list = query({
-  args: { userId: v.string(), threadId: v.string() },
+  args: { userId: v.optional(v.string()), sessionToken: v.optional(v.string()), threadId: v.string() },
   returns: v.array(messageValidator),
   handler: async (ctx, args) => {
+    const userId = await sessionOwner(ctx, args.sessionToken);
+    if (!userId) return [];
     const owner = await ctx.db
       .query("assistantThreads")
       .withIndex("by_thread", (q) => q.eq("threadId", args.threadId))
       .unique();
-    if (!owner || owner.userId !== args.userId) return [];
+    if (!owner || owner.userId !== userId) return [];
 
     const page = await listUIMessages(ctx, components.agent, {
       threadId: args.threadId,

@@ -2,10 +2,11 @@
 
 **Flip the news. Learn the threat.**
 
-Current implementation notes: [RELIABILITY.md](RELIABILITY.md). The original
-spec and historical sections below record earlier designs; the reliability
-update supersedes claims about translation sequencing, email retries, consent,
-and navigation. These fixes have not yet been deployed to production.
+Current status: [READINESS.md](READINESS.md). The original spec and dated
+sections below record earlier designs. Earlier reliability work is committed,
+and AUDIT section 5b records production email verification. The newer readiness
+follow-up is local and awaits production rollout. USER_TESTING.md separates
+planned observation from collected evidence.
 
 An AI security awareness app. The feed looks like social media and carries real stories about AI being used against people. Flip any post and it becomes a drill built from that exact story.
 

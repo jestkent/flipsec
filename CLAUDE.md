@@ -1,8 +1,16 @@
 # FlipSec.ai
 
-Read [RELIABILITY.md](RELIABILITY.md) for the current uncommitted reliability
-update, validated locally but not deployed to production. It supersedes older
-notes on consent, translation timing, delivery retries and URL routing.
+Read [READINESS.md](READINESS.md) for current rollout status and limitations.
+RELIABILITY.md describes the earlier committed reliability work. Historical
+entries do not establish which revision is deployed. Preserve the later Claude
+changes through `1095ebc` when continuing this follow-up.
+
+Private browser chat now requires a server-issued anonymous session token;
+never restore authorization through caller-supplied reader IDs. Do not migrate
+legacy threads by accepting their old identifier as ownership proof. Job closure
+requires a validated complete employer snapshot, never a failed request. Home
+and signup use onboardingCopy; non-English practice uses LocalizedPractice.
+The English simulations are longer; do not claim translated feature parity.
 
 An AI security app for ordinary people, built around one move: every card
 flips, and the back is what the front does not tell you. Three feeds use it.
@@ -47,8 +55,10 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
   must run `backfillKind` **before** a query reads `by_kind_published`, or the
   scam feed comes back empty.
 - AI, crawl and email functions are `internalAction`. Ask FlipSec exposes one
-  rate-limited public action and a thread query scoped to the browser reader. The public
-  writes are `submitAnswer`, `askAboutStory`, `teachLesson`, `subscribe`. Never make
+  rate-limited public action and a thread query, both scoped to the owner the
+  SERVER derives from a session token — never to a reader id the caller sent.
+  The public writes are `submitAnswer`, `askAboutStory`, `teachLesson`,
+  `subscribe`, plus `browserSessions.create`. Never make
   `sendTestDrill` public: it would mail any address a caller named.
 - **A public function must never take an identifier that names someone else.**
   `attempts.listForUser` was public and took a `userId`. For an emailed reply
@@ -141,8 +151,8 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
   The success message names the spam and junk folders, the sender, the exact
   subject, and that marking it as not spam helps the daily one arrive. The
   confirm page repeats it for the daily email. This is a mitigation, not a
-  fix: SPF, DKIM and DMARC on the sending domain are the actual fix and are
-  still unverified.
+  fix. The sending-domain authentication configuration remains unverified;
+  do not diagnose missing DNS records from a message going to spam.
 - **`subscribers.pending` absent means CONFIRMED.** Anyone can type any
   address into the sign-up box, so a sign-up now records an unconfirmed row and
   mails that address a link; nothing is sent until the link is pressed, which
@@ -180,7 +190,12 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
   bytes, and the body cannot be consumed twice.
 - `userId` comes from the browser and can be regenerated, so per-reader caps are
   a courtesy. Anything spending money also needs a deployment-wide cap
-  (`questions.by_time`).
+  (`questions.by_time`). Ask FlipSec now meters against the `session:<id>`
+  owner the server derived rather than the reader id, but that is an ownership
+  fix, not a limit one: `browserSessions.create` is public, so anyone can still
+  ask for a fresh session and a fresh per-reader budget. The per-reader cap
+  stays a courtesy; the global cap is still the one that holds, which is why
+  session issuance has a ceiling of its own in `BUDGETS`.
 - Secrets live in Convex env vars only, per deployment: OPENAI, FIRECRAWL,
   AGENTMAIL. Never hardcode or commit one.
 - Static hosting owns `/`, so app routes go under `/api`. The AgentMail webhook
@@ -251,16 +266,20 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
   one-graded-answer-per-drill, and answering questions removes that floor.
 - **An email conversation's Agent thread lives on the subscriber row, never in
   `assistantThreads`.** That table is what the PUBLIC `assistantMessages.list`
-  checks ownership against, so a thread registered there sits behind a
-  caller-supplied identifier that happens to be somebody's email address — the
-  shape that got `attempts.listForUser` deleted. Absent from it, the public
-  query returns `[]` for these threads and cannot be talked into anything
-  else. The reader id is namespaced `email:<address>` rather than the bare
-  address, because the bare address is already a `userId` on an attempt and
-  one identifier meaning two things is how a budget ends up spanning both.
+  checks ownership against. Its owners are now `session:<id>` values the server
+  derives from a token it issued, and an email reader has no such token and
+  never should — registering their thread there would be an access row nobody
+  can legitimately reach, waiting for the next weakening of that check. Absent
+  from it, the public query returns `[]` for these threads and cannot be talked
+  into anything else. The reader id is namespaced `email:<address>` rather than
+  the bare address, because the bare address is already a `userId` on an attempt
+  and one identifier meaning two things is how a budget ends up spanning both.
+  Historically this bullet read "behind a caller-supplied identifier", which
+  was the shape that got `attempts.listForUser` deleted; `assistantMessages.list`
+  no longer accepts one, but the rule it produced outlives its reason.
 - **Ask FlipSec must never recommend bad spelling as a way to spot a scam.**
-  The app's whole premise is that the tell stopped working: the home page says
-  so, and `ScamWritingDemo` is a lesson built to dismantle it. The assistant's
+  The app's premise is that good grammar does not prove identity, and
+  `ScamWritingDemo` is a lesson built to dismantle it. The assistant's
   prompt did not mention it, so the model fell back on ordinary internet
   advice and told a reader to "check for poor spelling, grammar, or unusual
   language" — the app contradicting itself, in the voice of the app. The
@@ -349,10 +368,18 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
   catch a render error, and it deliberately offers no reload button: a crash
   that reproduces on mount would loop.
 - Privacy is the fifth view in `App.tsx` state, linked from the footer of
-  every view and from a sentence under the sign-up box. It is written from the
-  schema rather than a template and has to be updated when what is stored
-  changes. A README on GitHub is not notice to someone typing their address
-  into a form.
+  every view and pointed at from a sentence under the sign-up box. It is
+  written from the schema rather than a template and has to be updated when
+  what is stored changes. A README on GitHub is not notice to someone typing
+  their address into a form.
+- **The sign-up help text must keep pointing at Privacy, in every language.**
+  It lives in `onboardingCopy().help`, inside the `aria-describedby` region, so
+  it is announced as well as shown. A rewrite of that copy dropped the pointer
+  in all eleven languages at once and nothing caught it — the footer link
+  survived, so nothing looked broken. It names the footer control literally as
+  "Privacy", because that button is not translated; the sentence around it is.
+  The moment a reader is typing their address is the moment the notice has to
+  be one glance away.
 - The absolute URLs in `index.html` (canonical, `og:url`, `og:image`,
   `twitter:image`), `public/sitemap.xml` and `public/robots.txt` all name the
   production domain and MOVE TOGETHER. Open Graph does not resolve relative
@@ -372,10 +399,19 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
   a hero that opens with the same artwork spends its best space saying the
   name twice and delays the sentence that explains what the site is. The
   headline leads.
-- The interface is intentionally calm. The homepage has two hero actions,
-  three unboxed feed pathways, a three-step explanation and one latest-story
-  card. Do not restore the duplicate technology card grid or add ornamental
-  dashboards.
+- The interface is intentionally calm. The homepage has two hero actions, one
+  line naming the loop, one real latest-story card a reader can flip in place,
+  two unboxed feed pathways for News and Learn, and Jobs as a quieter aside
+  below them. Do not restore the duplicate technology card grid or add
+  ornamental dashboards.
+- **Jobs sits below News and Learn on the home page, and that is a product
+  decision, not a layout one.** The three feeds used to be three equal
+  pathways, which said the app was as much a job board as a place to learn.
+  The reading path is story, lesson, practice, conversation; a career is what
+  some readers want next, so it is offered after that path rather than beside
+  it. The aside carries `jobCaution`, because a listing can close between
+  crawls and the reader should check the employer's own page before applying.
+  `TABS` is unchanged — the feed itself still has three equal tabs.
 - Firecrawl, OpenAI, Convex and AgentMail appear once in the shared footer with
   one plain-language role each. This is judge-facing evidence that stays quiet
   for readers. Keep detailed architecture in About and the repository docs.
@@ -444,8 +480,9 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
   `<html lang>` is set to whatever the reader chose, so any region still
   written in English is a lie to a screen reader: it reads English words
   through a Spanish, Japanese or Hindi voice, which is close to
-  unintelligible. That is WCAG 2.2 SC 3.1.2, and it applied to Home, About,
-  Privacy, the sign-up form and all four interactive lessons. The same
+  unintelligible. Keep About, Privacy and untranslated assistant controls
+  marked English. Home/signup and the shorter localized practices now use
+  their actual language; the longer English simulations remain English. The same
   attribute is what lets a browser's own translator see an English island
   worth offering to translate, so it is the accessible fix and the practical
   one at the same time. `ReadAloudButton` declares the reader's language back,
@@ -515,12 +552,24 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
   the three `EMPTY` states in `Feed.tsx` are English, and only render when a
   feed has no cards at all, which has not happened since launch.
 - **The four authored lessons are the NEWEST cards in AI Sec Learn, so they
-  are the first thing a reader in another language flips.** Their backs are
-  English by design (see `demoRegistry`), which means the top of that feed
-  reads as untranslated even though every crawled guide beneath it is fully
-  translated. The visible `lessonInEnglish` line is the mitigation, not a fix.
-  If Learn is ever reported as "not translating", check whether the card being
-  flipped is one of those four before looking anywhere else.
+  are the first thing a reader in another language flips.** Their backs used to
+  be English by design, and the top of that feed read as untranslated even
+  though every crawled guide beneath it was fully translated. `demoRegistry`
+  now wraps each one in `localized()`: English gets the original simulation,
+  every other language gets the shorter exercise in `LocalizedPractice`, keyed
+  off `practiceCopy`. **These are not translations of the English lessons and
+  must not be described as feature parity** — the English simulations are
+  longer, and `PRACTICE` is written per language rather than run through the
+  translator. That is the whole reason the exercises are separate: the English
+  lessons used to carry invented `555-01xx` numbers, an invented US statute and
+  Cebu/Dr Reyes details, which read as obviously fictional to an American and
+  as a real phone number to everybody else. Those specifics are now gone from
+  the English lessons too, and `PRACTICE` never had them — **do not add a
+  dialable-looking number, a fabricated law or a culture-specific name to
+  either.** The `lessonInEnglish` dictionary key is
+  no longer rendered anywhere; it is kept in all eleven dictionaries for any
+  region that still needs the disclosure, and `onboardingCopy().scope` is what
+  now tells a reader which parts remain English.
 - `translateStory` reserves a rate-limit slot **only on a cache miss**, after
   `storySource` reports no cached row. A hit costs nothing and must never
   consume a slot, or a reader switching language on a warm feed burns their

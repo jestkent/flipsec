@@ -12,8 +12,8 @@ import { useState } from "react";
 // honest way to teach that confidence carries no information. A demo where
 // the fake was findable would teach the opposite of the truth.
 //
-// Nothing here is a real phone number, policy or law. The numbers are
-// deliberately in the 555 reserved range so nobody can dial one by mistake.
+// These are fictional examples. Contact details use non-dialable placeholders
+// so the exercise does not rely on recognizing a regional reserved-number range.
 
 type Answer = {
   id: string;
@@ -27,17 +27,17 @@ const ANSWERS: Answer[] = [
     id: "refund",
     question: "How long do I have to return something I bought online?",
     reply:
-      "Under the Consumer Fairness Act you have 21 calendar days from delivery to request a refund, and the seller must respond within 5 business days. Keep your order confirmation, as sellers can ask for it.",
+      "Under the fictional Example Shopping Rule you have 21 calendar days from delivery to request a refund, and the seller must respond within 5 business days. Keep your order confirmation, as sellers can ask for it.",
     truth:
-      "There is no Consumer Fairness Act. The law, the number of days and the response window were all produced to fit the shape of your question.",
+      "The example rule, number of days and response window are invented for this exercise. Check the actual seller policy and applicable local rules instead of trusting an unsourced answer.",
   },
   {
     id: "helpline",
     question: "What number do I call to report a scam text?",
     reply:
-      "You can forward the message to the national reporting line on 555-0142, or call their support desk on 555-0199 between 8am and 8pm. Both are free from a mobile.",
+      "You can forward the message to the national reporting line on [invented text number], or call their support desk on [invented support number] between 8am and 8pm. Both are free from a mobile.",
     truth:
-      "Both numbers are invented. In a real answer they might have been a stranger's phone, or a number a scammer had bought precisely because people are sent there.",
+      "Both contact details are invented placeholders, not numbers to use. In a real answer they might have been a stranger's phone, or a number a scammer had bought precisely because people are sent there.",
   },
   {
     id: "bank",
@@ -45,7 +45,7 @@ const ANSWERS: Answer[] = [
     reply:
       "Banks will never ask for your code, except during a verified fraud review, when an agent may read back the last two digits to confirm your identity. This is standard practice.",
     truth:
-      "The first half is true, which is what makes the second half dangerous. The exception does not exist, and it is exactly the story a scammer tells to get a code out of you.",
+      "Do not share sign-in or payment codes with someone who contacts you. A claim about a fraud review is not proof. Verify through your usual bank app or a number you already trust.",
   },
 ];
 
@@ -60,8 +60,7 @@ export default function ConfidentWrongDemo() {
           Try it yourself
         </p>
         <p className="mt-1.5 text-base leading-relaxed text-ink">
-          Three answers from an AI assistant. One of them is made up. Pick the
-          one you would not trust.
+          Three fictional answers from an AI assistant. Any of them may be made up. Pick one you would verify before using.
         </p>
       </div>
 

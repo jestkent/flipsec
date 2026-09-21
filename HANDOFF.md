@@ -1,20 +1,24 @@
 # Picking this up on another machine
 
-## Current work - local, not production
+## Current work
 
-Read RELIABILITY.md first and inspect git diff: the reliability update is
-uncommitted. Preserve Claude changes through b9eeac7. It adds regression tests,
-mail consent and reply matching, bounded feedback retries, complete translation
-checks, paginated daily delivery and hash/card navigation. Production has not
-been updated. Use newly sent drills after deployment; old mail has no message
-mapping. Existing incomplete translations may need the documented backfill.
+Read [READINESS.md](READINESS.md) first and inspect git status/diff. The prior
+reliability changes are committed; the latest baseline reviewed was `1095ebc`.
+This follow-up adds anonymous sessions, job availability reconciliation,
+localized onboarding and shorter non-English practice. It is verified locally
+and has not been deployed to production in this session.
 
-Run npm test and npm run test:browser as well as build, backend typecheck and
-lint. Browser tests use installed Chrome. The configured development target is
-local-kent_agan-flipsec; do not infer production from the live URL below.
+The existing production email evidence is in AUDIT section 5b. Do not confuse
+that with the still-pending cold-mailbox signup or with proof of deployed parity.
+The local target is local-kent_agan-flipsec. Do not deploy the local dist to
+production. Run tests, browser checks, build, backend typecheck and lint.
 
-Written 2026-09-21. If the date below is stale, trust `git log` and the other
-docs over this file.
+`npm test`, `npm run build` and `npm run lint` need no backend. **`npm run
+test:browser` does:** start `npx convex dev` first and make sure the local
+deployment has published stories. Playwright starts Vite but not Convex, so
+without it the feed never loads, the sign-up box after the third card never
+renders, and the language test fails on English looking for the email label.
+That is the backend being down, not a regression. See READINESS.md.
 
 ## Setup
 
@@ -136,26 +140,11 @@ crawl does not work.
   browser history locally. The app still has one indexable shell, and unknown
   server paths retain the hosting response behaviour.
 - **`List-Unsubscribe` header.** Needs AgentMail's API to be checked first.
-- **Some of the app is still English only** in an eleven-language app: the
-  home page, About, Privacy, the sign-up form and all four interactive
-  lessons. Each of those regions now declares `lang="en"` so a screen reader
-  pronounces it correctly and a browser's translator can offer to translate
-  it — delete that attribute in the same change that translates the region.
-  See PLAN.md section 29.
-- **The four interactive lessons are English only.** Parked deliberately, not
-  forgotten — measured at **86 strings, 753 words**, so the obstacle is not
-  size. Two of the four need LOCALISING rather than translating, and one of
-  those is a safety matter: `ConfidentWrongDemo` prints invented phone numbers
-  in the North American `555-01xx` convention, which an American reader knows
-  on sight is fictional and a Spanish or Japanese reader does not. The lesson
-  is that an invented number is somebody else's phone, so translating those
-  digits literally would hand a reader a number to dial. Same shape with the
-  invented "Consumer Fairness Act", which reads plausibly in an Anglo legal
-  culture and as nothing elsewhere, and with the Cebu/Dr Reyes details in
-  `ScamWritingDemo`. The order is: genericise the locale-bound specifics in
-  English first — which improves the English lesson on its own merits — then
-  translate. Until then each demo face carries `lessonInEnglish` in the
-  reader's own language, which is honest. PLAN.md section 33.
+- **Language scope.** Current local Home/signup cover all 11 languages; the
+  four practice topics have shorter localized alternatives. About, Privacy,
+  email and some assistant controls are still English. No native-speaker review
+  has been recorded. Historical notes about all lessons being English-only are
+  superseded by this follow-up, not by a production deployment claim.
 - No right-to-left language: the layout uses physical direction classes.
 
 ## Never do these

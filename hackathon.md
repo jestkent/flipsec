@@ -10,19 +10,21 @@
 - **Convex deployment:** https://hallowed-nightingale-322.convex.cloud
 - **Components:** @convex-dev/static-hosting, @convex-dev/agent
 - **Convex features:** schema, tables, indexes, queries, mutations, actions, HTTP actions, crons, scheduled functions, realtime queries
-- **Auth:** none
+- **Auth:** server-issued anonymous browser sessions in the current local follow-up; no OAuth accounts. Mailbox confirmation controls email consent.
 - **AI models:** gpt-4o-mini, gpt-4o-mini-tts
 - **Started:** 2026-09-20T17:35:41Z
-- **Last updated:** 2026-09-21T18:22:30.467Z
+- **Last updated:** 2026-09-21 (readiness follow-up; see READINESS.md)
 
-## Current reliability work
+## Current status
 
-The local working tree adds consent-safe subscription changes, complete-card
-translation validation, message-based reply matching, bounded idempotent
-feedback retries, paginated delivery, hash navigation and regression tests.
-See [RELIABILITY.md](RELIABILITY.md) for implementation and rollout details.
-These changes have not been deployed to production. The demo, real inbox
-round trip, social post and final submission remain unverified.
+See [READINESS.md](READINESS.md) for the current verified status and limitations.
+The earlier reliability work is committed. AUDIT.md section 5b records a real
+production email round trip and threaded follow-up on September 21. The current
+follow-up (anonymous sessions, job retirement, localized onboarding and shorter
+localized exercises) is verified locally and has not been deployed to production.
+Cold-mailbox signup, observed user sessions, video, social post and final
+submission evidence are still pending. Exact production/source parity has not
+been independently established during this follow-up.
 
 ## Log
 
@@ -1279,3 +1281,21 @@ open the bank's own app, call the number on the card.
 A system prompt has to carry the product's thesis, not only its tone and its
 guardrails.
 
+
+### 2026-09-21 - address the judging risks without inventing evidence
+
+Reconciled the stale status summaries with the newer production-mail evidence.
+The current local changes add server-issued anonymous sessions for private
+conversations, retire jobs missing from successful employer snapshots, translate
+Home and signup into all eleven languages, and provide four shorter localized
+practice exercises while preserving the original English demonstrations.
+Careers are secondary to the story -> lesson -> practice -> conversation path.
+
+Twenty-eight regression tests pass, including cross-session access rejection,
+job retirement without treating network failures as closures, and signup through
+the generated confirmation link. Four browser tests pass, including the mobile
+landing/signup path in all languages and all four Spanish exercises; the optional
+card-fixture test is skipped. No real mail or paid model calls were used in these
+tests. USER_TESTING.md is ready for three human sessions and a fresh-mailbox check;
+its results are empty because those observations have not happened. No production
+deployment was performed in this follow-up. READINESS.md states the exact limits.

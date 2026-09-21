@@ -180,25 +180,11 @@ function FlipHint({
 // translate. The note above it stays in the reader's language, so it needs
 // its own lang back.
 function DemoFace({ demoName }: { demoName: string | null }) {
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
   const demo = findDemo(demoName);
   if (!demo) return null;
   const Lesson = demo.Component;
-  return (
-    <>
-      {language !== "en" && (
-        <p
-          lang={languageInfo(language).htmlLang}
-          className="px-6 pt-6 text-base text-slate"
-        >
-          {t("lessonInEnglish")}
-        </p>
-      )}
-      <div lang="en">
-        <Lesson />
-      </div>
-    </>
-  );
+  return <div lang={languageInfo(language).htmlLang}><Lesson /></div>;
 }
 
 export default function Post({

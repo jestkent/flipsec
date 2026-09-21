@@ -1,168 +1,52 @@
 import { useMutation } from "convex/react";
 import { useId, useState } from "react";
 import { api } from "../../convex/_generated/api";
+import { languageInfo, useLanguage } from "../localization";
+import { onboardingCopy } from "../onboardingCopy";
 
-// What the reader is signing up for, per feed. Signing up from a tab asks for
-// that tab; signing up from two tabs gets both in one email, not two.
-const PITCH: Record<string, { title: string; line: string; done: string }> = {
-  scam: {
-    title: "Get one drill a day",
-    line: "Reply in your own words and I will tell you how you did.",
-    done: "One lands in your inbox each morning. Reply however you like and I will tell you how you did.",
-  },
-  course: {
-    title: "Learn AI security, one piece a day",
-    line: "One free guide, what it teaches, and where to start.",
-    done: "One guide lands in your inbox each morning.",
-  },
-  job: {
-    title: "Get an AI security job each morning",
-    line: "One opening, what they want, and how to apply.",
-    done: "One opening lands in your inbox each morning.",
-  },
-};
-
-export default function Subscribe({
-  userId,
-  kind = "scam",
-}: {
-  userId: string;
-  kind?: string;
-}) {
+export default function Subscribe({ userId, kind = "scam" }: { userId: string; kind?: string }) {
   const subscribe = useMutation(api.subscribers.subscribe);
+  const { language, t } = useLanguage();
+  const copy = onboardingCopy(language);
   const [email, setEmail] = useState("");
-  const [state, setState] = useState<"idle" | "sending" | "done" | "error">(
-    "idle",
-  );
-  const emailId = useId();
-  const errorId = `${emailId}-error`;
-  const helpId = `${emailId}-help`;
-
-  const pitch = PITCH[kind] ?? PITCH.scam;
-
-  const [error, setError] = useState(
-    "That did not go through. Check the address and try again.",
-  );
-  const [sentConfirmation, setSentConfirmation] = useState(true);
-
+  const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle");
+  const [confirmation, setConfirmation] = useState(true);
+  const id = useId();
   async function signUp() {
-    if (!email.includes("@") || state === "sending") return;
+    if (state === "sending") return;
     setState("sending");
     try {
-      // The mutation says whether a confirmation was actually sent. An
-      // address that is already confirmed gets no second message, and telling
-      // that reader to go and look for one sends them to wait for mail that
-      // is never coming.
       const result = await subscribe({ email, userId, kinds: [kind] });
-      setSentConfirmation(result?.confirm !== false);
+      setConfirmation(result.confirm !== false);
       setState("done");
       setEmail("");
-    } catch (thrown) {
-      // The sign-up cap has its own message worth showing, because "check the
-      // address" is wrong advice for someone who typed a fine address.
-      const text = thrown instanceof Error ? thrown.message : "";
-      setError(
-        text.includes("Too many sign-ups")
-          ? "That is a lot of sign-ups from here. Try again in a little while."
-          : "That did not go through. Check the address and try again.",
-      );
-      setState("error");
-    }
+    } catch { setState("error"); }
   }
-
-  // A confirmation nobody can find is a sign-up that never happens, and mail
-  // from a domain with no sending history lands in spam more often than not.
-  // So this says where to look and what to look for, rather than leaving a
-  // reader to decide the site is broken.
-  if (state === "done") {
-    return (
-      <div lang="en" role="status" className="flex flex-col gap-2 rounded-card border border-line bg-white px-5 py-4">
-        {sentConfirmation ? (
-          <>
-            <p className="text-base leading-relaxed text-ink">
-              Check your email and press the button in it. {pitch.done}
-            </p>
-            <p className="text-base leading-relaxed text-ink">
-              Not there after a minute? Look in your spam or junk folder, and
-              search for <strong className="font-semibold text-navy">FlipSec</strong>.
-              The subject is <strong className="font-semibold text-navy">Confirm
-              your FlipSec.ai email</strong>. If you find it in spam, marking it
-              as not spam helps the daily one reach you.
-            </p>
-            <p className="text-base leading-relaxed text-slate">
-              New subscriptions and changes need confirmation. If you already
-              receive a daily email, your current feeds stay the same until then.
-            </p>
-          </>
-        ) : (
-          <p className="text-base leading-relaxed text-ink">
-            You are already subscribed to this feed. {pitch.done}
-          </p>
-        )}
-      </div>
-    );
-  }
-
+  const lang = languageInfo(language).htmlLang;
+  if (state === "done") return (
+    <div lang={lang} role="status" className="flex flex-col gap-3 rounded-card border border-line bg-white p-5">
+      <p>{confirmation ? copy.confirm : copy.already}</p>
+      {confirmation && <p className="text-sm text-slate">{copy.missing}</p>}
+      {language !== "en" && <p className="text-sm text-slate">{copy.emailEnglish}</p>}
+    </div>
+  );
   return (
-    <form
-      lang="en"
-      className="rounded-card border border-line bg-white px-5 py-4"
-      aria-busy={state === "sending"}
-      onSubmit={(event) => { event.preventDefault(); void signUp(); }}
-    >
-      <p className="text-base font-medium text-navy">{pitch.title}</p>
-      <p className="mt-0.5 text-base text-slate">{pitch.line}</p>
-      <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-        <label htmlFor={emailId} className="sr-only">Email address</label>
-        <input
-          id={emailId}
-          type="email"
-          name="email"
-          required
-          autoComplete="email"
-          inputMode="email"
-          aria-invalid={state === "error"}
-          // The help text below was never announced, only shown. A screen
-          // reader user got the input and nothing about what happens to the
-          // address or where the mail lands, which is the part most likely to
-          // make a sign-up look broken.
-          aria-describedby={state === "error" ? `${helpId} ${errorId}` : helpId}
-          value={email}
-          onChange={(e) => { setEmail(e.target.value); if (state === "error") setState("idle"); }}
-          placeholder="you@example.com"
-          className="min-h-11 min-w-0 flex-1 rounded-control border border-field px-3 py-2 text-base outline-none focus:border-sage"
-        />
-        <button
-          type="submit"
-          disabled={state === "sending"}
-          className="min-h-11 rounded-control bg-sage px-4 py-2 text-base font-semibold text-white hover:bg-sage-deep disabled:opacity-40"
-        >
-          {state === "sending" ? "Signing up…" : "Sign up"}
-        </button>
+    <form lang={lang} aria-busy={state === "sending"} className="rounded-card border border-line bg-white p-5" onSubmit={(event) => { event.preventDefault(); void signUp(); }}>
+      <h2 className="text-base font-semibold text-navy">{copy.emailTitle}</h2>
+      <p className="mt-1 text-base text-slate">{copy.emailLine}</p>
+      <label htmlFor={id} className="mt-3 block text-sm font-semibold">{copy.emailLabel}</label>
+      <div className="mt-1 flex flex-col gap-2 sm:flex-row">
+        <input id={id} type="email" name="email" required autoComplete="email" inputMode="email" maxLength={254}
+          value={email} onChange={(event) => { setEmail(event.target.value); if (state === "error") setState("idle"); }}
+          aria-invalid={state === "error"} aria-describedby={`${id}-help${state === "error" ? ` ${id}-error` : ""}`}
+          placeholder="you@example.com" className="min-h-11 min-w-0 flex-1 rounded-control border border-field px-3 py-2 text-base" />
+        <button disabled={state === "sending"} className="min-h-11 rounded-control bg-sage px-4 py-2 text-base font-semibold text-white disabled:opacity-40">{state === "sending" ? copy.sending : copy.signup}</button>
       </div>
-      <p id={helpId} className="mt-2 text-sm leading-relaxed text-slate">
-        Your address is stored to send a confirmation. Daily email starts after
-        you confirm, and preference changes also need confirmation. Every email carries an
-        unsubscribe link. See Privacy at the foot of the page.
-      </p>
-      {/* Said BEFORE signing up, not only after. FlipSec.ai sends from a new
-          domain with no sending history, so the first message often lands in
-          spam - and a reader who cannot find the confirmation has no way to
-          tell that from a site that is simply broken. The success screen and
-          the confirm page repeat it. This is a mitigation and not a fix: SPF,
-          DKIM and DMARC on the sending domain are the fix, and they need a
-          domain this project owns. AUDIT.md section 8 item 8. */}
-      <p className="mt-2 text-sm leading-relaxed text-slate">
-        <strong className="font-semibold text-navy">Check your spam or junk folder.</strong>{" "}
-        The first email often lands there, because FlipSec.ai is new and mail
-        from a new sender gets treated that way. Marking it as not spam helps
-        the daily one reach you.
-      </p>
-      {state === "error" && (
-        <p id={errorId} role="alert" className="mt-2 text-base text-danger">
-          {error}
-        </p>
-      )}
+      <div id={`${id}-help`} className="mt-3 flex flex-col gap-2 text-sm leading-relaxed text-slate">
+        <p>{copy.help}</p><p>{copy.missing}</p>
+        {language !== "en" && <p>{copy.emailEnglish}</p>}
+      </div>
+      {state === "error" && <p id={`${id}-error`} role="alert" className="mt-2 text-danger">{t("sendFailed")}</p>}
     </form>
   );
 }

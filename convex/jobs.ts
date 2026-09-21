@@ -3,6 +3,8 @@ import OpenAI from "openai";
 import { internal } from "./_generated/api";
 import { internalAction, internalMutation } from "./_generated/server";
 import { CRON_JOBS } from "./health";
+import type { PaginationResult } from "convex/server";
+import type { Doc } from "./_generated/dataModel";
 
 const MODEL = "gpt-4o-mini";
 
@@ -79,6 +81,7 @@ export const crawlJobs = internalAction({
 
     for (const { board, company } of BOARDS) {
       let listing: ListJob[] = [];
+      const checkedAt = Date.now();
       try {
         const response = await fetch(`${GREENHOUSE}/${board}/jobs`, {
           headers: {
@@ -91,11 +94,36 @@ export const crawlJobs = internalAction({
           console.warn(`${board}: HTTP ${response.status}, skipped`);
           continue;
         }
-        listing = ((await response.json()) as { jobs?: ListJob[] }).jobs ?? [];
+        const payload: unknown = await response.json();
+        const candidates = (payload as { jobs?: unknown } | null)?.jobs;
+        const total = (payload as { meta?: { total?: unknown } } | null)?.meta?.total;
+        // A broken/partial response must never be interpreted as an empty board.
+        if (!Array.isArray(candidates) || total !== candidates.length || candidates.some((job) =>
+          !job || typeof job.id !== "number" || typeof job.absolute_url !== "string" || !job.absolute_url.startsWith("https://"))) {
+          console.warn(`${board}: invalid board snapshot, availability unchanged`);
+          continue;
+        }
+        listing = candidates as ListJob[];
       } catch (error) {
         console.error(`${board}: list failed`, error);
         continue;
       }
+
+      // Reconcile against the COMPLETE successful board, before shortlisting.
+      // A failed fetch leaves availability alone. Closed rows disappear from
+      // public feeds, permalinks and daily selection through their status.
+      const openUrls = new Set(listing.map((job) => job.absolute_url));
+      let cursor: string | null = null;
+      do {
+        const page: PaginationResult<Doc<"stories">> = await ctx.runQuery(internal.jobAvailability.page, {
+          source: company, paginationOpts: { cursor, numItems: 50 },
+        });
+        await ctx.runMutation(internal.jobAvailability.reconcile, {
+          source: company, checkedAt,
+          jobs: page.page.map((row) => ({ id: row._id, open: openUrls.has(row.url) })),
+        });
+        cursor = page.isDone ? null : page.continueCursor;
+      } while (cursor !== null);
 
       // A large board lists the same role once per office, each with its own
       // id and url, so url dedupe never catches them. Three identical privacy

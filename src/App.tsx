@@ -8,6 +8,8 @@ import Home from "./components/Home";
 import SafetyTools from "./components/SafetyTools";
 import { languageInfo, useLanguage } from "./localization";
 import { navigateTo, useRoute } from "./navigation";
+import { PRACTICE } from "./practiceCopy";
+import { onboardingCopy } from "./onboardingCopy";
 import { useStickyVar } from "./stickyChrome";
 
 // The three feeds, in the order they appear. Reordering the app is editing
@@ -155,7 +157,7 @@ export default function App() {
                     lang={languageInfo(language).htmlLang}
                     className="mt-2 text-base text-slate"
                   >
-                    {t("lessonInEnglish")}
+                    {onboardingCopy(language).scope}
                   </p>
                 )}
 
@@ -165,6 +167,7 @@ export default function App() {
                     return (
                       <button
                         key={item.key}
+                        lang={languageInfo(language).htmlLang}
                         type="button"
                         onClick={() => setDemo(item.key)}
                         aria-pressed={open}
@@ -175,9 +178,9 @@ export default function App() {
                         }`}
                       >
                         <span className={`text-base ${open ? "font-semibold text-navy" : "font-medium text-navy"}`}>
-                          {item.label}
+                          {language === "en" ? item.label : PRACTICE[language].scenarios[DEMOS.indexOf(item)]}
                         </span>
-                        <span className="text-sm text-slate">{item.blurb}</span>
+                        {language === "en" && <span className="text-sm text-slate">{item.blurb}</span>}
                       </button>
                     );
                   })}

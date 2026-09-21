@@ -22,7 +22,7 @@ const ITEMS: Item[] = [
   {
     id: "bank",
     from: "Your bank",
-    body: "We noticed a sign-in from a new device in Cebu. If this was you, no action is needed. If it was not, please review your recent activity using the link below.",
+    body: "We noticed a sign-in from a new device in another city. If this was you, no action is needed. If it was not, please review your recent activity using the link below.",
     scam: true,
     because:
       "Reads perfectly, and that is the point. The tell is not the writing, it is that it wants you to arrive at your bank through their link instead of your own app.",
@@ -38,10 +38,10 @@ const ITEMS: Item[] = [
   {
     id: "dentist",
     from: "Dental clinic",
-    body: "This is a reminder of your appointment on Thursday at 2:15pm with Dr Reyes. Please arrive ten minutes early. Reply CANCEL if you need to reschedule.",
+    body: "This is a reminder of your appointment on Thursday at 2:15pm with your dentist. Please arrive ten minutes early. Reply CANCEL if you need to reschedule.",
     scam: false,
     because:
-      "Real. Notice it asks you for nothing: no link, no payment, no details. A message that only tells you something is a different shape from one that wants something.",
+      "Legitimate in this fictional scenario, but wording alone cannot prove who sent it. Check your own appointment record if you are unsure.",
   },
   {
     id: "boss",
@@ -54,10 +54,10 @@ const ITEMS: Item[] = [
   {
     id: "library",
     from: "Public library",
-    body: "The book you reserved, The Wager, is now available for collection. We will hold it at the front desk for seven days.",
+    body: "The book you reserved, your chosen title, is now available for collection. We will hold it at the front desk for seven days.",
     scam: false,
     because:
-      "Real, and dull. Legitimate messages are usually dull, because they are not trying to move you.",
+      "Legitimate in this fictional scenario. An ordinary-looking message can still be forged; check your library account independently if you need to act.",
   },
 ];
 

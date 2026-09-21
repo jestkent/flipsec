@@ -33,13 +33,19 @@ const flipSecAgent = new Agent(components.agent, {
   instructions: INSTRUCTIONS,
 });
 
-function validReaderId(userId: string) {
-  return userId.length >= 1 && userId.length <= 100;
-}
+export const deleteExpiredThread = internalAction({
+  args: { threadId: v.string() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await flipSecAgent.deleteThreadAsync(ctx, args);
+    return null;
+  },
+});
 
 export const ask = action({
   args: {
-    userId: v.string(),
+    userId: v.optional(v.string()), // Legacy callers cannot authorize with this.
+    sessionToken: v.optional(v.string()),
     threadId: v.optional(v.string()),
     question: v.string(),
     imageDataUrl: v.optional(v.string()),
@@ -50,7 +56,8 @@ export const ask = action({
     if (question.length < 2 || question.length > 4000) {
       throw new Error("Ask a question between 2 and 4,000 characters.");
     }
-    if (!validReaderId(args.userId)) throw new Error("This browser ID is invalid.");
+    const userId: string | null = await ctx.runQuery(internal.browserSessions.owner, { token: args.sessionToken });
+    if (!userId) throw new Error("Your private session has ended. Start a new conversation.");
 
     if (args.imageDataUrl && (
       !/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(args.imageDataUrl) ||
@@ -59,27 +66,27 @@ export const ask = action({
       throw new Error("That image could not be checked. Try a smaller JPG, PNG, or WebP file.");
     }
 
+    let threadId = args.threadId;
+    if (threadId) {
+      const ownsThread: boolean = await ctx.runQuery(internal.assistantData.findThread, {
+        userId,
+        threadId,
+      });
+      if (!ownsThread) throw new Error("This conversation is no longer available. Start a new one.");
+    }
     if (!(await ctx.runMutation(internal.assistantData.reserveChat, {
-      userId: args.userId,
+      userId,
       hasImage: Boolean(args.imageDataUrl),
     }))) {
       throw new Error("Ask FlipSec has reached its hourly limit. Try again later.");
     }
-
-    let threadId = args.threadId;
-    if (threadId) {
-      const ownsThread: boolean = await ctx.runQuery(internal.assistantData.findThread, {
-        userId: args.userId,
-        threadId,
-      });
-      if (!ownsThread) throw new Error("This conversation is no longer available. Start a new one.");
-    } else {
+    if (!threadId) {
       const created = await flipSecAgent.createThread(ctx, {
-        userId: args.userId,
+        userId,
         title: question.slice(0, 80),
       });
       threadId = created.threadId;
-      await ctx.runMutation(internal.assistantData.registerThread, { userId: args.userId, threadId });
+      await ctx.runMutation(internal.assistantData.registerThread, { userId, threadId });
     }
 
     const imageContext: ModelMessage[] | undefined = args.imageDataUrl
@@ -94,7 +101,7 @@ export const ask = action({
 
     const result = await flipSecAgent.generateText(
       ctx,
-      { userId: args.userId, threadId },
+      { userId, threadId },
       {
         prompt: question,
         messages: imageContext,
@@ -107,13 +114,16 @@ export const ask = action({
 });
 
 export const remove = action({
-  args: { userId: v.string(), threadId: v.string() },
+  args: { userId: v.optional(v.string()), sessionToken: v.optional(v.string()), threadId: v.string() },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const ownsThread: boolean = await ctx.runQuery(internal.assistantData.findThread, args);
+    const userId: string | null = await ctx.runQuery(internal.browserSessions.owner, { token: args.sessionToken });
+    if (!userId) throw new Error("Your private session has ended. Start a new conversation.");
+    const ownership = { userId, threadId: args.threadId };
+    const ownsThread: boolean = await ctx.runQuery(internal.assistantData.findThread, ownership);
     if (!ownsThread) throw new Error("This conversation is no longer available.");
     await flipSecAgent.deleteThreadAsync(ctx, { threadId: args.threadId });
-    await ctx.runMutation(internal.assistantData.removeThread, args);
+    await ctx.runMutation(internal.assistantData.removeThread, ownership);
     return null;
   },
 });

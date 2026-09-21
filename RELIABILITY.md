@@ -1,9 +1,13 @@
 # Reliability changes — 2026-09-21
 
+Current status is in [READINESS.md](READINESS.md). This document describes the
+earlier reliability work, now committed. Its original verification was local;
+later production email evidence is recorded in AUDIT section 5b.
+
 These changes follow the review of Claude's latest work through `b9eeac7`.
 The translated demo identifier fix, language-of-parts declarations, and narrow
-accessibility menu are preserved. This update is implemented locally; it is
-not a record of a production deployment.
+accessibility menu are preserved. The implementation notes below describe that earlier update;
+see READINESS.md for the separate current follow-up and rollout status.
 
 ## Consent
 
@@ -30,8 +34,9 @@ Claude's `back.demo` exclusion and client-side identifier lookup remain intact.
 
 `sentDrills` maps each outgoing message ID to its subscriber and drill. Inbound
 `in_reply_to` and `references` select the original lesson, with subscriber
-ownership checked before grading. Unmatched messages are ignored rather than
-graded against the last lesson. **Emails sent before this mapping exists do not
+ownership checked before grading. Unmatched messages are not graded against the last lesson. Later Claude
+changes route confirmed subscribers' unmatched or already-answered replies
+to Ask FlipSec, with a separate budget and automatic-reply filtering. **Emails sent before this mapping exists do not
 gain a mapping automatically; use a newly sent drill for the demo.**
 
 `saveGrade` stores the verdict and schedules feedback in one mutation. Delivery
@@ -88,8 +93,8 @@ internal `stories:unpublish` mutation. Never use production for this fixture.
 
 The configured local Convex deployment is `local-kent_agan-flipsec`.
 Production schema changes are additive: optional delivery/source/preference
-fields and the new `sentDrills` table. A production deploy still needs to happen
-before the public app gets these fixes. Incomplete existing translations can be
+fields and the new `sentDrills` table. Do not infer current deployed parity from this historical local test run;
+consult READINESS.md and the later production evidence. Incomplete existing translations can be
 repaired with the existing backfill after deployment; that spends model calls.
 
 ## Submission evidence still needed

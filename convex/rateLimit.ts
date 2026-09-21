@@ -19,6 +19,7 @@ const HOUR = 60 * 60 * 1000;
 // `chat` and `image` are one feature, so they share one budget. Nothing else
 // does, but the shape allows for it rather than assuming one kind per budget.
 export const BUDGETS = {
+  session: { kinds: ["session"], perReader: 300, global: 300 },
   chat: { kinds: ["chat", "image"], perReader: 10, global: 160 },
   speech: { kinds: ["speech"], perReader: 20, global: 300 },
   translate: { kinds: ["translate"], perReader: 30, global: 300 },
@@ -49,7 +50,8 @@ export type CheckKind =
   | "translate"
   | "subscribe"
   | "answer"
-  | "emailAsk";
+  | "emailAsk"
+  | "session";
 
 // userId comes from the browser and can be regenerated, so the per-reader cap
 // is a courtesy. The global cap is the one an attacker cannot get around, and

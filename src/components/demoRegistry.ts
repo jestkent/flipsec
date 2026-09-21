@@ -1,4 +1,7 @@
-import type { ComponentType } from "react";
+import { createElement, type ComponentType } from "react";
+import { useLanguage } from "../localization";
+import LocalizedPractice from "./LocalizedPractice";
+import type { PracticeTopic } from "../practiceCopy";
 import ConfidentWrongDemo from "./ConfidentWrongDemo";
 import InjectionDemo from "./InjectionDemo";
 import ScamWritingDemo from "./ScamWritingDemo";
@@ -21,30 +24,37 @@ export type Demo = {
   Component: ComponentType;
 };
 
+function localized(EnglishDemo: ComponentType, topic: PracticeTopic): ComponentType {
+  return function Practice() {
+    const { language } = useLanguage();
+    return language === "en" ? createElement(EnglishDemo) : createElement(LocalizedPractice, { key: `${language}:${topic}`, topic });
+  };
+}
+
 export const DEMOS: Demo[] = [
   {
     key: "voice-clone",
     label: "The voice on the phone",
     blurb: "Hear what an AI voice sounds like now, and what to do about it.",
-    Component: VoiceDemo,
+    Component: localized(VoiceDemo, "voice-clone"),
   },
   {
     key: "scam-writing",
     label: "Spot the scam",
     blurb: "Five messages, none with a spelling mistake. Three are scams.",
-    Component: ScamWritingDemo,
+    Component: localized(ScamWritingDemo, "scam-writing"),
   },
   {
     key: "confident-wrong",
     label: "Confidently wrong",
     blurb: "Three AI answers that sound certain. Pick the invented one.",
-    Component: ConfidentWrongDemo,
+    Component: localized(ConfidentWrongDemo, "confident-wrong"),
   },
   {
     key: "prompt-injection",
     label: "Hidden orders",
     blurb: "Watch an email tell your AI assistant what to do.",
-    Component: InjectionDemo,
+    Component: localized(InjectionDemo, "prompt-injection"),
   },
 ];
 

@@ -3,6 +3,8 @@ import { v } from "convex/values";
 import { language, speechLanguage } from "./languages";
 
 export default defineSchema({
+  browserSessions: defineTable({ tokenHash: v.string(), expiresAt: v.number() })
+    .index("by_tokenHash", ["tokenHash"]),
   stories: defineTable({
     url: v.string(),
     title: v.string(),
@@ -16,6 +18,7 @@ export default defineSchema({
     status: v.string(),               // raw | published | failed
     publishedAt: v.optional(v.number()),
     crawledAt: v.number(),
+    jobCheckedAt: v.optional(v.number()),
     // Which feed this card belongs to: scam | course | job. Optional because
     // the scam stories predate it; backfillKind fills them in and everything
     // written since sets it. Absent is read as "scam".
@@ -28,6 +31,7 @@ export default defineSchema({
   })
     .index("by_status", ["status"])
     .index("by_url", ["url"])
+    .index("by_kind_source", ["kind", "source"])
     .index("by_published", ["status", "publishedAt"])
     .index("by_kind_published", ["kind", "status", "publishedAt"]),
 
@@ -103,6 +107,7 @@ export default defineSchema({
       // whoever writes to it, and it must not be able to drain Ask FlipSec
       // on the website, or be drained by it.
       v.literal("emailAsk"),
+      v.literal("session"),
     ),
     createdAt: v.number(),
   })
@@ -114,7 +119,7 @@ export default defineSchema({
     .index("by_kind_time", ["kind", "createdAt"])
     .index("by_user_kind_time", ["userId", "kind", "createdAt"]),
 
-  // Maps an anonymous browser reader to its durable Agent component thread.
+  // Maps a server-derived anonymous session owner to its Agent component thread.
   // The component owns the messages; this table is the access boundary used
   // by our public query and action.
   assistantThreads: defineTable({

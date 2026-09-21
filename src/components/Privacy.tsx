@@ -43,14 +43,14 @@ export default function Privacy({ onBack }: { onBack: () => void }) {
 
       <Block title="What is on your device">
         <p className="text-base leading-relaxed text-ink">
-          Three things, all kept in your own browser and never sent anywhere on
-          their own: a random id so the hourly limits can count, the display
-          settings you choose under Accessibility, and the language you pick.
+          Your browser stores a random usage identifier, your display and language
+          preferences, and a private session token and conversation reference.
+          The token authorizes access to your conversation; do not share it.
           No cookies. No analytics. No advertising. Nothing that follows you to
           another site.
         </p>
         <p className="text-base leading-relaxed text-ink">
-          Clearing your browser data for this site removes all three. The random
+          Clearing your browser data for this site removes these local values. The random
           id is not tied to your name, and a new one is made the next time you
           visit.
         </p>
@@ -77,7 +77,13 @@ export default function Privacy({ onBack }: { onBack: () => void }) {
               Your Ask FlipSec conversation
             </strong>{" "}
             — the text, so follow-up questions make sense. An image you attach
-            is sent for that one answer and is <em>not</em> kept.
+            is sent for that one answer and is <em>not</em> kept. New browser
+            conversations use a server-issued anonymous session. Its secret is
+            stored as a hash on the server, expires after seven days, and cannot
+            be replaced by your public reader ID. Expiry revokes access and
+            schedules deletion of those conversations. This is not an account:
+            there is no cross-device recovery. Older conversations from before
+            this change are not migrated or automatically deleted.
           </li>
           <li>
             <strong className="font-semibold text-navy">

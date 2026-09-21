@@ -5,6 +5,7 @@
 // posting on its own board rather than at any aggregator.
 
 import { useLanguage } from "../localization";
+import { onboardingCopy } from "../onboardingCopy";
 
 type Back = {
   company?: string;
@@ -24,7 +25,7 @@ export default function JobBack({
   url: string;
   onBack: () => void;
 }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   if (!back) {
     return (
       <div className="flex min-h-56 flex-col gap-4 p-6">
@@ -106,6 +107,7 @@ export default function JobBack({
       >
         {t("seeFullPosting")} <span aria-hidden>↗</span><span className="sr-only">{t("newTab")}</span>
       </a>
+      <p className="text-sm leading-relaxed text-slate">{onboardingCopy(language).jobCaution}</p>
 
       <button
         type="button"
