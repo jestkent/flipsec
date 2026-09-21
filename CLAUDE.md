@@ -290,9 +290,14 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
   never black. Body copy stays around 65-75 characters.
 - The logo lives in `public/brand/`. It is a horizontal lockup that already
   contains the wordmark, so nothing sets "FlipSec.ai" in text beside it. Four
-  files: the lockup at 256x64 with a 512x128 @2x, and the mark alone squared
-  at 96 and 192 for the favicon and for widths under 640px where the full
-  lockup crowds the navigation. Sized by height with `w-auto`, so it cannot be
+  files: the lockup at **height 64 with a height-128 @2x** (257x64 and 513x128
+  from the current artwork — the width follows the drawing, and nothing should
+  force it to a round number), and the mark alone squared at 96 and 192 for
+  the favicon and for widths under 640px where the full lockup crowds the
+  navigation. All four are regenerated from one source PNG; the mark is cropped
+  at the transparent gutter between the icon and the wordmark, which has to be
+  measured **on the trimmed image** rather than on the raw one, because the two
+  have different origins. Sized by height with `w-auto`, so it cannot be
   stretched, and never recoloured or set on a busy ground. The supplied
   artwork is trimmed to its content box before shipping; the raw file carries
   a wide transparent margin that would otherwise read as broken padding.
@@ -326,6 +331,16 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
 
 ## UI
 
+- **The sign-up box comes AFTER the third card, never before the first.** A
+  reader who opened a feed used to meet an email capture before a single
+  story. That is the pattern people have been trained to distrust, and on an
+  app about not being manipulated it was the wrong first impression. A feed
+  shorter than three cards gets one at the end; a single-card permalink gets
+  none, because there is no feed there to earn it.
+- **The hero does not repeat the logo.** The header shows the lockup already;
+  a hero that opens with the same artwork spends its best space saying the
+  name twice and delays the sentence that explains what the site is. The
+  headline leads.
 - The interface is intentionally calm. The homepage has two hero actions,
   three unboxed feed pathways, a three-step explanation and one latest-story
   card. Do not restore the duplicate technology card grid or add ornamental

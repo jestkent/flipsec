@@ -80,19 +80,11 @@ export default function Home({
       {/* Hero                                                                */}
       {/* ------------------------------------------------------------------ */}
       <section className="pt-10 sm:pt-14">
-        {/* Here the logo is content rather than chrome: it is how the page
-            states the product's name, so it carries a real alt rather than an
-            empty one. */}
-        <img
-          src="/brand/flipsec-ai-logo.png"
-          srcSet="/brand/flipsec-ai-logo.png 1x, /brand/flipsec-ai-logo@2x.png 2x"
-          width={208}
-          height={52}
-          alt="FlipSec.ai"
-          className="h-11 w-auto object-contain sm:h-13"
-        />
-
-        <h1 className="mt-6 max-w-[20ch] text-3xl leading-tight font-semibold tracking-tight text-navy sm:text-4xl">
+        {/* The lockup used to open this section. It is gone on purpose: the
+            header shows the same artwork a hundred pixels above, so the hero
+            was spending its most valuable space repeating the name instead of
+            saying what the site does. The headline leads now. */}
+        <h1 className="max-w-[22ch] text-3xl leading-tight font-semibold tracking-tight text-navy sm:text-4xl">
           Flip the news. Learn the threat.
         </h1>
         <p className="mt-4 max-w-[68ch] text-lg leading-relaxed text-ink">

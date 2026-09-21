@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { readerId } from "../reader";
@@ -55,12 +56,24 @@ export default function Feed({ kind = "scam", storyId }: { kind?: string; storyI
     );
   }
 
+  // The sign-up box used to sit ABOVE the first card, so a reader who came to
+  // read a feed met an email capture before a single story. That is the
+  // pattern people have been trained to distrust, and on an app about not
+  // being manipulated it was the wrong first impression. It now appears after
+  // the third card, once the feed has shown what it is actually offering, and
+  // it is skipped entirely on a single-card permalink where there is no feed
+  // to earn it.
+  const AFTER = 3;
   return (
     <div className="flex flex-col gap-5">
-      <Subscribe userId={userId} kind={kind} />
-      {stories.map((story) => (
-        <Post key={story._id} story={story} userId={userId} />
+      {stories.map((story, index) => (
+        <Fragment key={story._id}>
+          <Post story={story} userId={userId} />
+          {!storyId && index === AFTER - 1 && <Subscribe userId={userId} kind={kind} />}
+        </Fragment>
       ))}
+      {/* A feed shorter than the cut-off still gets one, at the end. */}
+      {!storyId && stories.length < AFTER && <Subscribe userId={userId} kind={kind} />}
       {!storyId && <p className="pt-2 text-center text-base text-slate">
         That is everything in this feed. A card only gets here if it passes
         every gate, so the feeds stay short on purpose.
