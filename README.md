@@ -112,10 +112,24 @@ card from each feed you picked then arrives in a single email each morning.
 Restarting an unsubscribed address or adding feeds also requires confirmation;
 public requests cannot alter existing consent.
 
-Reply to the news drill in your own words and the grade comes back to your
-inbox: whether you got it, why, and what the strongest sign was. One graded
-answer per drill, which is also what stops an out-of-office reply and our own
-answer to it from talking to each other forever.
+Reply to the news drill in your own words and the grade comes back **in the
+same conversation**: whether you got it, why, and what the strongest sign was.
+One graded answer per drill, which is also what stops an out-of-office reply
+and our own answer to it from talking to each other forever.
+
+Then keep replying. Anything that is not an answer to that morning's drill is
+treated as a question and answered by Ask FlipSec — the same helper as on the
+site, in the same thread, remembering what you already asked. Ask why scammers
+use urgency, whether a text from your bank is real, or what to do after
+clicking something you should not have. The inbox is a second front door,
+which matters because the people these scams take the most from are far more
+likely to be in their mail than on a site they visited once, and because the
+suspicious message is already there.
+
+Only confirmed subscribers are answered, since an address that replies to
+anyone with a model call is somebody else's bill to run up. Questions have
+their own hourly budget, separate from the website's assistant, and automatic
+mail is refused before anything is written.
 
 ## Who it is for
 

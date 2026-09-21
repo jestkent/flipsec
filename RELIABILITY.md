@@ -94,7 +94,13 @@ repaired with the existing backfill after deployment; that spends model calls.
 
 ## Submission evidence still needed
 
-1. One new drill delivered to a real mailbox, replied to, with feedback received.
+1. ~~One new drill delivered to a real mailbox, replied to, with feedback
+   received.~~ **Done 2026-09-21.** Drill delivered to a real mailbox, replied
+   to by hand, graded `correct: true`, and the feedback received *in the same
+   thread*; a follow-up question was then answered in that thread by Ask
+   FlipSec. AUDIT.md section 5b carries the evidence. Note the caveat there:
+   every test address had already received mail from this sender, so delivery
+   to a cold mailbox is still unproven.
 2. Three observed user sessions: what they understood, missed, and would do next.
 3. A video under three minutes showing the real learning and email loop.
 4. Confirm registration, social post, final video URL, and submission.

@@ -83,6 +83,14 @@ drill is graded if it is this morning's answer and sent to Ask FlipSec if it
 is anything else, and either way the response threads back into the reader's
 own conversation.
 
+**Verified end to end on production, 2026-09-21**, against a real mailbox:
+drill delivered, reply matched to the right drill, graded, grade threaded back
+in 1.5 seconds, follow-up question answered in the same thread with context
+kept. AUDIT.md section 5b has the evidence and the three rounds of testing it
+took. What is still NOT proven is delivery to a cold mailbox - every test went
+to an address that had already received mail from this sender, and SPF, DKIM
+and DMARC are still unverified.
+
 Testing it has three traps, all of which cost an evening once:
 
 - **`pickTodaysDrill` is deterministic**, so every test drill sent on one day

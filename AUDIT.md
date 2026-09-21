@@ -345,6 +345,64 @@ what it said and nothing worse.
 
 ---
 
+## 5b. The email loop, verified end to end on production
+
+2026-09-21. The one flow AUDIT has carried as unproven since E-1 was fixed:
+mail that reaches a real mailbox, a reply written by a person, a grade that
+comes back. Now also an emailed question answered by Ask FlipSec.
+
+Run against `cerus112016@gmail.com`, a real mailbox, with a fresh subscriber
+each round so the one-graded-answer-per-drill guard did not mask a result.
+
+| Checked | Evidence |
+| --- | --- |
+| Drill delivered | Arrived in the inbox, not spam |
+| Reply matched to the right drill | attempt `j57584q00ezmxdpj4n7bk9n3298ev08e` on drill `j9792z4kp96...`, matched by `in_reply_to` against `sentDrills` |
+| Graded | `correct: true`, feedback written, logged `graded ... correct=true` at 2:01:09 PM |
+| Grade delivered **in the thread** | `deliveryStatus: "sent"`, attempt 1 of 5, message id `<010001a0c5c5cea6-...>`; visible under the reader's own reply |
+| Emailed question answered | Answered in the same thread, with the previous turn remembered |
+| `emailAsk` budget recording | Three rows in `toolChecks` under kind `emailAsk` |
+| No errors | Production logs across the whole exchange carry no send failure |
+
+Grade turnaround was 1.5 seconds from graded to sent.
+
+### Three rounds of testing that each looked like a broken pipeline
+
+Worth recording, because all three were the same class of fault and none of
+them was the thing first suspected.
+
+**Round one blamed deliverability.** The grade was accepted by AgentMail with
+an SES message id and never seen. SPF/DKIM/DMARC being unverified made that a
+plausible story and it was wrong: the AgentMail dashboard showed the message
+delivered, and the four bounces on the account were all to `.invalid` audit
+addresses, not to a real inbox.
+
+**Round two blamed the provider.** `sendGrade` called `messages/send`, which
+always creates a NEW message with its own subject, so the grade landed in a
+separate conversation while the reader watched the one they had replied in.
+Delivered every time, in the wrong place.
+
+**Round three was an argument that stopped halfway.** `replyToMessageId` has
+to cross five scheduled hops. Four were wired. `gradeReply` accepted it and
+did not pass it to `saveGrade`, so `sendGrade` saw `undefined` and took the
+fallback. Nothing failed, because a grade with no anchor is SUPPOSED to go out
+as its own message rather than not go out at all.
+
+The diagnostic that worked was noticing that emailed QUESTIONS threaded and
+grades did not, and that the question path is the one hop that skips
+`gradeReply`. CLAUDE.md carries the rule: when one path through a feature
+works and a near-identical one does not, diff the hops rather than the
+behaviour — and a deliberate fallback will hide a broken chain from the logs,
+the tests and the recipient alike.
+
+### Still not proven by this
+
+Deliverability to a cold mailbox. Everything above went to Gmail accounts that
+had already received mail from this sender. SPF, DKIM and DMARC remain
+unverified on the sending domain and item 8 stands.
+
+---
+
 ## 6. H-2: security headers — OPEN, and why
 
 Live response headers carry **only** `x-content-type-options: nosniff`.
@@ -458,8 +516,8 @@ IPs to Google. One change, three benefits.
 | 7 | Failure alerting | **Partly closed `46e3dc2`, and now verified.** Every cron records what it achieved, and `npx convex run health:status --prod` reports the last run of each. That is detection, not notification: nothing pages anybody, so it only helps if somebody looks. §3 says what must not be tidied. Proven end to end on prod 2026-09-21 — see §5a. |
 | 8 | SPF / DKIM / DMARC | On the AgentMail sending domain. Without DKIM the daily send lands in spam. **2026-09-21: now the leading suspect for a real failure, not a theoretical one.** A drill sent at 19:58 UTC arrived; the grade reply for it, sent at 20:02 UTC, was accepted by AgentMail with SES message id `<010001a0c5900170-...>` and `deliveryStatus: "sent"`, and never appeared in the recipient's inbox or spam. `deliveryStatus` records that AgentMail ACCEPTED the message, never that a mailbox received it, and `messages/send` is the only AgentMail call in the codebase, so nothing here can see a bounce. Check that message id in the AgentMail dashboard. |
 | 14 | **`sendTestDrill` sends the same drill all day** | `pickTodaysDrill` is a single global pick, so two test drills on the same day carry the same `drillId`. The one-graded-answer-per-reader-per-drill guard then silently drops the second reply — correct behaviour, invisible outcome. Observed 2026-09-21: a second reply produced no attempt row and no grade. To retest the reply loop the same day, use a different subscriber address, not a second send to the same one. |
-| 9 | Webhook URL | `https://<deployment>.convex.site/api/agentmail-inbound`, plus one real reply end to end. |
-| 10 | **Double opt-in, end to end** | Not verified with a real mailbox. Sign up with your own address, confirm the mail arrives, press the button, check `pending` clears. This is the one new flow that has never delivered a real message. |
+| 9 | Webhook URL | `https://<deployment>.convex.site/api/agentmail-inbound`, plus one real reply end to end. **Done 2026-09-21, see §5b:** several real replies, graded and answered, signature verified on every one. |
+| 10 | **Double opt-in, end to end** | Sign up with your own address, confirm the mail arrives, press the button, check `pending` clears. Drill and reply delivery to real mailboxes is now proven (§5b), but the CONFIRMATION message and the `pending` transition still have not been walked by hand. |
 | 11 | Cron timing | `0 14 * * *` is **UTC** — 7am PT. Confirm that is intended. |
 | 12 | Mobile at 320px | **Closed in code.** The Accessibility dropdown was `w-72` (288px) `absolute right-0`, with nothing to spare at a 320px viewport. It now carries `max-w-[calc(100vw-2rem)]`, which keeps a 16px gutter at any width and changes nothing above 320px. Compiled rule confirmed present. Still worth one look on a real handset. |
 | 13 | **Language of Parts (WCAG 2.2 SC 3.1.2)** | **Closed in code.** `<html lang>` follows the reader's choice, but Home, About, Privacy, the sign-up form and all four interactive lessons are still written in English, so they were English text declared as Spanish, Japanese or Hindi — a screen reader read them through the wrong voice. Each now declares `lang="en"`, and `ReadAloudButton` declares the reader's language back. Delete each `lang="en"` when that region is actually translated. |

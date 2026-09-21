@@ -1026,3 +1026,53 @@ backstop; the header check is the fence.
 Not done yet: the email assistant cannot see an attachment, and a forwarded
 screenshot of a suspicious text is exactly what someone would send.
 
+### 2026-09-21 - the loop, closed and watched
+
+The email loop has been in this log as working since step 66 and had never
+once been watched from a real mailbox. Tonight it was, and it took four goes,
+each of which looked like a broken pipeline and was not.
+
+The first blamed deliverability. A grade was accepted by AgentMail with an SES
+message id and never seen, and with SPF, DKIM and DMARC unverified that was an
+easy story to believe. It was wrong: AgentMail's own dashboard showed the
+message delivered, and all four bounces on the account were to .invalid audit
+addresses rather than to any real inbox.
+
+The second was real. sendGrade called messages/send, which always creates a new
+message with its own subject, so the grade arrived in a separate conversation
+while the reader watched the one they had replied in. Delivered every time, in
+the wrong place. The daily mail says "hit reply and I will tell you how you
+did", and the answer was landing where nobody was looking.
+
+The third was a fix that did nothing. It read the incoming message id from the
+webhook and replied to it, and the payload did not carry that field under the
+name the docs give - so it fell back to a new message, by design, silently.
+Replaced with an id we already hold: sentDrills stores the id of the drill we
+sent, AgentMail returned it from its own send endpoint, and the reply had just
+been matched against it. Prefer an identifier you have watched work over one a
+document promises.
+
+The fourth was the one worth writing down. replyToMessageId crosses five
+scheduled functions and four were wired; gradeReply took the argument and never
+passed it on. Nothing failed, because a grade with no anchor is supposed to go
+out as its own message rather than not go out at all - clean logs, passing
+tests, mail arriving in the wrong thread. What found it was a difference rather
+than an error: emailed questions threaded and grades did not, and the question
+path is exactly the hop that skips gradeReply.
+
+Verified on production against a real mailbox, with a fresh subscriber each
+round so the one-answer-per-drill guard could not mask the result. Drill
+delivered. Reply matched to the right drill by in_reply_to. Graded correct.
+Grade threaded back under the reader's own message in 1.5 seconds. Then a
+follow-up question answered in that same thread, with the previous turn
+remembered.
+
+Send, receive, verify, grade, reply, and answer. The tagline says FlipSec
+brings the practice back to the inbox, and as of tonight that is a thing you
+can watch happen rather than a thing the code implies.
+
+Still not proven: delivery to a cold mailbox. Every address tested had already
+received mail from this sender, and SPF, DKIM and DMARC are unverified on the
+sending domain. That is infrastructure and it is recorded as item 8, not
+claimed as done.
+

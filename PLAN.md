@@ -1134,6 +1134,34 @@ one-graded-answer-per-drill; a question has no such natural end, so our answer
 provoking their auto-reply provoking our answer would run all night at a model
 call per turn. The rate limit is the backstop, the header check is the fence.
 
+### The chain was only as good as its weakest hop
+
+Threading shipped broken once more after all of that, and the shape of the
+failure is the part worth keeping. `replyToMessageId` has to cross five
+scheduled functions. Four were wired; `gradeReply` accepted the argument and
+never passed it to `saveGrade`, so `sendGrade` saw nothing and took the
+fallback.
+
+Nothing failed. A grade with no anchor is supposed to go out as its own
+message rather than not go out at all, so the logs were clean, the tests
+passed, and the mail arrived in the wrong conversation for a third time.
+
+What found it was a difference rather than an error: emailed QUESTIONS came
+back threaded and grades did not, and the question path is precisely the one
+that skips `gradeReply`. When one path through a feature works and a
+near-identical one does not, diff the hops rather than the behaviour. A
+deliberate fallback will hide a broken chain from the logs, the tests and the
+recipient at the same time.
+
+### Verified
+
+Proven on production against a real mailbox, with a fresh subscriber each
+round so the one-answer-per-drill guard could not mask the result: drill
+delivered, reply matched to the right drill by `in_reply_to`, graded
+`correct: true`, grade delivered into the reader's own thread in 1.5 seconds,
+then a follow-up question answered in that same thread with the previous turn
+remembered. Evidence in AUDIT.md section 5b.
+
 ### What it does not do yet
 
 The answer is single-threaded per subscriber and remembers the conversation,
