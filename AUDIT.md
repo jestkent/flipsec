@@ -85,7 +85,7 @@ it is blocked by somebody else's, this regression is back.
 | T-2 | Interface labels hardcoded in English over fully translated cards — `Illusion.tsx`, then `ScamFlow.tsx` | Medium | Fixed `0c7acc5`, `82c2e4e` |
 | E-1 | The daily email promised "I will tell you how you did" and never sent the grade | **High** | Fixed `00d3312` |
 | E-2 | `saveReply` inserted unconditionally — once the grade is mailed, an auto-responder makes a mail loop | **High** | Fixed `00d3312` |
-| C-1 | Ask FlipSec recommended "check for poor spelling and grammar" — the exact heuristic the app exists to refute — because its system prompt never stated the premise | **High** | Fixed `TBD` |
+| C-1 | Ask FlipSec recommended "check for poor spelling and grammar" — the exact heuristic the app exists to refute — because its system prompt never stated the premise | **High** | Fixed `1095ebc` |
 | E-3 | The daily course and job card never rotated — `take(1)` with no memory, so Learn and Jobs subscribers got the SAME card every morning until a crawl published a newer one, which is routinely days | **High** | Fixed `0c9250f` |
 | E-4 | Learn and Jobs sections never invited a reply, so those readers had no way to know Ask FlipSec would answer them | Medium | Fixed `0c9250f` |
 | **H-2** | **No security headers** — no CSP, HSTS, or frame protection | **High** | **OPEN — hosting layer, see §6** |

@@ -1233,3 +1233,49 @@ product.
 
 A demo script that does not say what breaks is half a script. This one says.
 
+### 2026-09-21 - a functional sweep, and the assistant arguing with the app
+
+Asked to stop adding and check that everything actually works. Drove every
+feature on the live site rather than reading the code for it.
+
+Backend: feeds at 8, 17 and 10; both crawls green with what they found; zero
+untranslated stories across all ten languages. Front end: all seven routes
+render and an unknown hash reaches the recovery state; cards flip on all three
+feeds; the drill offers three choices, is graded on the server and prints the
+verdict in words rather than colour; all four interactive lessons render with
+live controls; the accessibility panel opens, toggles and persists; the sign-up
+form has a real email input with its help text announced. No page errors
+anywhere.
+
+Two of the checks failed and both were the TEST, not the app - drill choices
+are buttons with aria-pressed rather than radios, and the assistant's submit
+button says Ask FlipSec rather than Ask. Worth recording, because a badly
+written test reporting a working feature as broken is how somebody ends up
+"fixing" something that was fine.
+
+The one real fault could only have been found by asking. Ask FlipSec was
+asked how to check whether a text from a bank is real and answered: check for
+poor spelling, grammar, or unusual language, legitimate messages from banks
+are usually well-written.
+
+That is the advice this app exists to refute. The home page says bad spelling
+USED TO BE how you spotted a fake. ScamWritingDemo is a whole lesson built to
+dismantle it. The assistant was teaching it back to the reader in the app's
+own voice.
+
+The prompt carried a tone, a topic list and safety rules, and never the
+product's thesis. A model given only those answers with the internet's median
+opinion, and the internet's median opinion on spotting scams is twenty years
+old. Nothing was broken - the prompt was incomplete in a way only a real
+question could reveal.
+
+It now states the premise and names the tells that hold: unexpected contact,
+urgency, secrecy, being steered to a supplied link instead of the app or
+number already in hand, demands for money or codes, and a reason why the
+person cannot check with anybody. Verified after deploying by asking the same
+question: no mention of spelling, and the answer is do not click the link,
+open the bank's own app, call the number on the card.
+
+A system prompt has to carry the product's thesis, not only its tone and its
+guardrails.
+
