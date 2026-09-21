@@ -109,9 +109,14 @@ export default function App() {
 
       <footer className="border-t border-line">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-8 text-sm text-slate sm:px-6">
-          <span className="font-semibold text-navy">
-            FlipSec<span className="font-normal text-slate">.ai</span>
-          </span>
+          <img
+            src="/brand/flipsec-ai-logo.png"
+            srcSet="/brand/flipsec-ai-logo.png 1x, /brand/flipsec-ai-logo@2x.png 2x"
+            width={112}
+            height={28}
+            alt="FlipSec.ai"
+            className="h-7 w-auto object-contain"
+          />
           <span>Flip the news. Learn the threat.</span>
           <button
             type="button"

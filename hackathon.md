@@ -13,7 +13,7 @@
 - **Auth:** none
 - **AI models:** gpt-4o-mini
 - **Started:** 2026-09-20T17:35:41Z
-- **Last updated:** 2026-09-21T02:30:14Z
+- **Last updated:** 2026-09-21T02:34:39Z
 
 ## Log
 
@@ -370,3 +370,20 @@ every control, a footer, and a 128px logo in place of the 1254px 1.9MB
 original (`src/index.css`, `src/components/ui.tsx`, `src/components/Header.tsx`,
 `src/components/Home.tsx`, `src/App.tsx`, `src/components/Post.tsx`,
 `public/brand/`).
+
+### 2026-09-21 - brand lockup
+Replaced the app-icon logo with the supplied horizontal lockup. Because that
+artwork already contains the wordmark, the text that used to sit beside it in
+the header was removed; a header that shows a logo saying the name and then
+writes the name again is saying it twice.
+
+The source is 2172x724 with a wide transparent margin, so it is trimmed to its
+content box first, then shipped as a 256x64 lockup with a 512x128 @2x, plus
+the mark alone squared at 96 and 192. The mark stands in below 640px where the
+full lockup would crowd the navigation, and serves as the favicon. Everything
+is sized by height with width auto, so the lockup cannot be stretched.
+
+The artwork's own colours are the palette the redesign already uses - the same
+navy, teal and amber - so nothing needed adjusting to match it
+(`public/brand/`, `src/components/Header.tsx`, `src/components/Home.tsx`,
+`src/App.tsx`).

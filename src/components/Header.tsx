@@ -37,25 +37,37 @@ export default function Header({
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-ivory/90 backdrop-blur-sm">
       <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3 sm:px-6">
-        {/* Home. The logo is never stretched: fixed square, object-contain,
-            and the wordmark sits beside it rather than inside the image. */}
+        {/* Home. The supplied lockup already contains the wordmark, so there
+            is no text beside it — repeating "FlipSec.ai" next to a logo that
+            says it is how a header ends up saying the name twice.
+
+            Both images are sized by height with width:auto, so neither can be
+            stretched, and the name lives on the button's aria-label rather
+            than on whichever image happens to be visible. */}
         <button
           type="button"
           onClick={() => onNavigate("home")}
-          className="flex shrink-0 items-center gap-2.5 rounded-control py-1"
+          className="flex shrink-0 items-center rounded-control py-1"
           aria-label="FlipSec.ai, go to the home page"
         >
+          {/* The mark alone below 640px, where the full lockup would crowd
+              the navigation. */}
           <img
-            src="/brand/flipsec-ai-logo.png"
-            srcSet="/brand/flipsec-ai-logo.png 1x, /brand/flipsec-ai-logo@2x.png 2x"
+            src="/brand/flipsec-ai-mark.png"
+            srcSet="/brand/flipsec-ai-mark.png 1x, /brand/flipsec-ai-mark@2x.png 2x"
             width={36}
             height={36}
             alt=""
-            className="h-9 w-9 rounded-[9px] object-contain"
+            className="h-9 w-9 object-contain sm:hidden"
           />
-          <span className="text-lg font-semibold tracking-tight text-navy">
-            FlipSec<span className="font-normal text-slate">.ai</span>
-          </span>
+          <img
+            src="/brand/flipsec-ai-logo.png"
+            srcSet="/brand/flipsec-ai-logo.png 1x, /brand/flipsec-ai-logo@2x.png 2x"
+            width={144}
+            height={36}
+            alt=""
+            className="hidden h-9 w-auto object-contain sm:block"
+          />
         </button>
 
         <nav aria-label="Main" className="ml-auto flex items-center gap-0.5">

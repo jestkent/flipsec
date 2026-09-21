@@ -137,9 +137,14 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
   pill except a genuine tag. Spacing follows an 8px rhythm.
 - One family, Source Sans 3, loaded in `index.html`. Headings are semibold,
   never black. Body copy stays around 65-75 characters.
-- The logo lives in `public/brand/`: 128px, a 180px @2x, and a 96px mark. The
-  1254px original was 1.9MB and had no business in a header. Fixed square,
-  `object-contain`, never recoloured or stretched.
+- The logo lives in `public/brand/`. It is a horizontal lockup that already
+  contains the wordmark, so nothing sets "FlipSec.ai" in text beside it. Four
+  files: the lockup at 256x64 with a 512x128 @2x, and the mark alone squared
+  at 96 and 192 for the favicon and for widths under 640px where the full
+  lockup crowds the navigation. Sized by height with `w-auto`, so it cannot be
+  stretched, and never recoloured or set on a busy ground. The supplied
+  artwork is trimmed to its content box before shipping; the raw file carries
+  a wide transparent margin that would otherwise read as broken padding.
 - Every control has a visible keyboard focus ring, set once in `index.css` on
   `:focus-visible`. Several had none and relied on a browser default a custom
   background swallowed.
