@@ -3,11 +3,15 @@
 // between those two columns, so the panel puts them side by side and lets the
 // reader see it rather than be told about it.
 const TINT: Record<string, string> = {
-  deepfake: "#7c3aed",
-  voice: "#d97706",
-  phishing: "#0284c7",
-  injection: "#0d9488",
-  other: "#525252",
+  deepfake: "#c94f45",
+  voice: "#e2a12b",
+  phishing: "#c94f45",
+  injection: "#138a8a",
+  other: "#667788",
+  beginner: "#2f7d5b",
+  intermediate: "#138a8a",
+  advanced: "#e2a12b",
+  hiring: "#138a8a",
 };
 
 export default function Illusion({
@@ -21,9 +25,9 @@ export default function Illusion({
   const tint = TINT[tactic] ?? TINT.other;
 
   return (
-    <div className="overflow-hidden rounded-xl border border-neutral-200">
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-3 border-b border-neutral-200 bg-neutral-50 px-4 py-2">
-        <p className="text-[11px] font-semibold tracking-wider text-neutral-600 uppercase">
+    <div className="overflow-hidden rounded-card border border-line">
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-3 border-b border-line bg-ivory px-4 py-2">
+        <p className="text-[11px] font-semibold tracking-wider text-slate uppercase">
           What you saw
         </p>
         <span className="w-4" />
@@ -39,10 +43,10 @@ export default function Illusion({
         <div
           key={pair.seen}
           className={`grid grid-cols-[1fr_auto_1fr] items-center gap-x-3 px-4 py-3 ${
-            i > 0 ? "border-t border-neutral-100" : ""
+            i > 0 ? "border-t border-line" : ""
           }`}
         >
-          <p className="text-base leading-snug text-neutral-600">{pair.seen}</p>
+          <p className="text-base leading-snug text-slate">{pair.seen}</p>
           <span className="w-4 text-center text-neutral-300" aria-hidden>
             →
           </span>

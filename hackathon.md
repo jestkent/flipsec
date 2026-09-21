@@ -13,7 +13,7 @@
 - **Auth:** none
 - **AI models:** gpt-4o-mini
 - **Started:** 2026-09-20T17:35:41Z
-- **Last updated:** 2026-09-21T02:13:44Z
+- **Last updated:** 2026-09-21T02:30:14Z
 
 ## Log
 
@@ -335,3 +335,38 @@ Note for submission: the flipsec.ai domain does not currently resolve
 (`NXDOMAIN`). The live app is the convex.site URL in the header above, and the
 name is branding only until the domain is registered and pointed at the
 deployment (`src/App.tsx`, `index.html`, `convex/`, `README.md`, `CLAUDE.md`).
+
+### 2026-09-21 - visual redesign
+Rebuilt the presentation layer on the supplied brand without touching the
+backend. Nothing in convex/ changed in this pass, and all three feeds return
+the same counts they did before it: 6 news, 11 guides, 10 roles.
+
+The app previously opened straight onto a feed, so a first-time reader met a
+list of cards with no idea what the product was or why they turn over. There
+is now a home page: the tagline, one paragraph, two actions, live counts read
+from the same queries the feeds use, the three pathways, a four-step
+explanation of the flip, the most recently collected story, and a plain
+account of what Firecrawl, OpenAI, Convex and AgentMail each actually do. The
+counts are a live Convex query, so a crawl publishing while the page is open
+moves them with no refresh.
+
+Colour is now centralised as tokens in one stylesheet rather than the stock
+neutral and rainbow scales spread across every component. Ivory page, white
+cards, navy text, teal for actions, amber for the flip motif, coral only for
+real errors. Status is never carried by colour alone: badges keep their word,
+the selected tab changes weight as well as rule, the current nav item is
+underlined.
+
+The card front now carries what it was missing: the source, a headline, the
+summary, and both a relative and an absolute date. The flip control became a
+labelled button on both faces instead of an icon roundel a reader had to
+guess at, and the rotation came down from 520ms to 220ms. An amber folded
+corner is the recurring motif and doubles as the affordance.
+
+Shared primitives replaced the per-component styling: Button, Badge, Card,
+Eyebrow, Skeleton, EmptyState, ErrorNotice. Feeds load as card skeletons
+rather than the word "Loading". Added a skip link, a visible focus ring on
+every control, a footer, and a 128px logo in place of the 1254px 1.9MB
+original (`src/index.css`, `src/components/ui.tsx`, `src/components/Header.tsx`,
+`src/components/Home.tsx`, `src/App.tsx`, `src/components/Post.tsx`,
+`public/brand/`).

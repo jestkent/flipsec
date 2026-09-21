@@ -6,21 +6,22 @@ import CourseBack from "./CourseBack";
 import JobBack from "./JobBack";
 import LessonBack from "./LessonBack";
 import TacticArt from "./TacticArt";
+import { Badge } from "./ui";
 
 type Story = Omit<Doc<"stories">, "rawText">;
 
-// The one place colour carries meaning, per PLAN.md section 16. The last four
-// are the other two feeds: how hard a guide is, and that a role is open.
-const TACTIC_STYLE: Record<string, string> = {
-  deepfake: "bg-violet-50 text-violet-700",
-  voice: "bg-amber-50 text-amber-700",
-  phishing: "bg-sky-50 text-sky-700",
-  injection: "bg-teal-50 text-teal-700",
-  other: "bg-neutral-100 text-neutral-600",
-  beginner: "bg-emerald-50 text-emerald-700",
-  intermediate: "bg-indigo-50 text-indigo-700",
-  advanced: "bg-rose-50 text-rose-700",
-  hiring: "bg-cyan-50 text-cyan-700",
+// Tone, not a rainbow. The chip says its own word, so colour is reinforcement
+// and never the only signal.
+const CHIP_TONE: Record<string, "neutral" | "accent" | "highlight" | "danger" | "success"> = {
+  deepfake: "danger",
+  voice: "highlight",
+  phishing: "danger",
+  injection: "accent",
+  other: "neutral",
+  beginner: "success",
+  intermediate: "accent",
+  advanced: "highlight",
+  hiring: "accent",
 };
 
 // What the flip promises, per feed. The card says what is behind it rather
@@ -37,19 +38,36 @@ const BACK_LABEL: Record<string, string> = {
   job: "Back to the role",
 };
 
+// Cards carry a real date as well as a relative one. "3d" tells a reader how
+// fresh it is; the date tells them what they are looking at when they come
+// back to it later.
 function timeAgo(ms: number | undefined): string {
   if (ms === undefined) return "";
   const mins = Math.round((Date.now() - ms) / 60000);
-  if (mins < 60) return `${Math.max(mins, 1)}m`;
+  if (mins < 60) return `${Math.max(mins, 1)}m ago`;
   const hours = Math.round(mins / 60);
-  if (hours < 24) return `${hours}h`;
-  return `${Math.round(hours / 24)}d`;
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.round(hours / 24);
+  return days === 1 ? "yesterday" : `${days}d ago`;
 }
 
-// The badge sits on both faces so the way back is in the same place as the
-// way in. It is a real button, which is what makes the flip keyboard
-// reachable, per PLAN.md section 7.
-function FlipBadge({
+function fullDate(ms: number | undefined): string {
+  if (ms === undefined) return "";
+  return new Date(ms).toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+// The flip control. A labelled word, not a mystery glyph: an icon-only
+// roundel asked the reader to guess, and the label is what makes the card
+// readable to a screen reader without an aria-label doing all the work.
+//
+// It sits at the foot of both faces, so the way back is in the same place as
+// the way in, and it is a real button, which is what makes the flip keyboard
+// reachable.
+function FlipControl({
   flipped,
   kind,
   onFlip,
@@ -58,6 +76,10 @@ function FlipBadge({
   kind: string;
   onFlip: () => void;
 }) {
+  const label = flipped
+    ? (BACK_LABEL[kind] ?? BACK_LABEL.scam)
+    : (FLIP_LABEL[kind] ?? FLIP_LABEL.scam);
+
   return (
     <button
       type="button"
@@ -66,14 +88,15 @@ function FlipBadge({
         onFlip();
       }}
       aria-expanded={flipped}
-      aria-label={
-        flipped
-          ? (BACK_LABEL[kind] ?? BACK_LABEL.scam)
-          : (FLIP_LABEL[kind] ?? FLIP_LABEL.scam)
-      }
-      className="absolute top-3 right-3 z-10 grid h-11 w-11 place-items-center rounded-full bg-white/95 text-lg text-neutral-900 shadow-md ring-1 ring-neutral-900/10 backdrop-blur transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-neutral-900"
+      className="inline-flex min-h-11 items-center gap-2 rounded-control px-3 text-base font-semibold text-teal-deep transition-colors hover:bg-teal/[0.07]"
     >
-      <span aria-hidden>↻</span>
+      <span
+        aria-hidden
+        className={`text-lg leading-none transition-transform ${flipped ? "-scale-x-100" : ""}`}
+      >
+        ⤾
+      </span>
+      {label}
     </button>
   );
 }
@@ -140,10 +163,14 @@ export default function Post({
     return () => observer.disconnect();
   }, [story._id, drill]);
 
+  // Kept in step with --flip-duration in index.css. The rotation is 220ms, so
+  // the midpoint is 110ms and will-change comes off a little after the end.
+  const FLIP_MS = 220;
+
   // will-change only while the rotation is actually running.
   useEffect(() => {
     if (!flipping) return;
-    const timer = setTimeout(() => setFlipping(false), 560);
+    const timer = setTimeout(() => setFlipping(false), FLIP_MS + 40);
     return () => clearTimeout(timer);
   }, [flipping]);
 
@@ -152,12 +179,15 @@ export default function Post({
     setFlipping(true);
     setFlipped((f) => !f);
 
-    // The lesson is much taller than the post, so locking the card to the
-    // taller of the two would leave every card in the feed as tall as its
-    // own lesson. Instead the card is the height of the face being shown,
-    // and the swap happens at the midpoint of the 520ms rotation, while the
-    // card is edge on and the change cannot be seen. Still transform-only.
-    window.setTimeout(() => setShownFace(next), 260);
+    // The lesson is much taller than the card front, so locking the card to
+    // the taller of the two would leave every card in the feed as tall as its
+    // own lesson. Instead the card is the height of the face being shown, and
+    // the swap happens at the midpoint of the rotation, while the card is edge
+    // on and the change cannot be seen. Still transform-only.
+    //
+    // The reader's place on the page is preserved by construction: the card
+    // grows downward from a fixed top edge, and nothing above it moves.
+    window.setTimeout(() => setShownFace(next), FLIP_MS / 2);
   }
 
   const tactic = story.tactic ?? "other";
@@ -172,28 +202,27 @@ export default function Post({
     <article className="post">
       <div
         className={[
-          "post-inner rounded-2xl border border-neutral-200 bg-white shadow-sm",
+          "post-inner rounded-card border border-line bg-white",
           flipped ? "flipped" : "",
           flipping ? "flipping" : "",
         ].join(" ")}
         style={{ height }}
       >
-        {/* The whole front is the control. The badge is the accessible name
-            and the keyboard path; this click target is the convenience. */}
         {/* inert on the face that is turned away. backface-visibility hides a
             face from the eye but not from the keyboard or a screen reader, so
             without this every unflipped card still put its ask box, its
             buttons and its drill options in the tab order. */}
         <div
-          onClick={flip}
-          className="face face-front cursor-pointer"
+          className="face face-front"
           inert={flipped}
           aria-hidden={flipped}
         >
-          <FlipBadge flipped={flipped} kind={kind} onFlip={flip} />
+          {/* The brand motif, and the affordance: the corner you would lift
+              to turn a page over. Decorative, so it is not announced. */}
+          <span className="fold" aria-hidden />
 
           <div ref={frontRef} className="flex flex-col">
-            <div className="h-40 w-full shrink-0 overflow-hidden border-b border-neutral-100 bg-neutral-50">
+            <div className="h-36 w-full shrink-0 overflow-hidden border-b border-line bg-ivory">
               {showArt ? (
                 <TacticArt tactic={tactic} uid={artId} />
               ) : (
@@ -207,80 +236,83 @@ export default function Post({
               )}
             </div>
 
-            <div className="flex flex-1 flex-col gap-4 p-6">
-              <header className="flex items-center gap-2">
+            <div className="flex flex-1 flex-col gap-3 p-5">
+              {/* Source acts as the byline, the way a handle does in a feed,
+                  which keeps attribution part of the design rather than a
+                  footnote. The date is both relative and absolute: one says
+                  how fresh, the other says which. */}
+              <header className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 {story.sourceIcon && (
                   <img
                     src={story.sourceIcon}
                     alt=""
-                    width={20}
-                    height={20}
-                    className="rounded"
+                    width={18}
+                    height={18}
+                    className="rounded-sm"
                   />
                 )}
-                <span className="text-sm font-semibold text-neutral-900">
+                <span className="text-sm font-semibold text-navy">
                   {story.source}
                 </span>
-                <span className="text-sm text-neutral-500">
-                  · {timeAgo(story.publishedAt)}
+                <span className="text-sm text-slate" aria-hidden>
+                  ·
                 </span>
+                <time
+                  dateTime={
+                    story.publishedAt
+                      ? new Date(story.publishedAt).toISOString()
+                      : undefined
+                  }
+                  title={fullDate(story.publishedAt)}
+                  className="text-sm text-slate"
+                >
+                  {timeAgo(story.publishedAt)}
+                </time>
               </header>
 
-              {/* A scam post leads with what happened, so the headline would
-                  only repeat the summary. A course and a job are named things
-                  a reader is deciding between, so those two lead with the
-                  name and the summary explains it. */}
-              {kind === "scam" ? (
-                <p className="text-lg leading-snug font-medium text-neutral-900">
-                  {story.summary}
-                </p>
-              ) : (
-                <div className="flex flex-col gap-1.5">
-                  <p className="text-lg leading-snug font-semibold text-neutral-900">
-                    {story.title}
-                  </p>
-                  <p className="text-base leading-relaxed text-neutral-700">
-                    {story.summary}
-                  </p>
-                </div>
-              )}
+              <h3 className="clamp-2 text-lg leading-snug font-semibold text-navy">
+                {story.title}
+              </h3>
 
-              {/* Only the tactic stays on the front. The red flags belong with
-                the explanation, so they live on the lesson. */}
-              <span
-                className={`self-start rounded-full px-2.5 py-1 text-xs font-medium ${
-                  TACTIC_STYLE[tactic] ?? TACTIC_STYLE.other
-                }`}
-              >
-                {tactic}
-              </span>
+              <p className="clamp-3 text-base leading-relaxed text-ink">
+                {story.summary}
+              </p>
 
-              <footer className="mt-auto flex items-center justify-between pt-1">
-                <span className="text-sm font-semibold text-neutral-900">
-                  ↻ {FLIP_LABEL[kind] ?? FLIP_LABEL.scam}
-                </span>
+              <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-1">
+                <Badge tone={CHIP_TONE[tactic] ?? "neutral"}>{tactic}</Badge>
                 <a
                   href={story.url}
                   target="_blank"
                   rel="noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="text-sm text-neutral-500 hover:text-neutral-900"
+                  className="min-h-11 content-center text-sm font-medium text-slate underline decoration-line underline-offset-4 hover:text-navy"
                 >
-                  ↗ Source
+                  Original source
                 </a>
-              </footer>
+              </div>
+
+              <div className="-mx-1 border-t border-line pt-1">
+                <FlipControl flipped={flipped} kind={kind} onFlip={flip} />
+              </div>
             </div>
           </div>
         </div>
 
-        {/* The back holds inputs and buttons, so only the badge and the
-            explicit link flip it back. */}
+        {/* The back holds inputs and buttons, so only the explicit control
+            flips it back. */}
         <div className="face face-back" inert={!flipped} aria-hidden={!flipped}>
-          <FlipBadge flipped={flipped} kind={kind} onFlip={flip} />
           {/* One flip, three backs. The rotation, the height measuring and
               the reduced-motion handling above are shared; only what is
-              printed on the far face changes. */}
+              printed on the far face changes.
+
+              The way back sits at the top as well as the bottom, because a
+              lesson is long and a reader who wants out should not have to
+              scroll to find the door. Both live inside the measured wrapper,
+              or the card is sized without them and clips. */}
           <div ref={backRef}>
+            <div className="flex items-center justify-between border-b border-line px-4 py-1">
+              <FlipControl flipped={flipped} kind={kind} onFlip={flip} />
+              <span className="pr-1 text-sm text-slate">{story.source}</span>
+            </div>
             {kind === "course" ? (
               <CourseBack back={story.back} url={story.url} onBack={flip} />
             ) : kind === "job" ? (

@@ -7,11 +7,15 @@ const STAGE = [
 ];
 
 const TINT: Record<string, string> = {
-  deepfake: "#7c3aed",
-  voice: "#d97706",
-  phishing: "#0284c7",
-  injection: "#0d9488",
-  other: "#525252",
+  deepfake: "#c94f45",
+  voice: "#e2a12b",
+  phishing: "#c94f45",
+  injection: "#138a8a",
+  other: "#667788",
+  beginner: "#2f7d5b",
+  intermediate: "#138a8a",
+  advanced: "#e2a12b",
+  hiring: "#138a8a",
 };
 
 export default function ScamFlow({
@@ -64,7 +68,7 @@ export default function ScamFlow({
               >
                 {stage.label}
               </p>
-              <p className="mt-0.5 text-base leading-relaxed text-neutral-700">
+              <p className="mt-0.5 text-base leading-relaxed text-ink">
                 {step}
               </p>
             </div>

@@ -51,16 +51,16 @@ export default function Subscribe({
 
   if (state === "done") {
     return (
-      <p className="rounded-2xl border border-neutral-200 bg-white px-5 py-4 text-base text-neutral-700">
+      <p className="rounded-card border border-line bg-white px-5 py-4 text-base text-ink">
         You are on the list. {pitch.done}
       </p>
     );
   }
 
   return (
-    <div className="rounded-2xl border border-neutral-200 bg-white px-5 py-4">
-      <p className="text-base font-medium text-neutral-900">{pitch.title}</p>
-      <p className="mt-0.5 text-base text-neutral-600">{pitch.line}</p>
+    <div className="rounded-card border border-line bg-white px-5 py-4">
+      <p className="text-base font-medium text-navy">{pitch.title}</p>
+      <p className="mt-0.5 text-base text-slate">{pitch.line}</p>
       <div className="mt-3 flex gap-2">
         <input
           type="email"
@@ -70,19 +70,19 @@ export default function Subscribe({
             if (e.key === "Enter") void signUp();
           }}
           placeholder="you@example.com"
-          className="min-w-0 flex-1 rounded-lg border border-neutral-200 px-3 py-2 text-base outline-none focus:border-neutral-400"
+          className="min-w-0 flex-1 rounded-control border border-line px-3 py-2 text-base outline-none focus:border-teal"
         />
         <button
           type="button"
           onClick={() => void signUp()}
           disabled={state === "sending" || !email.includes("@")}
-          className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+          className="rounded-control bg-teal px-4 py-2 text-base font-semibold text-white hover:bg-teal-deep disabled:opacity-40"
         >
           {state === "sending" ? "…" : "Sign up"}
         </button>
       </div>
       {state === "error" && (
-        <p className="mt-2 text-sm text-rose-600">
+        <p className="mt-2 text-sm text-danger">
           That did not go through. Check the address and try again.
         </p>
       )}

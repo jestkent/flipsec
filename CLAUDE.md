@@ -117,10 +117,38 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
   vendor landscape or solutions directory is a catalogue of a market, not
   something a reader can learn from.
 
+## Design system
+
+- Colour lives in `src/index.css`: a raw palette in `:root`, roles beside it
+  (`--page`, `--surface`, `--text-strong`), and Tailwind utilities in `@theme`.
+  The Tailwind names are prefixed (`navy`, `teal`, `ivory`, `line`) because a
+  token named `--color-teal-600` in both `:root` and `@theme` would reference
+  itself and silently generate no CSS at all.
+- Ivory page, white cards, navy headings, teal for anything you can act on,
+  amber only for the flip motif and genuine highlights, coral only for real
+  errors and threats.
+- Status is never colour alone. Every badge carries its own word, the selected
+  tab changes weight as well as rule colour, and the current nav item is
+  underlined.
+- Shared components live in `src/components/ui.tsx`: Button, LinkButton, Badge,
+  Card, Eyebrow, Skeleton, CardSkeleton, EmptyState, ErrorNotice. Reach for one
+  before writing another set of padding and radius classes.
+- Radii are `rounded-card` (12px) and `rounded-control` (8px). Nothing is a
+  pill except a genuine tag. Spacing follows an 8px rhythm.
+- One family, Source Sans 3, loaded in `index.html`. Headings are semibold,
+  never black. Body copy stays around 65-75 characters.
+- The logo lives in `public/brand/`: 128px, a 180px @2x, and a 96px mark. The
+  1254px original was 1.9MB and had no business in a header. Fixed square,
+  `object-contain`, never recoloured or stretched.
+- Every control has a visible keyboard focus ring, set once in `index.css` on
+  `:focus-visible`. Several had none and relied on a browser default a custom
+  background swallowed.
+
 ## UI
 
-- The card is the height of the face being shown, swapped 260ms into the 520ms
-  rotation while it is edge on. Locking to the taller face, as PLAN.md section 7
+- The card is the height of the face being shown, swapped at the midpoint of
+  the 220ms rotation while it is edge on. FLIP_MS in Post.tsx and
+  --flip-duration in index.css have to agree. Locking to the taller face, as PLAN.md section 7
   says, makes every card as tall as its own lesson. Only `transform` animates.
 - Measure a content-sized wrapper inside each face, never the face. A face is
   `position: absolute; inset: 0`, so its box is whatever height we set and a
@@ -142,6 +170,9 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
   the reduced-motion path for every kind; a new feed adds a back component and
   nothing else. `CourseBack` and `JobBack` follow the same rule as `LessonBack`:
   no `h-full`, no `overflow-y-auto`, no `mt-auto` anywhere inside a face.
+- The flip control is a labelled button on both faces, not an icon roundel: a
+  glyph alone asked the reader to guess, and the label is what a screen reader
+  reads. The amber folded corner is the brand motif and the affordance.
 - Only the news kind loads a drill. Edu and jobs carry their whole back in
   `story.back`, so they never open that subscription.
 - Feed order is the exported `TABS` array in `App.tsx`; nothing else holds a

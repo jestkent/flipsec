@@ -1,36 +1,137 @@
 @import "tailwindcss";
 
-@theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+/* ---------------------------------------------------------------------------
+   Design tokens.
+
+   One place for colour, so a change is a change here and not a search across
+   twenty components. The names describe the role, not the shade: `--surface`
+   rather than `--white`, so a card does not have to be told what colour white
+   is. The raw palette sits above, the roles below.
+   --------------------------------------------------------------------------- */
+
+:root {
+  /* Palette */
+  --color-navy-950: #102a43;
+  --color-navy-800: #243b53;
+  --color-teal-600: #138a8a;
+  --color-teal-700: #107272;
+  --color-amber-500: #e2a12b;
+  --color-ivory-50: #f7f5ef;
+  --color-white: #ffffff;
+  --color-ink: #17212b;
+  --color-slate: #667788;
+  --color-border: #d9e2ec;
+  --color-danger: #c94f45;
+  --color-success: #2f7d5b;
+
+  /* Roles */
+  --page: var(--color-ivory-50);
+  --surface: var(--color-white);
+  --text-strong: var(--color-navy-950);
+  --text: var(--color-ink);
+  --text-muted: var(--color-slate);
+  --line: var(--color-border);
+  --accent: var(--color-teal-600);
+  --accent-strong: var(--color-teal-700);
+  --highlight: var(--color-amber-500);
+
+  /* An 8px rhythm. Only 4px breaks it, and only for optical nudges. */
+  --space-1: 0.5rem;
+  --space-2: 1rem;
+  --space-3: 1.5rem;
+  --space-4: 2rem;
+  --space-6: 3rem;
+  --space-8: 4rem;
+
+  /* Restrained radii. Cards are softer than controls; nothing is a pill
+     except a genuine tag. */
+  --radius-card: 12px;
+  --radius-control: 8px;
+
+  /* The flip is the one place motion carries meaning, so it is the one place
+     with a named duration. */
+  --flip-duration: 220ms;
+  --flip-ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+
+  color-scheme: light;
 }
 
-/* The flip. PLAN.md section 7 is the spec for everything in this block. */
+@theme {
+  --font-sans: "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
 
-/* Perspective belongs on the parent, not the rotating element. On the element
-   itself the projection flattens and the effect reads cheap. */
+  /* Tailwind utility names for the palette above. Deliberately prefixed: a
+     token called --color-teal-600 in both :root and @theme would reference
+     itself and generate nothing at all. */
+  --color-navy: #102a43;
+  --color-navy-soft: #243b53;
+  --color-teal: #138a8a;
+  --color-teal-deep: #107272;
+  --color-amber: #e2a12b;
+  --color-ivory: #f7f5ef;
+  --color-ink: #17212b;
+  --color-slate: #667788;
+  --color-line: #d9e2ec;
+  --color-danger: #c94f45;
+  --color-success: #2f7d5b;
+
+  --radius-card: 12px;
+  --radius-control: 8px;
+}
+
+html {
+  background: var(--page);
+}
+
+body {
+  background: var(--page);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ---------------------------------------------------------------------------
+   Focus.
+
+   One visible ring everywhere, on the keyboard only. Several controls had no
+   focus style at all and relied on the browser default, which a custom
+   background can swallow.
+   --------------------------------------------------------------------------- */
+
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ---------------------------------------------------------------------------
+   The flip. PLAN.md section 7 is the origin of this block; the duration is
+   now 220ms rather than 520ms, which is the brief's range and does read as a
+   deliberate turn rather than a flourish.
+   --------------------------------------------------------------------------- */
+
 .post {
-  perspective: 1400px;
+  /* Perspective belongs on the parent. On the rotating element itself the
+     projection flattens and the effect reads cheap. */
+  perspective: 1600px;
 }
 
 .post-inner {
   position: relative;
   transform-style: preserve-3d;
-  /* Leaves fast, settles slow. A symmetric ease reads mechanical. */
-  transition: transform 520ms cubic-bezier(0.2, 0.75, 0.3, 1),
-    box-shadow 520ms cubic-bezier(0.2, 0.75, 0.3, 1);
+  transition:
+    transform var(--flip-duration) var(--flip-ease),
+    box-shadow var(--flip-duration) var(--flip-ease);
 }
 
 .post-inner.flipped {
   transform: rotateY(180deg);
 }
 
-/* will-change costs memory, so it is only on while a post is actually
-   rotating. Feed.tsx adds and removes this class around the transition. */
+/* will-change costs memory, so it is only on while a card is actually
+   rotating. Post.tsx adds and removes this class around the transition. */
 .post-inner.flipping {
   will-change: transform;
-  /* The shadow lifting at the midpoint sells the third dimension more than
-     the rotation does on its own. */
-  box-shadow: 0 22px 50px -12px rgb(15 23 42 / 0.28);
+  box-shadow: 0 12px 28px -10px rgb(16 42 67 / 0.22);
 }
 
 .face {
@@ -39,13 +140,32 @@
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   overflow: hidden;
+  border-radius: var(--radius-card);
 }
 
 .face-back {
   transform: rotateY(180deg);
 }
 
-/* With reduced motion the faces cross-fade instead of rotating. */
+/* The folded corner. A small amber triangle in the top right of every card
+   front, which is the brand motif and also the affordance: it is the corner
+   you would lift to turn a page over. Drawn in CSS so it costs no request and
+   scales with the card. */
+.fold {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 28px;
+  height: 28px;
+  border-top-right-radius: var(--radius-card);
+  background: linear-gradient(
+    225deg,
+    var(--highlight) 0 50%,
+    transparent 50% 100%
+  );
+  pointer-events: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .post-inner,
   .post-inner.flipped {
@@ -54,7 +174,7 @@
   }
 
   .face {
-    transition: opacity 180ms linear;
+    transition: opacity 120ms linear;
   }
 
   .face-back {
@@ -69,4 +189,48 @@
   .post-inner.flipped .face-back {
     opacity: 1;
   }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* A loading placeholder that does not pulse aggressively. */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgb(217 226 236 / 0.45) 25%,
+    rgb(217 226 236 / 0.8) 37%,
+    rgb(217 226 236 / 0.45) 63%
+  );
+  background-size: 400% 100%;
+  animation: skeleton 1.4s ease-in-out infinite;
+}
+
+@keyframes skeleton {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+/* Long source titles and unusual content have to stop somewhere. */
+.clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
