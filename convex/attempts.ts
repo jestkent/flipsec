@@ -99,9 +99,19 @@ export const saveReply = internalMutation({
     // Unmatched legacy messages fail closed rather than receiving a wrong grade.
     const messageIds = [...new Set([args.inReplyTo, ...(args.references ?? []).slice(-20).reverse()].filter((id): id is string => Boolean(id)))];
     let drillId;
+    // The id of OUR drill message, kept so the grade can be sent as a reply to
+    // it and land in the thread the reader is already reading.
+    //
+    // The incoming message's own id would be a shade better to answer, but the
+    // webhook payload did not carry it under the name the docs give, and the
+    // grade silently went out as a new message again. This id needs no payload
+    // field to be present and no guessing: AgentMail returned it to us when we
+    // sent the drill, and the reader's reply just matched against it, which is
+    // the same identifier space the reply endpoint takes in its path.
+    let threadAnchor;
     for (const messageId of messageIds) {
       const sent = await ctx.db.query("sentDrills").withIndex("by_message", (q) => q.eq("messageId", messageId)).unique();
-      if (sent?.subscriberId === subscriber._id) { drillId = sent.drillId; break; }
+      if (sent?.subscriberId === subscriber._id) { drillId = sent.drillId; threadAnchor = sent.messageId; break; }
     }
     if (!drillId || !args.body.trim()) return null;
     const drill = await ctx.db.get(drillId);
@@ -141,9 +151,10 @@ export const saveReply = internalMutation({
       // The reply is the whole point: the daily mail says "I will tell you how
       // you did", and for a long time it did not.
       to: args.from,
-      // Threaded onto the reader's own message, so the grade lands in the
-      // conversation they are already looking at.
-      replyToMessageId: args.messageId,
+      // Threaded, so the grade lands in the conversation the reader is
+      // already looking at. The inbound id when the provider sent one, and
+      // otherwise our own drill message, which is always on file.
+      replyToMessageId: args.messageId ?? threadAnchor,
       answer: args.body,
       prompt: drill.prompt,
       choices: drill.choices,
