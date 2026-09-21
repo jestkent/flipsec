@@ -60,21 +60,54 @@ function fullDate(ms: number | undefined): string {
   });
 }
 
-// The flip control. A labelled word, not a mystery glyph: an icon-only
-// roundel asked the reader to guess, and the label is what makes the card
-// readable to a screen reader without an aria-label doing all the work.
+// Drawn, not typed. This was U+293E, an arrow from Supplemental Arrows-B:
+// Source Sans 3 does not contain it and neither do most UI fonts, so it
+// rendered as an empty box or as nothing at all. An icon in an interface has
+// to be a shape we ship, not a codepoint we hope the font has.
 //
-// It sits at the foot of both faces, so the way back is in the same place as
-// the way in, and it is a real button, which is what makes the flip keyboard
-// reachable.
+// A card with an arrow crossing it: go to the other side. It mirrors when the
+// card is already flipped, so the arrow always points the way it will go.
+function FlipIcon({ flipped }: { flipped: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="18"
+      height="18"
+      aria-hidden
+      focusable="false"
+      className={`shrink-0 transition-transform duration-200 ${
+        flipped ? "-scale-x-100" : ""
+      }`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3" y="5" width="18" height="14" rx="2.5" />
+      <path d="M8.5 12h7M13 9.5l2.5 2.5L13 14.5" />
+    </svg>
+  );
+}
+
+// The flip control. A labelled button, not a mystery roundel: the floating
+// icon-only badge asked the reader to guess, and the label is what a screen
+// reader reads without an aria-label carrying the whole meaning.
+//
+// On the front it is the card's primary action and looks like one, because
+// the flip is the entire point of the product and was previously the least
+// prominent thing on the card. On the back it is quieter, since by then the
+// reader is reading rather than deciding.
 function FlipControl({
   flipped,
   kind,
   onFlip,
+  prominent = false,
 }: {
   flipped: boolean;
   kind: string;
   onFlip: () => void;
+  prominent?: boolean;
 }) {
   const label = flipped
     ? (BACK_LABEL[kind] ?? BACK_LABEL.scam)
@@ -88,14 +121,15 @@ function FlipControl({
         onFlip();
       }}
       aria-expanded={flipped}
-      className="inline-flex min-h-11 items-center gap-2 rounded-control px-3 text-base font-semibold text-teal-deep transition-colors hover:bg-teal/[0.07]"
+      className={[
+        "inline-flex min-h-11 items-center justify-center gap-2 rounded-control",
+        "text-base font-semibold transition-colors",
+        prominent
+          ? "w-full bg-teal px-4 text-white hover:bg-teal-deep"
+          : "px-3 text-teal-deep hover:bg-teal/[0.08]",
+      ].join(" ")}
     >
-      <span
-        aria-hidden
-        className={`text-lg leading-none transition-transform ${flipped ? "-scale-x-100" : ""}`}
-      >
-        ⤾
-      </span>
+      <FlipIcon flipped={flipped} />
       {label}
     </button>
   );
@@ -290,8 +324,13 @@ export default function Post({
                 </a>
               </div>
 
-              <div className="-mx-1 border-t border-line pt-1">
-                <FlipControl flipped={flipped} kind={kind} onFlip={flip} />
+              <div className="border-t border-line pt-3">
+                <FlipControl
+                  flipped={flipped}
+                  kind={kind}
+                  onFlip={flip}
+                  prominent
+                />
               </div>
             </div>
           </div>
