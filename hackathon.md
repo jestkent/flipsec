@@ -13,7 +13,7 @@
 - **Auth:** none
 - **AI models:** gpt-4o-mini
 - **Started:** 2026-09-20T17:35:41Z
-- **Last updated:** 2026-09-21T02:52:18Z
+- **Last updated:** 2026-09-21T02:58:17Z
 
 ## Log
 
@@ -432,3 +432,23 @@ from zero on first paint.
 The badge answers on press with a scale, before the rotation begins, so a
 longer turn never feels like a slow control. Reduced motion keeps a cross-fade
 and none of the rest (`src/index.css`, `src/components/Post.tsx`).
+
+### 2026-09-21 - two controls that were one control twice
+Owner review caught two redundancies, both introduced by the redesign.
+
+The back of a card had a header bar reading "Back to the story" and, at the
+foot of the lesson, a link reading "Back to the story". Same words, same
+action, one above the other. A back now has two exits that are genuinely
+different things: the round badge in the corner, which is the same control in
+the same position as on the front and catches a reader who turned the card by
+accident, and the text link at the end of the reading, for a reader who has
+finished and is already at the bottom. The badge is icon only, so the label
+appears once.
+
+The header had a "Start reading" button next to a "Feeds" link, and both went
+to the same view. A header action has to offer something the navigation does
+not, or it is one control drawn twice and the reader has to work out which is
+real. The button is gone; the primary call to action lives on the home page
+where it belongs. The remaining link is "Read" rather than "Feeds", because it
+says what you would do there and the three feeds have their own tabs once you
+arrive (`src/components/Post.tsx`, `src/components/Header.tsx`).

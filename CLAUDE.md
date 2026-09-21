@@ -189,8 +189,18 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
   the reduced-motion path for every kind; a new feed adds a back component and
   nothing else. `CourseBack` and `JobBack` follow the same rule as `LessonBack`:
   no `h-full`, no `overflow-y-auto`, no `mt-auto` anywhere inside a face.
+- One control, one job, one name. The card back has exactly two exits and they
+  are deliberately different: the round badge in the corner, which is the same
+  control in the same place as the front and is for a reader who turned the
+  card by accident; and the text link at the end of the reading, for a reader
+  who has finished and is already down there. They briefly carried the same
+  words, one under the other, which is not two affordances but one mistake.
+- A header action must offer something the navigation does not. A "Start
+  reading" button sat beside a "Feeds" link and both went to the same view,
+  so the reader had to work out which was real. The primary call to action
+  lives on the home page; the header is navigation only.
 - The flip is a round badge over the artwork, top right, on both faces, plus a
-  quiet labelled line at the foot of the card. A full-width solid button in its
+  quiet labelled line at the foot of the card FRONT only. A full-width solid button in its
   place made every card look like a landing page. The badge has no printed
   label, so its aria-label carries the meaning.
 - Never use a character as an interface icon unless the font has it. The flip

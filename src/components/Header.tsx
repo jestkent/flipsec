@@ -2,8 +2,6 @@
 // views. The feed tabs live below it rather than inside it, so the header
 // never has to reflow on a phone.
 
-import { Button } from "./ui";
-
 export type View = "home" | "feed" | "about";
 
 export default function Header({
@@ -70,18 +68,18 @@ export default function Header({
           />
         </button>
 
+        {/* There was a "Start reading" button here beside a "Feeds" link, and
+            both of them went to the same place. A header action has to offer
+            something the navigation does not, or it is the same control drawn
+            twice and the reader has to work out which one is real. The
+            primary call to action lives on the home page, where it belongs.
+
+            "Read" rather than "Feeds": it says what you would do there, and
+            the three feeds have their own tabs once you arrive. */}
         <nav aria-label="Main" className="ml-auto flex items-center gap-0.5">
-          {link("feed", "Feeds")}
+          {link("feed", "Read")}
           {link("about", "About")}
         </nav>
-
-        <Button
-          size="sm"
-          onClick={() => onNavigate("feed")}
-          className="ml-1 hidden sm:inline-flex"
-        >
-          Start reading
-        </Button>
       </div>
     </header>
   );

@@ -130,20 +130,17 @@ function FlipBadge({
   );
 }
 
-// The quiet line at the foot of the card. Says what is behind the card rather
-// than shouting about it.
+// The quiet line at the foot of the card FRONT. It only ever says what is
+// behind the card, never how to get back: the back's exits are the badge in
+// the corner and the link at the end of the reading.
 function FlipHint({
-  flipped,
   kind,
   onFlip,
 }: {
-  flipped: boolean;
   kind: string;
   onFlip: () => void;
 }) {
-  const label = flipped
-    ? (BACK_LABEL[kind] ?? BACK_LABEL.scam)
-    : (FLIP_LABEL[kind] ?? FLIP_LABEL.scam);
+  const label = FLIP_LABEL[kind] ?? FLIP_LABEL.scam;
 
   return (
     <button
@@ -152,10 +149,10 @@ function FlipHint({
         e.stopPropagation();
         onFlip();
       }}
-      aria-expanded={flipped}
+      aria-expanded={false}
       className="inline-flex min-h-11 items-center gap-2 text-base font-semibold text-navy transition-colors hover:text-sage-deep"
     >
-      <FlipIcon flipped={flipped} />
+      <FlipIcon flipped={false} />
       {label}
     </button>
   );
@@ -366,7 +363,7 @@ export default function Post({
               </Badge>
 
               <footer className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-1">
-                <FlipHint flipped={flipped} kind={kind} onFlip={flip} />
+                <FlipHint kind={kind} onFlip={flip} />
                 <a
                   href={story.url}
                   target="_blank"
@@ -388,14 +385,22 @@ export default function Post({
               the reduced-motion handling above are shared; only what is
               printed on the far face changes.
 
-              The way back sits at the top as well as the bottom, because a
-              lesson is long and a reader who wants out should not have to
-              scroll to find the door. Both live inside the measured wrapper,
-              or the card is sized without them and clips. */}
+              There are two ways back and they are deliberately different
+              things. This badge is the same control in the same corner as the
+              front, for the reader who turned the card by accident. The text
+              link at the foot of each back is for the reader who has finished
+              reading and is already down there.
+
+              They used to be the same word twice, one under the other, which
+              is not two affordances but one mistake. */}
+          <FlipBadge flipped={flipped} kind={kind} onFlip={flip} />
+
           <div ref={backRef}>
-            <div className="flex items-center justify-between border-b border-line px-4 py-1">
-              <FlipHint flipped={flipped} kind={kind} onFlip={flip} />
-              <span className="pr-1 text-sm text-slate">{story.source}</span>
+            {/* pr-16 keeps a long source name out from under the badge. */}
+            <div className="border-b border-line px-5 py-3 pr-16">
+              <span className="text-sm font-semibold text-navy">
+                {story.source}
+              </span>
             </div>
             {kind === "course" ? (
               <CourseBack back={story.back} url={story.url} onBack={flip} />
