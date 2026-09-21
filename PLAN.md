@@ -1387,6 +1387,57 @@ recorded in CLAUDE.md so it is not proposed again.
 
 ---
 
+## 33. Parked: translating the interactive lessons
+
+Measured rather than estimated: **86 strings, 753 words** across the four demo
+components, which is 946 dictionary lines including the ten other languages.
+An evening's work. Size is not why this is parked.
+
+Two of the four need **localising**, not translating, and one of those is a
+safety matter rather than a quality one.
+
+`ConfidentWrongDemo` prints invented phone numbers — `555-0142`, `555-0199`.
+The `555-01xx` range is a North American fiction convention, so an American
+reader knows on sight that it is fake. A Spanish or Japanese reader does not;
+it simply looks like a phone number. And the whole lesson is that **an invented
+phone number is somebody else's phone, or a scammer's**. Translating those
+digits literally builds a lesson that hands a reader a number to dial. The
+same component invents a "Consumer Fairness Act", which reads plausibly inside
+an Anglo legal culture and as nothing at all outside one.
+
+`ScamWritingDemo` has the milder version: a sign-in from Cebu, an appointment
+with Dr Reyes. Exactly right for a Filipino reader and arbitrary for a Russian
+one — and the lesson is "these read perfectly, that is the point", which a
+message that reads as translated quietly undermines.
+
+`VoiceDemo` and `InjectionDemo` are close to locale-neutral and would
+translate cleanly.
+
+### The order when it is picked up
+
+1. **Genericise the locale-bound specifics in English first.** Drop the
+   realistic fake digits, describe the invented law instead of naming one,
+   neutralise the place names. This improves the English lesson on its own
+   merits: a demo showing plausible fake digits is a small hazard even to an
+   English reader.
+2. **Then translate all 86 strings**, which is mechanical once nothing depends
+   on a US phone convention.
+
+Doing step 2 without step 1 is worse than leaving it in English, which is the
+rule section 22 already states in general and this is the sharpest instance of
+it in the app.
+
+### Why it is acceptable to ship without
+
+Every demo face carries `lessonInEnglish` in the reader's own language, so a
+reader is told rather than left to conclude the app is broken. Section 31
+records the related trap: those four are the NEWEST cards in Learn, so they
+sit at the top of the feed and are the first thing anybody flips, which makes
+the gap look larger than it is. Every crawled guide beneath them translates in
+full.
+
+---
+
 ## Appendix: the Convex mental model
 
 Worth re-reading when something does not behave.

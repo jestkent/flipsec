@@ -142,6 +142,20 @@ crawl does not work.
   pronounces it correctly and a browser's translator can offer to translate
   it — delete that attribute in the same change that translates the region.
   See PLAN.md section 29.
+- **The four interactive lessons are English only.** Parked deliberately, not
+  forgotten — measured at **86 strings, 753 words**, so the obstacle is not
+  size. Two of the four need LOCALISING rather than translating, and one of
+  those is a safety matter: `ConfidentWrongDemo` prints invented phone numbers
+  in the North American `555-01xx` convention, which an American reader knows
+  on sight is fictional and a Spanish or Japanese reader does not. The lesson
+  is that an invented number is somebody else's phone, so translating those
+  digits literally would hand a reader a number to dial. Same shape with the
+  invented "Consumer Fairness Act", which reads plausibly in an Anglo legal
+  culture and as nothing elsewhere, and with the Cebu/Dr Reyes details in
+  `ScamWritingDemo`. The order is: genericise the locale-bound specifics in
+  English first — which improves the English lesson on its own merits — then
+  translate. Until then each demo face carries `lessonInEnglish` in the
+  reader's own language, which is honest. PLAN.md section 33.
 - No right-to-left language: the layout uses physical direction classes.
 
 ## Never do these

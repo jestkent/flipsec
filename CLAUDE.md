@@ -258,6 +258,18 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
   else. The reader id is namespaced `email:<address>` rather than the bare
   address, because the bare address is already a `userId` on an attempt and
   one identifier meaning two things is how a budget ends up spanning both.
+- **Ask FlipSec must never recommend bad spelling as a way to spot a scam.**
+  The app's whole premise is that the tell stopped working: the home page says
+  so, and `ScamWritingDemo` is a lesson built to dismantle it. The assistant's
+  prompt did not mention it, so the model fell back on ordinary internet
+  advice and told a reader to "check for poor spelling, grammar, or unusual
+  language" — the app contradicting itself, in the voice of the app. The
+  instructions now state the premise and name the tells that do still hold:
+  unexpected contact, urgency, secrecy, being steered to a supplied link, any
+  demand for money or codes, and a reason why the person cannot check with
+  anybody. **A system prompt has to carry the product's thesis**; a model given
+  only a tone and a topic will answer with the internet's median opinion,
+  which is the thing this app exists to correct.
 - `askAboutStory` answers only about its own post, treats reader input as a
   question and never an instruction, and is capped at 200 chars in, 10 per
   reader an hour, 220 tokens out. `teachLesson` is cached per story in
