@@ -7,6 +7,31 @@ import { reserveSlot } from "./rateLimit";
 // signing up twice reactivates rather than creating a second row.
 const FEEDS = ["scam", "course", "job"];
 
+// What the reader calls each feed. The database keeps the original kind
+// values; these are only for saying out loud what someone signed up for.
+const FEED_NAMES: Record<string, string> = {
+  scam: "AI Sec News",
+  course: "AI Sec Learn",
+  job: "AI Sec Jobs",
+};
+
+export function feedNames(kinds: string[]): string {
+  const named = FEEDS.filter((f) => kinds.includes(f)).map((f) => FEED_NAMES[f]);
+  if (named.length <= 1) return named[0] ?? FEED_NAMES.scam;
+  return `${named.slice(0, -1).join(", ")} and ${named[named.length - 1]}`;
+}
+
+// One address is one subscription, so one confirmation. Signing up from the
+// news tab and then the jobs tab merges both into the same row, and the token
+// is an HMAC of the address alone, so the message already in the inbox
+// confirms whatever set of feeds the reader ends up asking for. Sending a
+// second copy would be three identical emails for one decision, which is mail
+// amplification of exactly the kind double opt-in exists to prevent.
+//
+// Long enough to cover somebody working through the tabs, short enough that a
+// reader who genuinely lost the message can ask again.
+const RESEND_AFTER_MS = 15 * 60 * 1000;
+
 // Whatever the browser sent, reduced to known feeds. A caller can put any
 // string in a public mutation's array, and an unknown kind would sit in the
 // row forever producing an empty section in every email.
@@ -74,13 +99,27 @@ export const subscribe = mutation({
       // Absent pending means this row predates double opt-in, or was already
       // confirmed. Either way it is a real reader and nothing needs resending.
       const stillPending = existing.pending === true;
-      await ctx.db.patch(existing._id, { active: true, kinds: merged });
+      const lastSent = existing.confirmSentAt ?? 0;
+      const resend = stillPending && Date.now() - lastSent > RESEND_AFTER_MS;
 
-      if (stillPending) {
-        await ctx.scheduler.runAfter(0, internal.email.sendConfirmation, { email });
-        return { already: true, confirm: true };
+      await ctx.db.patch(existing._id, {
+        active: true,
+        kinds: merged,
+        // Stamped in the same transaction that decides to send, so two tabs
+        // racing cannot both win the check and both mail.
+        ...(resend ? { confirmSentAt: Date.now() } : {}),
+      });
+
+      if (resend) {
+        await ctx.scheduler.runAfter(0, internal.email.sendConfirmation, {
+          email,
+          kinds: merged,
+        });
       }
-      return { already: true, confirm: false };
+      // Still pending means a confirmation is sitting in their inbox, whether
+      // this call sent it or an earlier one did. Telling them to go and look
+      // is right either way.
+      return { already: true, confirm: stillPending };
     }
 
     await ctx.db.insert("subscribers", {
@@ -91,11 +130,12 @@ export const subscribe = mutation({
       active: true,
       pending: true,
       kinds,
+      confirmSentAt: Date.now(),
     });
 
     // A mutation reaches the network only by scheduling. Scheduling is itself
     // a database write, so a mutation that throws sends nothing.
-    await ctx.scheduler.runAfter(0, internal.email.sendConfirmation, { email });
+    await ctx.scheduler.runAfter(0, internal.email.sendConfirmation, { email, kinds });
     return { already: false, confirm: true };
   },
 });

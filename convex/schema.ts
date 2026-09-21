@@ -139,6 +139,9 @@ export default defineSchema({
     // them. Only a new sign-up sets it to true, and confirming clears it.
     pending: v.optional(v.boolean()),
     confirmedAt: v.optional(v.number()),
+    // When the confirmation was last sent, so signing up from a second tab
+    // does not mail a second copy of a message already sitting in the inbox.
+    confirmSentAt: v.optional(v.number()),
     // Which drill went out last, so an emailed reply can be graded against
     // the right question without the reader quoting anything back.
     lastDrillId: v.optional(v.id("drills")),

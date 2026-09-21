@@ -3,6 +3,7 @@ import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { internalAction } from "./_generated/server";
 import { confirmToken, unsubscribeToken } from "./http";
+import { feedNames } from "./subscribers";
 
 // The AgentMail SDK dynamically imports @x402/fetch, a payments module this
 // app does not use, and that import cannot be bundled by Convex. The REST API
@@ -125,22 +126,29 @@ Don't want these? Unsubscribe: ${unsubscribeUrl}`;
 // Scheduled from the subscribe mutation, so a mutation that throws sends
 // nothing at all.
 export const sendConfirmation = internalAction({
-  args: { email: v.string() },
+  args: { email: v.string(), kinds: v.optional(v.array(v.string())) },
   returns: v.null(),
   handler: async (_ctx, args) => {
     const email = args.email.trim().toLowerCase();
     const token = await confirmToken(email);
     const url = `${SITE}/api/confirm?e=${encodeURIComponent(email)}&t=${token}`;
+    // Names the feeds, so the message says what it is actually asking about
+    // rather than being interchangeable with any other confirmation mail.
+    const wants = feedNames(args.kinds ?? ["scam"]);
 
     try {
       await sendMessage(
         email,
-        "Confirm your FlipSec.ai email",
-        `Someone asked for the FlipSec.ai daily email to be sent to this address.
+        `Confirm your FlipSec.ai email — ${wants}`,
+        `Someone asked for the FlipSec.ai daily email to be sent to this address,
+covering ${wants}.
 
 If that was you, open this link and press the button:
 
 ${url}
+
+One email a day, whichever feeds you picked, in one message rather than one
+per feed. Adding another feed later does not need another confirmation.
 
 If it was not you, ignore this message. Nothing will be sent and the address
 will not be added.
