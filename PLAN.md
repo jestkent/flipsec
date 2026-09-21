@@ -753,6 +753,21 @@ material the gate should, and hopefully would, throw away. Microsoft Learn is
 the partial exception: it carries real AI security modules, but they have to
 be reached by a specific learning path rather than by pointing at the site.
 
+### What the research actually concluded
+
+Checking these properly changed the answer. Good AI security material is not
+published as a blog index. Google SAIF is three long pages with no per-risk
+URLs — `risks/index` returns 404 and the site exposes one distinct risk path.
+The NIST framework has the same shape. The best fit in existence, MITRE
+ATLAS, is a 3.7 KB JavaScript shell. The news sites that permit crawling
+mostly do not cover AI, and the ones that do could not be verified: Scamwatch
+carries AI in its headlines and its licence could not be located across four
+URLs.
+
+So crawling has reached diminishing returns for Learn specifically, and that
+is a conclusion from measurement rather than caution. What Learn needed was
+not another source but lessons this app writes itself, which is section 25.
+
 ### Why none of this shipped before submission
 
 Every source this project has added needed gate tuning *after* its first
@@ -779,6 +794,51 @@ because on a security feed a wrong card is worse than a missing one.
    fooled it if it under-fires. Section 5 has the reasoning; do not soften
    the rule itself.
 5. Only then promote, and check the three feed counts before and after.
+
+---
+
+## 25. Shipped extension: lessons the app writes itself
+
+AI Sec Learn was a feed of links to other people's guides. It now also
+carries lessons written here, and the first one lets a reader run a prompt
+injection and watch an assistant obey an email instead of them.
+
+This came out of asking why the crawl could not be widened. The honest answer
+was that it could not be widened much: the material worth teaching is
+published as frameworks and JavaScript applications rather than as article
+indexes, and section 24 has the measurements. A feed that can only link out is
+limited by what other people have chosen to publish in a shape a crawler can
+read.
+
+An authored card removes every constraint that shaped the rest of the app.
+There is no robots.txt to honour, no crawl-delay, no licence to establish, no
+gate to tune, and none of section 5's copyright rules bind it, because there
+is nothing to attribute. The words are ours. What remains is the harder part:
+nothing checks the card but the person who wrote it.
+
+### Why the assistant in the demo is scripted
+
+Calling a real model would have been more impressive for about a minute and
+worse afterwards. The lesson would depend on the model's mood, it would cost
+a call and share an hourly budget with Ask FlipSec, it would fail offline, and
+a free-text box that sends whatever a reader types to a model is a box that
+can be steered somewhere this app should not go.
+
+The behaviour being demonstrated is real. The demonstration is fixed, the way
+a flight simulator is, and the interface says so rather than letting a reader
+believe they are talking to something live.
+
+### The line on voice and face
+
+The same request asked for voice changer and face changer lessons. Those ship
+as demonstrations or not at all. A reader can experience prompt injection
+because nothing they do leaves the page; a working voice cloner is a tool that
+does, and on an app teaching people to recognise impersonation, shipping
+impersonation tools would be indefensible.
+
+The voice lesson, when it lands, does not need to clone anybody. This app
+already generates speech and already labels it, so the demonstration is
+pressing play and being told how little that cost.
 
 ---
 

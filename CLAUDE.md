@@ -385,10 +385,35 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
 - Every call that reaches a model needs a `catch` and a visible message.
   `LessonBack` had two `try` blocks, zero `catch`, and a failed call silently
   reset the button, which reads as a broken app rather than a busy one.
-- One flip, three backs. `Post.tsx` owns the rotation, the height measuring and
+- **Some Learn cards are written here, not crawled.** `convex/authored.ts`
+  seeds them and they skip the crawler and the gates entirely, which is the
+  point: gates judge material nobody chose, and these were chosen. Section 5's
+  content rules do not bind them either, because there is nothing to
+  attribute — the words are ours. `source` says FlipSec.ai rather than
+  borrowing somebody's name, and `url` points at the authority for the concept
+  so a reader is one tap from the definitive version. Nothing checks these but
+  the person who wrote them.
+- **An interactive lesson's assistant is SCRIPTED, and the interface says so.**
+  Calling a real model would be more impressive for a minute and worse
+  afterwards: the lesson would depend on the model's mood, cost a call, share
+  an hourly budget, fail offline, and a box that sends whatever a reader types
+  to a model is a box that can be steered somewhere this app should not go.
+  The behaviour demonstrated is real; the demonstration is fixed, the way a
+  flight simulator is.
+- **Demonstrate an attack, never ship one.** A reader can experience prompt
+  injection safely because nothing they do leaves the page. Do not build a
+  voice cloner or a face swapper on the same reasoning — on an app that
+  teaches people to recognise impersonation, shipping impersonation tools
+  would be indefensible. Detection challenges and explainers yes, generators
+  no. The voice lesson, when it lands, uses the TTS this app already
+  discloses rather than cloning anybody.
+- One flip, four backs. `Post.tsx` owns the rotation, the height measuring and
   the reduced-motion path for every kind; a new feed adds a back component and
   nothing else. `CourseBack` and `JobBack` follow the same rule as `LessonBack`:
   no `h-full`, no `overflow-y-auto`, no `mt-auto` anywhere inside a face.
+  `InjectionDemo` is the fourth, chosen when a course card's `back` carries a
+  `demo` name. `back` is `v.any()` precisely so that needed no schema change,
+  which also means `demoName()` has to check the shape rather than trust it.
 - One control, one job, one name. The card back has exactly two exits and they
   are deliberately different: the round badge in the corner, which is the same
   control in the same place as the front and is for a reader who turned the

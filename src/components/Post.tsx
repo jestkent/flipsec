@@ -3,6 +3,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState, type RefObject } f
 import { api } from "../../convex/_generated/api";
 import type { Doc } from "../../convex/_generated/dataModel";
 import CourseBack from "./CourseBack";
+import InjectionDemo from "./InjectionDemo";
 import JobBack from "./JobBack";
 import LessonBack from "./LessonBack";
 import TacticArt from "./TacticArt";
@@ -34,6 +35,15 @@ const CHIP_TONE: Record<string, "neutral" | "accent" | "highlight" | "danger" | 
 const FLIP_LABEL = { scam: "flipScam", course: "flipCourse", job: "flipJob" } as const;
 const BACK_LABEL = { scam: "backToStory", course: "backToGuide", job: "backToRole" } as const;
 type LabelKey = (typeof FLIP_LABEL)[keyof typeof FLIP_LABEL] | (typeof BACK_LABEL)[keyof typeof BACK_LABEL];
+
+// An authored lesson card carries a demo name on its back instead of a
+// course guide. back is v.any() precisely so a new kind of back needs no
+// schema change, which also means it has to be checked rather than trusted.
+function demoName(back: unknown): string | null {
+  if (typeof back !== "object" || back === null) return null;
+  const value = (back as { demo?: unknown }).demo;
+  return typeof value === "string" ? value : null;
+}
 
 // Cards carry a real date as well as a relative one. "3d" tells a reader how
 // fresh it is; the date tells them what they are looking at when they come
@@ -536,7 +546,9 @@ export default function Post({
               </span>
               <ReadAloudButton targetRef={backRef} label={t("readLesson")} />
             </div>
-            {kind === "course" ? (
+            {kind === "course" && demoName(displayBack) === "prompt-injection" ? (
+              <InjectionDemo onBack={() => flip(true)} />
+            ) : kind === "course" ? (
               <CourseBack back={displayBack} url={story.url} onBack={() => flip(true)} />
             ) : kind === "job" ? (
               <JobBack back={displayBack} url={story.url} onBack={() => flip(true)} />

@@ -13,7 +13,7 @@
 - **Auth:** none
 - **AI models:** gpt-4o-mini, gpt-4o-mini-tts
 - **Started:** 2026-09-20T17:35:41Z
-- **Last updated:** 2026-09-21T06:55:00Z
+- **Last updated:** 2026-09-21T07:25:00Z
 
 ## Log
 
@@ -716,3 +716,37 @@ remain unverified.
 
 Corrected a claim in the README rather than leaving it: emailed replies are
 graded and the result is stored, but nothing is sent back to the reader.
+
+### 2026-09-21 - a lesson the app writes itself
+
+AI Sec Learn carried links to other people's guides. It now also carries
+lessons written here, and the first is interactive: a reader picks one of three
+emails, presses Summarise, and watches an AI assistant obey an instruction
+buried in the message instead of doing what they asked. A defences toggle shows
+it resisting. Prompt injection, learned by doing it.
+
+This started as a question about widening the crawl, and checking the
+candidates properly changed the answer. Google SAIF has no per-risk pages -
+risks/index returns 404. NIST has the same shape. MITRE ATLAS, the best fit in
+existence for this feed, serves a 3.7 KB JavaScript shell. Scamwatch has AI in
+its headlines and no licence findable across four URLs. FTC and SEC return 403
+on robots.txt itself. Good AI security material is not published as a blog
+index, so a feed that can only link out is limited by what others happen to
+publish in a crawlable shape.
+
+An authored card removes every constraint that shaped the rest of the app: no
+robots.txt, no crawl-delay, no licence, no gate. What remains is that nothing
+checks it but the person who wrote it.
+
+The assistant in the demo is scripted, and the interface says so. A real model
+would depend on its own mood, cost a call, share Ask FlipSec's hourly budget,
+fail offline, and give a reader a free-text box that reaches a model. The
+behaviour is real; the demonstration is fixed, like a flight simulator.
+
+The request also asked for voice changer and face changer lessons. Those ship
+as demonstrations or not at all - a reader can experience prompt injection
+because nothing they do leaves the page, and on an app teaching people to
+recognise impersonation, shipping impersonation tools would be indefensible.
+
+Learn went from 11 cards to 12. News and Jobs unchanged at 6 and 10, and the
+11 crawled guides still render the guide back.

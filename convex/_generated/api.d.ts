@@ -12,6 +12,7 @@ import type * as assistant from "../assistant.js";
 import type * as assistantData from "../assistantData.js";
 import type * as assistantMessages from "../assistantMessages.js";
 import type * as attempts from "../attempts.js";
+import type * as authored from "../authored.js";
 import type * as courses from "../courses.js";
 import type * as crawl from "../crawl.js";
 import type * as crons from "../crons.js";
@@ -40,6 +41,7 @@ declare const fullApi: ApiFromModules<{
   assistantData: typeof assistantData;
   assistantMessages: typeof assistantMessages;
   attempts: typeof attempts;
+  authored: typeof authored;
   courses: typeof courses;
   crawl: typeof crawl;
   crons: typeof crons;
