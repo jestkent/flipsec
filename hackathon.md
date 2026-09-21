@@ -5,6 +5,7 @@
 - **What it does:** Three feeds of AI security - real incidents, free guides, and jobs where AI and security meet - where every card flips to a plain-language explanation built from that exact item, and a daily email carries one card per feed a reader picked.
 - **Live app:** https://hallowed-nightingale-322.convex.site
 - **Repo:** https://github.com/jestkent/flipsec
+- **Demo video:** not recorded yet
 - **Frontend:** Convex static hosting
 - **Convex deployment:** https://hallowed-nightingale-322.convex.cloud
 - **Components:** @convex-dev/static-hosting
@@ -12,7 +13,7 @@
 - **Auth:** none
 - **AI models:** gpt-4o-mini
 - **Started:** 2026-09-20T17:35:41Z
-- **Last updated:** 2026-09-21T01:05:34Z
+- **Last updated:** 2026-09-21T01:32:56Z
 
 ## Log
 
@@ -257,3 +258,49 @@ Updated the README, the in-app About page and the project guide for the three
 renamed feeds and the two new sources, and recorded why a gate that under-fires
 gets labelled examples rather than a softer rule (`README.md`, `CLAUDE.md`,
 `src/components/About.tsx`).
+
+### 2026-09-21 - audit pass
+Full audit of the live app against the judging criteria, then fixed what it
+found. The findings were reproduced against production, not read off the code.
+
+Three security problems, all confirmed by probing the live deployment:
+
+A public query took a user id as a plain argument and returned that user's
+answers. For a reply that arrived by email that id is the reader's own email
+address, so anyone could read the free text a stranger wrote back to us, and an
+address that returned nothing told them who was not subscribed. The front end
+never called it. Deleted.
+
+The hourly cap on the ask box only counted; the row was written after the model
+answered, with a network call in between. Twelve concurrent requests against a
+cap of ten let eleven through and blocked none. Counting and claiming now
+happen in one mutation, and the same fourteen-request test now blocks four and
+allows exactly ten. The tutor lesson, which had no limit at all, shares that
+bucket.
+
+The inbound mail route accepted any POST, so a forged sender naming a real
+subscriber wrote an attempt for them and spent a model call grading it. Both
+public HTTP routes now require a shared secret and fail closed.
+
+Also fixed: every daily email now carries a signed unsubscribe link, and the
+route verifies the signature before acting; the daily send picks a drill the
+reader has not had, where it previously sent the same one every morning
+forever; email validation rejects addresses like "a@b" that a bare "contains an
+@" test allowed; the card face that is turned away is now inert, because
+backface-visibility hid it from the eye but not from the keyboard; every model
+call has a catch and a visible message, where a failure used to reset the
+button silently; and the tab bar wraps.
+
+Content gates gained three rules the feed had disproved. A summary must name
+what the AI did, after an alert whose source said a site was cloned using AI
+produced a summary with no AI in it. Scam excludes lawsuits about a product
+being oversold, after a product-liability case against a named company reached
+the feed tagged as phishing; that card was withdrawn. Edu now also asks whether
+a reader could learn anything from the page, which removed the vendor
+landscapes and solutions directories that were sitting in a learning feed.
+
+Added an MIT licence and a privacy note (`convex/questions.ts`,
+`convex/attempts.ts`, `convex/http.ts`, `convex/email.ts`,
+`convex/subscribers.ts`, `convex/lessons.ts`, `convex/stories.ts`,
+`convex/courses.ts`, `src/components/Post.tsx`,
+`src/components/LessonBack.tsx`, `src/App.tsx`, `LICENSE`).

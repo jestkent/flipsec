@@ -76,7 +76,7 @@ How to write it:
 - 280 words maximum.`;
 
 export const teachLesson = action({
-  args: { storyId: v.id("stories") },
+  args: { storyId: v.id("stories"), userId: v.optional(v.string()) },
   handler: async (ctx, args): Promise<{ body: string }> => {
     // Generated once per story and kept. PLAN.md section 14: never regenerate
     // per view.
@@ -90,6 +90,22 @@ export const teachLesson = action({
       storyId: args.storyId,
     });
     if (story === null) return { body: "That post is not available." };
+
+    // Only a cache miss reaches the model, so this is bounded by the number
+    // of published stories — but it was previously bounded by nothing else,
+    // and a caller could still walk every uncached story at once. It shares
+    // the ask box's hourly bucket, and claims the slot in the same
+    // transaction that counts it.
+    const { questionId } = await ctx.runMutation(internal.questions.reserve, {
+      userId: args.userId ?? "anonymous",
+      storyId: args.storyId,
+      question: "[lesson]",
+    });
+    if (questionId === null) {
+      return {
+        body: "You have opened a lot of lessons this hour. Try again later.",
+      };
+    }
 
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) throw new Error("OPENAI_API_KEY is not set in Convex env vars");
@@ -114,6 +130,10 @@ export const teachLesson = action({
     await ctx.runMutation(internal.lessons.save, {
       storyId: args.storyId,
       body,
+    });
+    await ctx.runMutation(internal.questions.record, {
+      questionId,
+      answer: "[lesson generated]",
     });
 
     return { body };

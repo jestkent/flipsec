@@ -43,15 +43,23 @@ export default function LessonBack({
   const [lesson, setLesson] = useState<string | null>(null);
   const [teaching, setTeaching] = useState(false);
 
+  const [failed, setFailed] = useState<string | null>(null);
+
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState<string | null>(null);
   const [asking, setAsking] = useState(false);
 
+  // Every one of these calls a model over the network. Without a catch a
+  // slow or failed call just reset the button and said nothing, which reads
+  // as a broken app rather than a busy one.
   async function teachMe() {
     if (teaching || lesson !== null) return;
     setTeaching(true);
+    setFailed(null);
     try {
-      setLesson((await teach({ storyId })).body);
+      setLesson((await teach({ storyId, userId })).body);
+    } catch {
+      setFailed("That did not come through. Try again in a moment.");
     } finally {
       setTeaching(false);
     }
@@ -61,9 +69,12 @@ export default function LessonBack({
     if (question.trim().length < 3 || asking) return;
     setAsking(true);
     setAnswer(null);
+    setFailed(null);
     try {
       setAnswer((await ask({ userId, storyId, question })).answer);
       setQuestion("");
+    } catch {
+      setFailed("That did not come through. Try again in a moment.");
     } finally {
       setAsking(false);
     }
@@ -72,7 +83,13 @@ export default function LessonBack({
   async function choose(index: number) {
     if (result !== null) return;
     setPicked(index);
-    setResult(await submit({ userId, drillId: drill!._id, choice: index }));
+    setFailed(null);
+    try {
+      setResult(await submit({ userId, drillId: drill!._id, choice: index }));
+    } catch {
+      setPicked(null);
+      setFailed("That answer did not save. Try again in a moment.");
+    }
   }
 
   if (drill === undefined) {
@@ -103,6 +120,17 @@ export default function LessonBack({
       <p className="text-xs font-semibold tracking-widest text-neutral-500 uppercase">
         How this works
       </p>
+
+      {/* One place for any of the three network failures. role="status" so a
+          screen reader hears it without the focus moving. */}
+      {failed !== null && (
+        <p
+          role="status"
+          className="rounded-lg bg-rose-50 px-3 py-2 text-base text-rose-700"
+        >
+          {failed}
+        </p>
+      )}
 
       <ScamFlow steps={drill.steps} tactic={tactic} />
 

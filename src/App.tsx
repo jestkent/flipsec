@@ -46,11 +46,13 @@ export default function App() {
         </button>
       </header>
 
-      {/* Hidden on the About page, which is not one of the feeds. */}
+      {/* Hidden on the About page, which is not one of the feeds. Wraps
+          because three pills at these labels measure wider than a 360px
+          phone, and without flex-wrap the row overflowed the viewport. */}
       {view === "feed" && (
         <nav
           aria-label="Feeds"
-          className="mx-auto mb-6 flex max-w-xl gap-2 px-4"
+          className="mx-auto mb-6 flex max-w-xl flex-wrap gap-2 px-4"
         >
           {TABS.map((tab) => {
             const active = tab.kind === kind;

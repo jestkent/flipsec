@@ -72,6 +72,16 @@ building it. A job only counts when the AI is what is being protected or the AI
 is what does the protecting, so a cloud security role at an AI company does not
 qualify. Most candidates fail a gate, so the feeds stay small on purpose.
 
+## Privacy and email
+
+FlipSec stores a subscriber email address, the questions readers ask a post,
+and the answers they give. Nothing else, and there are no accounts. A reader on
+the web is a random id kept in their own browser.
+
+Every daily email carries a working unsubscribe link, signed so that only the
+addressee's own link works. Both public HTTP routes require a shared secret and
+fail closed without one.
+
 ## Local setup
 
 ```bash
@@ -92,4 +102,10 @@ npm install @mendable/firecrawl-js openai
 npx convex env set OPENAI_API_KEY sk-...
 npx convex env set FIRECRAWL_API_KEY fc-...
 npx convex env set AGENTMAIL_API_KEY ...
+npx convex env set WEBHOOK_SECRET "$(openssl rand -hex 24)"
 ```
+
+## Licence
+
+MIT, see [LICENSE](LICENSE). That covers the code. Content shown in the app is
+summarised from public sources and linked back, never redistributed.

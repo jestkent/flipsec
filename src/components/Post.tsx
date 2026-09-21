@@ -180,7 +180,16 @@ export default function Post({
       >
         {/* The whole front is the control. The badge is the accessible name
             and the keyboard path; this click target is the convenience. */}
-        <div onClick={flip} className="face face-front cursor-pointer">
+        {/* inert on the face that is turned away. backface-visibility hides a
+            face from the eye but not from the keyboard or a screen reader, so
+            without this every unflipped card still put its ask box, its
+            buttons and its drill options in the tab order. */}
+        <div
+          onClick={flip}
+          className="face face-front cursor-pointer"
+          inert={flipped}
+          aria-hidden={flipped}
+        >
           <FlipBadge flipped={flipped} kind={kind} onFlip={flip} />
 
           <div ref={frontRef} className="flex flex-col">
@@ -266,7 +275,7 @@ export default function Post({
 
         {/* The back holds inputs and buttons, so only the badge and the
             explicit link flip it back. */}
-        <div className="face face-back">
+        <div className="face face-back" inert={!flipped} aria-hidden={!flipped}>
           <FlipBadge flipped={flipped} kind={kind} onFlip={flip} />
           {/* One flip, three backs. The rotation, the height measuring and
               the reduced-motion handling above are shared; only what is

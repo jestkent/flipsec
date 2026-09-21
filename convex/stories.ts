@@ -104,7 +104,7 @@ const PROCESS_SCHEMA = {
     isScam: {
       type: "boolean",
       description:
-        "True if this is a trick aimed at a person that a reader could learn to recognise. False for accidents, bias, bad decisions by a system, or misuse by an insider.",
+        "True only if someone was deliberately tricked by another person into handing over money, information, access or trust, AND a reader could learn to see that trick coming. False for accidents, bias, bad decisions by a system, misuse by an insider, and — this one got through before — a lawsuit or complaint that a product was advertised as better than it is. A company overstating what its AI can do is not a scam a reader can spot.",
     },
     unsafeTopic: {
       type: "string",
@@ -119,7 +119,8 @@ const PROCESS_SCHEMA = {
     },
     summary: {
       type: "string",
-      description: "A summary of the scam in 60 words or fewer.",
+      description:
+        "A summary of the scam in 60 words or fewer. It MUST say what the AI actually did, because that is the whole reason this story is in an AI security feed. If the source says a website was cloned using AI, the summary says so.",
     },
     redFlags: {
       type: "array",
@@ -145,12 +146,14 @@ Rules you must follow:
 - Write at a 7th grade reading level. Short sentences. Plain verbs. Sentence case.
 - If a 7th grader would not use a word, do not use it. Never write "revictimize", "personally identifiable information", "threat actor", "malicious", "mitigation" or "credentials".
 - Say what happened and how the trick works. Do not give advice or tell the reader what to do.
-- Red flags are the signs that give the scam away, not instructions. Two to four of them, four words maximum each, lowercase.
+- The summary must name what the AI did. This is an AI security feed, and a summary that never mentions the AI reads as though the filter is broken. If the source says the fake site was built with AI, say that.
+- Red flags are the signs that give the scam away, not instructions. Two to four of them, four words maximum each, always lowercase — including "ai" and any brand name.
 - Set aiRelated true only when the story says AI was actually used. A deepfake video, a cloned voice, a message or website a model produced, a chatbot. If the story never shows AI doing anything, set it false, no matter how modern or serious the scam is. Ordinary phishing with no AI in it is false.
 - unsafeTopic asks you to NAME what is unfit for a middle school screen, not to judge how serious the story is. If you cannot name one of the four, the answer is none.
 - Answer none for: fraud of any size, scams, impersonation, fake police or fake FBI agents, stolen money however large, hacked accounts, phishing, fake websites, deepfaked public figures, cloned voices, arrests, court cases, and anything involving crime in general. These are the normal subject matter of this app and they are all fine.
 - Answer sexual for sexual content or nude or intimate images of anyone. Answer childAbuse for child sexual abuse material. Answer selfHarm for suicide or self harm. Answer violence for violence, threats of violence, bomb threats, swatting, weapons, terrorism, or a person being killed or badly hurt.
 - Set isScam true only if someone is tricked into handing over money, information, access or trust, and a reader could learn to see that trick coming.
+- Set isScam FALSE for lawsuits, consumer complaints and regulatory action about a product being oversold. Those are disputes, not tricks, and there is nothing for a reader to spot.
 - Set it false for a system making a mistake, unfair treatment by software, a staff member misusing access, a company behaving badly, harassment, hoaxes or threats aimed at a school or an organisation, and anything where there is no trick for the reader to spot.
 - Set everydayPerson true only if this is a scam a 12 year old or their parent could actually meet, on their own phone, their own email, or their own social media, in their own life.
 - Set it false if telling the story needs any of these words: token, credential, kit, tool, exploit, server, network, endpoint, admin, enterprise, infrastructure, or the name of a piece of hacking software. Those stories are written for IT staff, and FlipSec is not for IT staff.

@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { internalAction } from "./_generated/server";
+import { unsubscribeToken } from "./http";
 
 // The AgentMail SDK dynamically imports @x402/fetch, a payments module this
 // app does not use, and that import cannot be bundled by Convex. The REST API
@@ -99,20 +100,37 @@ Listed on ${card.source}:
 ${card.url}`;
 }
 
+const SITE = "https://hallowed-nightingale-322.convex.site";
+
 // One email a day per reader, carrying a section per feed they asked for.
 // Two feeds do not mean two emails.
-function dailyEmail(sections: string[]): string {
+//
+// The unsubscribe line is not optional decoration. Commercial mail needs a
+// working way out, and for a while the only one was a CLI call nobody but the
+// author could make.
+function dailyEmail(sections: string[], unsubscribeUrl: string): string {
   return `${sections.join("\n\n———\n\n")}
 
 — FlipSec
-https://hallowed-nightingale-322.convex.site`;
+${SITE}
+
+Don't want these? Unsubscribe: ${unsubscribeUrl}`;
 }
 
 export const sendDailyDrill = internalAction({
   args: {},
   handler: async (ctx): Promise<{ sent: number; failed: number }> => {
-    // Fetched once for everybody, not once per reader.
-    const drill = await ctx.runQuery(internal.subscribers.pickTodaysDrill, {});
+    // Fetched once for everybody, not once per reader. A list rather than one
+    // drill, so each reader can be given something they have not had yet.
+    const candidates: Array<{
+      drillId: Id<"drills">;
+      storyId: Id<"stories">;
+      prompt: string;
+      choices: string[];
+      source: string;
+      url: string;
+    }> = await ctx.runQuery(internal.subscribers.listDrillCandidates, {});
+    const drill = candidates[0] ?? null;
     const course: Card | null = await ctx.runQuery(
       internal.subscribers.pickTodaysCard,
       { kind: "course" },
@@ -131,17 +149,23 @@ export const sendDailyDrill = internalAction({
       subscriberId: Id<"subscribers">;
       email: string;
       kinds: string[];
+      lastDrillId: Id<"drills"> | null;
     }> = await ctx.runQuery(internal.subscribers.listActive, {});
 
     let sent = 0;
     let failed = 0;
 
     for (const subscriber of subscribers) {
+      // The newest drill this reader did not already get. Falls back to the
+      // newest when there is only one, which is better than sending nothing.
+      const mine =
+        candidates.find((c) => c.drillId !== subscriber.lastDrillId) ?? drill;
+
       // Sections in feed order, and only the feeds this reader asked for.
       const wants = subscriber.kinds;
       const sections: string[] = [];
-      if (wants.includes("scam") && drill !== null) {
-        sections.push(drillSection(drill));
+      if (wants.includes("scam") && mine !== null) {
+        sections.push(drillSection(mine));
       }
       if (wants.includes("course") && course !== null) {
         sections.push(courseSection(course));
@@ -155,21 +179,30 @@ export const sendDailyDrill = internalAction({
       // The drill is the only part anyone can reply to, so it sets the
       // subject when it is there.
       const subject =
-        wants.includes("scam") && drill !== null
+        wants.includes("scam") && mine !== null
           ? "Spot the scam — today's drill"
           : "Today from FlipSec";
 
       try {
-        await sendMessage(subscriber.email, subject, dailyEmail(sections));
+        const token = await unsubscribeToken(subscriber.email);
+        const unsubscribeUrl = `${SITE}/api/unsubscribe?e=${encodeURIComponent(
+          subscriber.email,
+        )}&t=${token}`;
+
+        await sendMessage(
+          subscriber.email,
+          subject,
+          dailyEmail(sections, unsubscribeUrl),
+        );
 
         // Only the scam drill is gradeable, so only that records a target.
         // A reply from a courses-only reader finds no drill and saveReply
         // logs and drops it, which is the intended behaviour.
-        if (wants.includes("scam") && drill !== null) {
+        if (wants.includes("scam") && mine !== null) {
           await ctx.runMutation(internal.subscribers.markSent, {
             subscriberId: subscriber.subscriberId,
-            drillId: drill.drillId,
-            storyId: drill.storyId,
+            drillId: mine.drillId,
+            storyId: mine.storyId,
           });
         }
         sent++;
@@ -206,10 +239,14 @@ export const sendTestDrill = internalAction({
       { email },
     );
 
+    const token = await unsubscribeToken(email);
     await sendMessage(
       email,
       "Spot the scam — today's drill",
-      dailyEmail([drillSection(drill)]),
+      dailyEmail(
+        [drillSection(drill)],
+        `${SITE}/api/unsubscribe?e=${encodeURIComponent(email)}&t=${token}`,
+      ),
     );
 
     await ctx.runMutation(internal.subscribers.markSent, {

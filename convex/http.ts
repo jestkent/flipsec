@@ -4,6 +4,41 @@ import { httpAction } from "./_generated/server";
 
 const http = httpRouter();
 
+// Both routes below are open to the internet, so both carry a shared secret.
+//
+// Timing-safe compare. Cheap, and it costs nothing to not leak the secret one
+// character at a time.
+function secretsMatch(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+// The unsubscribe link has to be guessable by nobody but derivable by us, so
+// it is an HMAC of the address rather than a stored token.
+async function unsubscribeToken(email: string): Promise<string> {
+  const secret = process.env.WEBHOOK_SECRET ?? "";
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    new TextEncoder().encode(email.trim().toLowerCase()),
+  );
+  return Array.from(new Uint8Array(signature))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("")
+    .slice(0, 32);
+}
+
+export { unsubscribeToken };
+
 // AgentMail posts here when a reader replies to the daily drill.
 //
 // Static hosting owns the root, so this sits under /api. The full URL to
@@ -16,6 +51,28 @@ http.route({
   path: "/agentmail-inbound",
   method: "POST",
   handler: httpAction(async (ctx, request) => {
+    // Anyone could POST here. With no check, a forged "from" naming a real
+    // subscriber wrote an attempt for them and spent an OpenAI call grading
+    // it — free grade spoofing and a free way to run up the bill. The secret
+    // rides in a query string or a header, whichever AgentMail can send.
+    //
+    // Fails closed: if WEBHOOK_SECRET is not set, nothing is accepted.
+    const expected = process.env.WEBHOOK_SECRET;
+    if (!expected) {
+      console.error("WEBHOOK_SECRET is not set; refusing inbound mail");
+      return new Response("not configured", { status: 503 });
+    }
+
+    const supplied =
+      new URL(request.url).searchParams.get("k") ??
+      request.headers.get("x-flipsec-secret") ??
+      "";
+
+    if (!secretsMatch(supplied, expected)) {
+      console.warn("inbound webhook rejected: bad or missing secret");
+      return new Response("unauthorized", { status: 401 });
+    }
+
     let event: {
       event_type?: string;
       message?: {
@@ -51,6 +108,49 @@ http.route({
     });
 
     return new Response("ok", { status: 200 });
+  }),
+});
+
+// Every commercial email needs a working way out, and the only one that
+// existed was a CLI call only the author could make. This is a GET because
+// mail clients and scanners follow links, so it confirms rather than acting
+// blind — except that a scanner following it should still not silently
+// unsubscribe a real reader, which is why the address has to arrive with a
+// matching signature.
+http.route({
+  path: "/unsubscribe",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    const url = new URL(request.url);
+    const email = (url.searchParams.get("e") ?? "").trim().toLowerCase();
+    const token = url.searchParams.get("t") ?? "";
+
+    const page = (title: string, line: string) =>
+      new Response(
+        `<!doctype html><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${title}</title>
+<body style="margin:0;font:16px/1.6 system-ui,sans-serif;background:#fafafa;color:#171717">
+<div style="max-width:32rem;margin:4rem auto;padding:0 1.25rem">
+<h1 style="font-size:1.5rem;margin:0 0 .5rem">${title}</h1>
+<p style="color:#525252;margin:0 0 1.5rem">${line}</p>
+<a href="/" style="color:#171717">← Back to FlipSec</a>
+</div></body>`,
+        { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } },
+      );
+
+    if (!email || !token) return page("That link is incomplete", "Nothing was changed.");
+
+    const expected = await unsubscribeToken(email);
+    if (!secretsMatch(token, expected)) {
+      return page("That link is not valid", "Nothing was changed.");
+    }
+
+    await ctx.runMutation(internal.subscribers.deactivate, { email });
+    return page(
+      "You are unsubscribed",
+      "No more daily mail from FlipSec. You can read the feed any time without signing up.",
+    );
   }),
 });
 

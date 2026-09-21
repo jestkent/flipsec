@@ -5,7 +5,6 @@ import {
   internalAction,
   internalMutation,
   mutation,
-  query,
 } from "./_generated/server";
 
 const MODEL = "gpt-4o-mini";
@@ -59,23 +58,19 @@ export const submitAnswer = mutation({
   },
 });
 
-// Lets a returning reader see posts they have already answered, without
-// replaying the whole feed through the server.
-export const listForUser = query({
-  args: { userId: v.string() },
-  handler: async (ctx, args) => {
-    const attempts = await ctx.db
-      .query("attempts")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
-      .take(200);
-
-    return attempts.map((a) => ({
-      drillId: a.drillId,
-      answer: a.answer,
-      correct: a.correct,
-    }));
-  },
-});
+// There was a public listForUser query here. It is gone, and nothing should
+// replace it in that shape.
+//
+// It took a userId as a plain argument and returned that user's answers. For
+// a web reader the userId is a random browser id, which is harmless. For an
+// emailed reply it is the reader's EMAIL ADDRESS, because saveReply below
+// falls back to `args.from` when a subscriber has no browser id. So anyone
+// who knew or guessed an address could read the free text that person wrote
+// back to us in private mail, and an unknown address returning [] told them
+// whether that address was subscribed at all.
+//
+// The front end never called it. If a "posts you have answered" feature is
+// wanted later it needs a real session, not a caller-supplied identifier.
 
 // An emailed reply is free text, not a choice index, so it needs the model to
 // judge it. The reply is matched to a drill through the subscriber's last

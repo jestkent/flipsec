@@ -46,10 +46,25 @@ export const getForAsking = internalQuery({
   },
 });
 
-// Counts this reader's last hour through the by_user_time index and refuses
-// past the cap. Called before the model, so a blocked reader costs nothing.
-export const checkRate = internalMutation({
-  args: { userId: v.string() },
+// Counts this reader's last hour through the by_user_time index and, when
+// there is room, WRITES THE ROW IMMEDIATELY to claim the slot.
+//
+// This used to only count, and the row was written after the model answered.
+// Between those two steps sat a two second network call, so concurrent
+// requests all counted the same empty hour and all passed. Twelve parallel
+// requests against a cap of ten let eleven through and blocked none, which
+// made both caps decorative and left a public endpoint able to spend money
+// without limit. A mutation is a transaction, so counting and claiming in one
+// is the whole fix: the answer is patched in afterwards.
+//
+// A reservation that never gets an answer still counts. That is deliberate.
+// It cost a model call either way.
+export const reserve = internalMutation({
+  args: {
+    userId: v.string(),
+    storyId: v.id("stories"),
+    question: v.string(),
+  },
   handler: async (ctx, args) => {
     const since = Date.now() - 60 * 60 * 1000;
 
@@ -60,26 +75,35 @@ export const checkRate = internalMutation({
       )
       .take(MAX_PER_HOUR + 1);
 
-    if (mine.length >= MAX_PER_HOUR) return { allowed: false };
+    if (mine.length >= MAX_PER_HOUR) return { questionId: null };
 
     const everyone = await ctx.db
       .query("questions")
       .withIndex("by_time", (q) => q.gt("createdAt", since))
       .take(MAX_PER_HOUR_GLOBAL + 1);
 
-    return { allowed: everyone.length < MAX_PER_HOUR_GLOBAL };
+    if (everyone.length >= MAX_PER_HOUR_GLOBAL) return { questionId: null };
+
+    const questionId = await ctx.db.insert("questions", {
+      userId: args.userId,
+      storyId: args.storyId,
+      question: args.question,
+      answer: "",
+      createdAt: Date.now(),
+    });
+
+    return { questionId };
   },
 });
 
+// Fills in the answer on a row reserve() already created.
 export const record = internalMutation({
   args: {
-    userId: v.string(),
-    storyId: v.id("stories"),
-    question: v.string(),
+    questionId: v.id("questions"),
     answer: v.string(),
   },
   handler: async (ctx, args) => {
-    await ctx.db.insert("questions", { ...args, createdAt: Date.now() });
+    await ctx.db.patch(args.questionId, { answer: args.answer });
   },
 });
 
@@ -115,10 +139,13 @@ export const askAboutStory = action({
       return { answer: "Ask a question about this post and I will answer it." };
     }
 
-    const { allowed } = await ctx.runMutation(internal.questions.checkRate, {
+    // Claims the slot before any money is spent, and in one transaction.
+    const { questionId } = await ctx.runMutation(internal.questions.reserve, {
       userId: args.userId,
+      storyId: args.storyId,
+      question,
     });
-    if (!allowed) {
+    if (questionId === null) {
       return {
         answer: "You have asked a lot of questions this hour. Try again later.",
       };
@@ -168,12 +195,7 @@ export const askAboutStory = action({
       completion.choices[0]?.message?.content?.trim() ??
       "I could not answer that one. Try asking it a different way.";
 
-    await ctx.runMutation(internal.questions.record, {
-      userId: args.userId,
-      storyId: args.storyId,
-      question,
-      answer,
-    });
+    await ctx.runMutation(internal.questions.record, { questionId, answer });
 
     return { answer };
   },

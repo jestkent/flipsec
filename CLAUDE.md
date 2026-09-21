@@ -34,6 +34,20 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
 - AI, crawl and email functions are `internalAction`. The only public writes are
   `submitAnswer`, `askAboutStory`, `teachLesson`, `subscribe`. Never make
   `sendTestDrill` public: it would mail any address a caller named.
+- **A public function must never take an identifier that names someone else.**
+  `attempts.listForUser` was public and took a `userId`. For an emailed reply
+  that id is the reader's email address, so anyone could read the free text a
+  stranger wrote back to us, and an unknown address returning `[]` confirmed
+  who was subscribed. It was deleted. Anything per-person needs a real session,
+  not a caller-supplied key.
+- **Rate limits must claim the slot in the same transaction that counts it.**
+  `questions.reserve` inserts the row before the model is called. It used to
+  only count, with the OpenAI call sitting between counting and writing, so
+  twelve concurrent requests against a cap of ten all passed. Check-then-act is
+  not a limit on a public endpoint.
+- Both public HTTP routes carry `WEBHOOK_SECRET` and fail closed. The inbound
+  mail route was unauthenticated, so a forged `from` could write an attempt for
+  a real subscriber and spend an OpenAI call grading it.
 - `userId` comes from the browser and can be regenerated, so per-reader caps are
   a courtesy. Anything spending money also needs a deployment-wide cap
   (`questions.by_time`).
@@ -83,7 +97,17 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
 - `askAboutStory` answers only about its own post, treats reader input as a
   question and never an instruction, and is capped at 200 chars in, 10 per
   reader an hour, 220 tokens out. `teachLesson` is cached per story in
-  `lessons`; never regenerate per view.
+  `lessons`, never regenerated per view, and shares the same hourly bucket —
+  it had no limit of any kind before.
+- A summary must name what the AI did. An FTC story whose source said the fake
+  site was cloned "using AI" produced a summary with no AI in it, which on an
+  AI security feed reads as a broken filter.
+- `isScam` excludes lawsuits and consumer complaints about a product being
+  oversold. A product-liability case against a named company reached the feed
+  tagged `phishing`; there was no trick and nobody was tricked.
+- Edu gates on `isLearningMaterial` as well as `isFree` and `isAISecurity`. A
+  vendor landscape or solutions directory is a catalogue of a market, not
+  something a reader can learn from.
 
 ## UI
 
@@ -99,6 +123,13 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
 - Wrap every `localStorage` call in try/catch. An unguarded throw in a private
   window renders the feed blank.
 - DOM ids inside a repeated card need `useId`, or two posts of one tactic clash.
+- The face that is turned away gets `inert` and `aria-hidden`.
+  `backface-visibility` hides a face from the eye but not from the keyboard, so
+  every unflipped card was putting its ask box, buttons and drill options in
+  the tab order.
+- Every call that reaches a model needs a `catch` and a visible message.
+  `LessonBack` had two `try` blocks, zero `catch`, and a failed call silently
+  reset the button, which reads as a broken app rather than a busy one.
 - One flip, three backs. `Post.tsx` owns the rotation, the height measuring and
   the reduced-motion path for every kind; a new feed adds a back component and
   nothing else. `CourseBack` and `JobBack` follow the same rule as `LessonBack`:
