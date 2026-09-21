@@ -49,3 +49,22 @@ export const reserveChat = internalMutation({
   handler: async (ctx, args) =>
     reserveSlot(ctx, "chat", args.userId, args.hasImage ? "image" : "chat"),
 });
+
+// The Agent thread behind a reader's EMAIL conversation, stored on their
+// subscriber row rather than in `assistantThreads`. That table backs a public
+// ownership check keyed by a caller-supplied id; an email thread registered
+// there would sit behind somebody's address. See the schema comment.
+export const rememberEmailThread = internalMutation({
+  args: { subscriberId: v.id("subscribers"), threadId: v.string() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const row = await ctx.db.get(args.subscriberId);
+    // Never overwrite a thread that already exists: two replies arriving at
+    // once would otherwise leave the reader talking to a conversation that
+    // has forgotten the last thing they said.
+    if (row && !row.assistantThreadId) {
+      await ctx.db.patch(args.subscriberId, { assistantThreadId: args.threadId });
+    }
+    return null;
+  },
+});

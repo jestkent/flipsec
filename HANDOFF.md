@@ -76,6 +76,28 @@ move without anybody touching the code. That is normal.
   licence already checked.
 - **hackathon.md** — the build log, newest entry last.
 
+## The email loop, in one place
+
+Send, receive, verify, grade, reply - and now answer. A reply to the daily
+drill is graded if it is this morning's answer and sent to Ask FlipSec if it
+is anything else, and either way the response threads back into the reader's
+own conversation.
+
+Testing it has three traps, all of which cost an evening once:
+
+- **`pickTodaysDrill` is deterministic**, so every test drill sent on one day
+  carries the same `drillId`. One-graded-answer-per-reader-per-drill then
+  drops a second reply from the same address, silently and correctly. Use a
+  different mailbox, or `npx convex run subscribers:forget "{email:'...'}"
+  --prod`, which deletes the subscriber AND their attempts.
+- **A Gmail `+alias` cannot complete the loop.** Mail to
+  `you+test@gmail.com` arrives, but Gmail replies from the bare address, so
+  the ownership check in `saveReply` correctly refuses it. Use a genuinely
+  separate mailbox.
+- **Replying to a drill sent before a reset** fails, because its `sentDrills`
+  row points at a subscriber id that no longer exists. Always reply to the
+  newest drill.
+
 ## Still open, on purpose
 
 - **Security headers.** No CSP, HSTS or frame protection. Cannot be set from

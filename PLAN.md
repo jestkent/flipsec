@@ -1075,6 +1075,75 @@ keeps a 16px gutter at any width. AUDIT.md item 12.
 
 ---
 
+## 30. Shipped extension: the inbox is the second front door
+
+Every daily drill has ended with "just hit reply and tell me which one, in
+your own words". A reader who replied with an answer got a grade. A reader who
+replied with a *question* got nothing at all, and so did a reader who wrote
+back to the grade itself. The invitation was real and the door was half open.
+
+Now a reply that is not a fresh drill answer goes to Ask FlipSec, the same
+assistant and the same instructions the website uses, and the answer is
+threaded back into the conversation the reader is already in. Nothing about
+the product changed; the moment-of-need half of it simply stopped requiring
+the reader to open a browser.
+
+That is worth more than convenience. The people these scams take the most from
+are older, and are far likelier to be in their mail than on a site they visited
+once. Mail is where the suspicious message already is.
+
+### The grade had to thread before any of this made sense
+
+Three separate sessions reported the email loop broken. Each time it had
+worked: the reply was matched to the right drill, graded, and delivered. To a
+different thread, because `sendGrade` called `messages/send`, which always
+creates a new message with its own subject. The reader watched the
+conversation they replied in and saw silence.
+
+The first fix read the incoming message id from the webhook and replied to it.
+It was deployed, it was correct, and it did nothing, because the payload did
+not carry that field under the name the docs give — and a missing id falls
+back to sending a new message, deliberately, so a grade is never lost. Silent
+correctness is the hardest kind of bug to see.
+
+The fix that worked stopped asking the payload for anything. `sentDrills`
+already holds the id of the drill WE sent; AgentMail returned it from its own
+send endpoint, and the reader's reply had just been matched against it. It is
+the same identifier space the reply endpoint takes in its path. Answer your own
+message and the conversation takes care of itself.
+
+The general lesson is the one worth keeping: prefer an identifier you have
+already watched work over one a document promises.
+
+### Three guards, none optional
+
+**Only confirmed subscribers are answered.** We do not verify SPF or DKIM on
+inbound mail, so `from` is forgeable. An address that answers any stranger with
+a model call is an open door onto somebody else's bill.
+
+**`emailAsk` is its own rate-limit kind**, five per reader per hour. Section 23
+records what happened when three budgets shared one table and a translation run
+took the assistant offline; a fourth feature sharing the assistant's budget
+would repeat it with the roles swapped.
+
+**The inbound route refuses automatic mail** before anything is written —
+RFC 3834's `Auto-Submitted`, plus `Precedence: bulk`, `X-Autoreply`,
+`List-Id`, and the usual subject lines. This one is load-bearing in a way the
+others are not. The drill path was safe from an auto-responder only because of
+one-graded-answer-per-drill; a question has no such natural end, so our answer
+provoking their auto-reply provoking our answer would run all night at a model
+call per turn. The rate limit is the backstop, the header check is the fence.
+
+### What it does not do yet
+
+The answer is single-threaded per subscriber and remembers the conversation,
+but it cannot see an attachment: images are the one thing the website's
+assistant takes that the email one does not, and a forwarded screenshot of a
+suspicious text is exactly what somebody would send. That is the obvious next
+piece.
+
+---
+
 ## Appendix: the Convex mental model
 
 Worth re-reading when something does not behave.

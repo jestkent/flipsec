@@ -98,6 +98,11 @@ export default defineSchema({
       v.literal("translate"),
       v.literal("subscribe"),
       v.literal("answer"),
+      // Questions asked BY EMAIL. Its own kind so it gets its own budget:
+      // an address that answers anything with a model is money spent by
+      // whoever writes to it, and it must not be able to drain Ask FlipSec
+      // on the website, or be drained by it.
+      v.literal("emailAsk"),
     ),
     createdAt: v.number(),
   })
@@ -144,6 +149,17 @@ export default defineSchema({
     // reading absent as "pending" would have silently unsubscribed all of
     // them. Only a new sign-up sets it to true, and confirming clears it.
     pending: v.optional(v.boolean()),
+    // The Agent thread behind this reader's email conversation, so a follow-up
+    // question keeps the context of the last one.
+    //
+    // Deliberately kept HERE and never in `assistantThreads`. That table is
+    // what `assistantMessages.list`, a PUBLIC query, checks ownership against.
+    // Registering an email thread there would put a conversation behind a
+    // caller-supplied identifier that happens to be somebody's address, which
+    // is the shape that got `attempts.listForUser` deleted. Absent from that
+    // table, the public query returns [] for these threads and cannot be
+    // talked into anything else.
+    assistantThreadId: v.optional(v.string()),
     confirmedAt: v.optional(v.number()),
     // When the confirmation was last sent, so signing up from a second tab
     // does not mail a second copy of a message already sitting in the inbox.

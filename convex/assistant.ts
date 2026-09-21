@@ -6,7 +6,7 @@ import type { ModelMessage } from "ai";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { components } from "./_generated/api";
-import { action } from "./_generated/server";
+import { action, internalAction } from "./_generated/server";
 
 const MODEL = "gpt-4o-mini";
 const INSTRUCTIONS = `You are Ask FlipSec, a calm digital safety coach for ordinary people.
@@ -112,6 +112,82 @@ export const remove = action({
     if (!ownsThread) throw new Error("This conversation is no longer available.");
     await flipSecAgent.deleteThreadAsync(ctx, { threadId: args.threadId });
     await ctx.runMutation(internal.assistantData.removeThread, args);
+    return null;
+  },
+});
+
+// Ask FlipSec, reached by replying to the daily email instead of opening the
+// site. The daily mail already invites a reply; this makes the invitation mean
+// more than one graded answer.
+//
+// The reader id is namespaced `email:` rather than being the bare address.
+// The bare address is already a user id elsewhere -- saveReply falls back to
+// it for an attempt -- and letting two different things share one identifier
+// is how a budget or a lookup ends up spanning both. The rate limit for this
+// is its own kind for the same reason.
+//
+// The thread lives on the subscriber row and is NOT registered in
+// assistantThreads, so the public assistantMessages.list cannot reach it. See
+// the comment on the schema field.
+export const answerByEmail = internalAction({
+  args: {
+    subscriberId: v.id("subscribers"),
+    to: v.string(),
+    question: v.string(),
+    replyToMessageId: v.optional(v.string()),
+    threadId: v.optional(v.string()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args): Promise<null> => {
+    const question = args.question.trim();
+    if (question.length < 2) return null;
+
+    const userId = `email:${args.to}`;
+    let threadId: string | undefined = args.threadId;
+
+    if (!threadId) {
+      const created = await flipSecAgent.createThread(ctx, {
+        userId,
+        title: question.slice(0, 80),
+      });
+      threadId = created.threadId;
+      await ctx.runMutation(internal.assistantData.rememberEmailThread, {
+        subscriberId: args.subscriberId,
+        threadId,
+      });
+    }
+
+    let answer: string;
+    try {
+      const result = await flipSecAgent.generateText(
+        ctx,
+        { userId, threadId },
+        {
+          // The reader's words are a question to answer, never an instruction
+          // to follow. The system prompt already says so for pasted text; mail
+          // is the same thing arriving by another door.
+          prompt: question,
+          temperature: 0.2,
+          // Shorter than the web answer. This is read in a mail client, often
+          // on a phone, and a wall of text is not help.
+          maxOutputTokens: 420,
+        },
+      );
+      answer = result.text.trim();
+    } catch (error) {
+      // A reader who wrote in and hears nothing back concludes the address is
+      // dead. Say so plainly instead, and let the logs carry the detail.
+      console.error("email assistant generate failed", error);
+      answer = "Sorry -- something went wrong answering that one. Please try asking again, and it should go through.";
+    }
+
+    if (!answer) return null;
+
+    await ctx.scheduler.runAfter(0, internal.email.sendAssistantReply, {
+      to: args.to,
+      answer,
+      replyToMessageId: args.replyToMessageId,
+    });
     return null;
   },
 });

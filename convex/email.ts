@@ -454,3 +454,43 @@ export const sendTestDrill = internalAction({
     return { ok: true, detail: `sent to ${email}` };
   },
 });
+
+// The answer to an emailed question, sent back into the reader's own thread.
+//
+// Unlike sendGrade this falls back to a new message when the reply endpoint
+// refuses the anchor. A grade that fails is retried by the recovery chain and
+// the work is already saved; an answer has no such chain, and a reader who
+// asked a question and got silence has been told the address does not work.
+// Threading is the nice-to-have here, arriving is not.
+export const sendAssistantReply = internalAction({
+  args: { to: v.string(), answer: v.string(), replyToMessageId: v.optional(v.string()) },
+  returns: v.null(),
+  handler: async (_ctx, args) => {
+    const token = await unsubscribeToken(args.to);
+    const body = `${args.answer}
+
+This is Ask FlipSec, the same helper as on the site. Reply again any time
+with another question about scams, accounts, privacy or AI safety.
+
+— FlipSec.ai
+${SITE}
+
+Don't want these? Unsubscribe: ${SITE}/api/unsubscribe?e=${encodeURIComponent(args.to)}&t=${token}`;
+
+    if (args.replyToMessageId) {
+      try {
+        await replyToMessage(args.replyToMessageId, body);
+        return null;
+      } catch (error) {
+        console.error("assistant reply could not be threaded, sending separately", error);
+      }
+    }
+
+    try {
+      await sendMessage(args.to, "Re: your question", body);
+    } catch (error) {
+      console.error("assistant reply send failed", error);
+    }
+    return null;
+  },
+});

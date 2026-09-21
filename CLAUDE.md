@@ -198,6 +198,29 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
 - Images come from `og:image`, else `TacticArt.tsx`, which also carries art for
   the guide levels and `hiring` so a feed with no source pictures still reads
   as a feed.
+- **A reply to the daily email that is not a drill answer is a QUESTION, and
+  Ask FlipSec answers it.** The mail has always invited a reply; until now
+  anything that was not this morning's answer was silently binned, including
+  a follow-up to a grade we had just sent. `saveReply` routes those to
+  `assistant.answerByEmail`, which threads the answer back into the same
+  conversation. Three things hold it up and none is optional. **Only confirmed
+  subscribers are answered**, because `from` is not verified by us and an
+  address that answers any stranger with a model call is somebody else's
+  budget to spend. **`emailAsk` is its own rate-limit kind** at 5 per reader
+  per hour, so it cannot drain the website's assistant or be drained by it,
+  and so a mail loop stops after five turns. **The inbound route refuses
+  automatic mail** by RFC 3834 headers and subject before anything is written,
+  which protects the drill path too — that path was only ever safe because of
+  one-graded-answer-per-drill, and answering questions removes that floor.
+- **An email conversation's Agent thread lives on the subscriber row, never in
+  `assistantThreads`.** That table is what the PUBLIC `assistantMessages.list`
+  checks ownership against, so a thread registered there sits behind a
+  caller-supplied identifier that happens to be somebody's email address — the
+  shape that got `attempts.listForUser` deleted. Absent from it, the public
+  query returns `[]` for these threads and cannot be talked into anything
+  else. The reader id is namespaced `email:<address>` rather than the bare
+  address, because the bare address is already a `userId` on an attempt and
+  one identifier meaning two things is how a budget ends up spanning both.
 - `askAboutStory` answers only about its own post, treats reader input as a
   question and never an instruction, and is capped at 200 chars in, 10 per
   reader an hour, 220 tokens out. `teachLesson` is cached per story in

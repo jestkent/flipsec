@@ -113,9 +113,39 @@ export const saveReply = internalMutation({
       const sent = await ctx.db.query("sentDrills").withIndex("by_message", (q) => q.eq("messageId", messageId)).unique();
       if (sent?.subscriberId === subscriber._id) { drillId = sent.drillId; threadAnchor = sent.messageId; break; }
     }
-    if (!drillId || !args.body.trim()) return null;
+    if (!args.body.trim()) return null;
+
+    // Anything we sent that they replied to is a valid message to answer in
+    // the thread, even when it is not a drill -- a grade, or a confirmation.
+    // That is what keeps a follow-up question in the same conversation.
+    const anchor = args.messageId ?? threadAnchor ?? messageIds[0];
+
+    // A reply that is not a fresh drill answer is treated as a QUESTION and
+    // goes to Ask FlipSec instead of being dropped. The daily mail invites a
+    // reply, and until now anything that was not an answer to today's drill
+    // was silently binned.
+    //
+    // Only confirmed subscribers reach here, which is the whole authorisation
+    // story: `from` is not verified by us, so an address that answers any
+    // stranger with a model call would be somebody else's budget to spend.
+    const askInstead = async () => {
+      if (!(await reserveSlot(ctx, "emailAsk", args.from, "emailAsk"))) {
+        console.warn("emailAsk hourly limit reached, reply ignored");
+        return null;
+      }
+      await ctx.scheduler.runAfter(0, internal.assistant.answerByEmail, {
+        subscriberId: subscriber._id,
+        to: args.from,
+        question: args.body.slice(0, 4000),
+        replyToMessageId: anchor,
+        threadId: subscriber.assistantThreadId,
+      });
+      return null;
+    };
+
+    if (!drillId) return await askInstead();
     const drill = await ctx.db.get(drillId);
-    if (drill === null) return null;
+    if (drill === null) return await askInstead();
 
     const userId = subscriber.userId ?? args.from;
 
@@ -132,10 +162,10 @@ export const saveReply = internalMutation({
       )
       .first();
 
-    if (already !== null) {
-      console.warn(`reply from a reader who already answered this drill, ignored`);
-      return null;
-    }
+    // Already answered, so this is not a second attempt at the drill -- it is
+    // the reader saying something else in the same thread. Grading it again
+    // is what the loop guard forbids; answering it is what they asked for.
+    if (already !== null) return await askInstead();
 
     const attemptId = await ctx.db.insert("attempts", {
       userId,
@@ -154,7 +184,7 @@ export const saveReply = internalMutation({
       // Threaded, so the grade lands in the conversation the reader is
       // already looking at. The inbound id when the provider sent one, and
       // otherwise our own drill message, which is always on file.
-      replyToMessageId: args.messageId ?? threadAnchor,
+      replyToMessageId: anchor,
       answer: args.body,
       prompt: drill.prompt,
       choices: drill.choices,

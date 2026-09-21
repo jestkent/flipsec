@@ -980,3 +980,49 @@ that the app now tells the truth about which language each part of it is in,
 which is what both a screen reader and a translator need before either can do
 anything sensible.
 
+### 2026-09-21 - the inbox is the second front door
+
+The daily drill has always ended with "just hit reply and tell me which one,
+in your own words". Reply with an answer and you got a grade. Reply with a
+question and you got nothing, and so did anyone who wrote back to the grade.
+The invitation was real and the door was half open.
+
+A reply that is not a fresh drill answer now goes to Ask FlipSec - the same
+assistant and the same instructions the site uses - and the answer threads back
+into the conversation the reader is already in. The people these scams take the
+most from are older and far likelier to be in their mail than on a site they
+visited once, and mail is where the suspicious message already is.
+
+Getting the grade to thread came first, and took three attempts. Each time the
+loop was reported broken it had actually worked: matched to the right drill,
+graded, delivered - to a different thread, because sendGrade called
+messages/send, which always makes a new message with its own subject.
+
+The first fix read the incoming message id from the webhook and replied to it.
+Deployed, correct, and it did nothing: the payload did not carry that field
+under the name the docs give, and a missing id falls back to a new message on
+purpose so a grade is never lost. Silent correctness is the hardest bug to see.
+Three pieces of evidence pinned it - a probe proved the new code was live, the
+logs held no send error, and AgentMail's own thread still ended with the
+reader's reply.
+
+The fix that worked stopped asking the payload for anything. sentDrills already
+holds the id of the drill we sent; AgentMail returned it from its own send
+endpoint and the reply had just been matched against it, which is the same
+identifier space the reply endpoint takes in its path. Prefer an identifier you
+have watched work over one a document promises.
+
+Three guards, and the third is the interesting one. Only confirmed subscribers
+are answered, because from is forgeable and an address that answers strangers
+with model calls is an open door onto the bill. emailAsk is its own rate-limit
+kind at five per reader per hour, so it cannot drain the site's assistant or be
+drained by it. And the inbound route now refuses automatic mail by RFC 3834
+headers before anything is written - the drill path was safe from an
+auto-responder only because of one-graded-answer-per-drill, and a question has
+no such natural end, so our answer provoking their auto-reply provoking our
+answer would run all night at a model call a turn. The rate limit is the
+backstop; the header check is the fence.
+
+Not done yet: the email assistant cannot see an attachment, and a forwarded
+screenshot of a suspicious text is exactly what someone would send.
+

@@ -31,6 +31,13 @@ export const BUDGETS = {
   // deployment-wide cap can stop. Set well above anything a person does: six
   // published drills means a real reader writes six rows, ever.
   answer: { kinds: ["answer"], perReader: 60, global: 600 },
+  // Asking by email costs a model call, and the sender is a mailbox rather
+  // than a browser id, so the per-reader cap is real here rather than a
+  // courtesy: only confirmed subscribers get answered at all. Kept tight,
+  // because this is also the ceiling on a mail loop. If our reply somehow
+  // provokes another reply, it stops after five exchanges in an hour instead
+  // of running all night.
+  emailAsk: { kinds: ["emailAsk"], perReader: 5, global: 60 },
 } as const;
 
 export type BudgetName = keyof typeof BUDGETS;
@@ -41,7 +48,8 @@ export type CheckKind =
   | "speech"
   | "translate"
   | "subscribe"
-  | "answer";
+  | "answer"
+  | "emailAsk";
 
 // userId comes from the browser and can be regenerated, so the per-reader cap
 // is a courtesy. The global cap is the one an attacker cannot get around, and

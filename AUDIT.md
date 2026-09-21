@@ -241,6 +241,17 @@ mutation — check-then-act is not a limit on a public endpoint.
 | `translate` | `translate` | 30 | 300 | `translateStory`, **cache miss only** |
 | `subscribe` | `subscribe` | 3 | 60 | `subscribers.subscribe` |
 | `answer` | `answer` | 60 | 600 | `attempts.submitAnswer` |
+| `emailAsk` | `emailAsk` | 5 | 60 | `attempts.saveReply`, for a question asked BY EMAIL |
+
+`emailAsk` is deliberately the second tightest budget in the table. The sender
+is a mailbox rather than a browser id, and only a confirmed subscriber is
+answered at all, so the per-reader cap is a real limit here rather than a
+courtesy. It is also the ceiling on a mail loop: if an answer of ours ever
+provokes another reply, the exchange stops after five in an hour instead of
+running all night at a model call per turn. The first guard is RFC 3834
+detection on the inbound route, which refuses anything marked
+`Auto-Submitted`, `Precedence: bulk`, `X-Autoreply`, `List-Id`, or subjected
+"Out of office" / "Automatic reply", before a single row is written.
 
 `questions.reserve` is separate and unchanged: it counts the `questions`
 table, which is its own store, so it never had the cross-contamination
