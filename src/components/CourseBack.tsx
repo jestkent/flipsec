@@ -1,5 +1,5 @@
-// The back of a Learn AI card. Deliberately thinner than LessonBack: a course
-// card answers three questions and then gets out of the way.
+// The back of an AI Sec Edu card. Deliberately thinner than LessonBack: it
+// answers three questions about a guide and then gets out of the way.
 //
 // No h-full, no overflow-y-auto, no mt-auto anywhere in here. A face is
 // absolutely positioned at inset 0, so anything that stretches to the face
@@ -34,7 +34,7 @@ export default function CourseBack({
           onClick={onBack}
           className="self-start text-sm font-medium text-neutral-500 hover:text-neutral-900"
         >
-          ← Back to the course
+          ← Back to the guide
         </button>
       </div>
     );
@@ -98,7 +98,7 @@ export default function CourseBack({
         onClick={(e) => e.stopPropagation()}
         className="self-start rounded-lg bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-neutral-700"
       >
-        Open the course ↗
+        Open the guide ↗
       </a>
 
       <button
@@ -106,7 +106,7 @@ export default function CourseBack({
         onClick={onBack}
         className="self-start pt-1 text-sm font-medium text-neutral-500 hover:text-neutral-900"
       >
-        ← Back to the course
+        ← Back to the guide
       </button>
     </div>
   );

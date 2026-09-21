@@ -11,12 +11,12 @@ const PITCH: Record<string, { title: string; line: string; done: string }> = {
     done: "One lands in your inbox each morning. Reply however you like and I will tell you how you did.",
   },
   course: {
-    title: "Get a free AI course each morning",
-    line: "One course, what it teaches, and where to start.",
-    done: "One course lands in your inbox each morning.",
+    title: "Learn AI security, one piece a day",
+    line: "One free guide, what it teaches, and where to start.",
+    done: "One guide lands in your inbox each morning.",
   },
   job: {
-    title: "Get a remote AI job each morning",
+    title: "Get an AI security job each morning",
     line: "One opening, what they want, and how to apply.",
     done: "One opening lands in your inbox each morning.",
   },

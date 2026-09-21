@@ -4,10 +4,13 @@ import Feed from "./components/Feed";
 
 // The three feeds, in the order they appear. Reordering the app is editing
 // this array; nothing else reads a hard-coded list of kinds.
+// The kind values are the database's and do not change; only the labels do.
+// Renaming them would mean migrating every published row for a word on a
+// button, and the scam feed is the demo.
 export const TABS = [
-  { kind: "scam", label: "Scams" },
-  { kind: "course", label: "Learn AI" },
-  { kind: "job", label: "Jobs" },
+  { kind: "scam", label: "AI Sec News" },
+  { kind: "course", label: "AI Sec Edu" },
+  { kind: "job", label: "AI Sec Jobs" },
 ] as const;
 
 export default function App() {

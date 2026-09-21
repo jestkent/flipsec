@@ -1,10 +1,8 @@
 // The back of a jobs card. Same shape as CourseBack, same height rules: no
 // h-full, no overflow-y-auto, no mt-auto.
 //
-// The apply link is the point of the card. Remote OK's terms ask to be named
-// as the source and linked back without nofollow, so this link carries only
-// rel="noreferrer" — noopener behaviour comes free with target="_blank" in
-// every current browser, and neither of those is nofollow.
+// The apply link is the point of the card, and it points at the company's own
+// posting on its own board rather than at any aggregator.
 
 type Back = {
   company?: string;
@@ -35,7 +33,7 @@ export default function JobBack({
           onClick={onBack}
           className="self-start text-sm font-medium text-neutral-500 hover:text-neutral-900"
         >
-          ← Back to the job
+          ← Back to the role
         </button>
       </div>
     );
@@ -103,7 +101,7 @@ export default function JobBack({
         onClick={(e) => e.stopPropagation()}
         className="self-start rounded-lg bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-neutral-700"
       >
-        Apply on Remote OK ↗
+        See the full posting ↗
       </a>
 
       <button
@@ -111,7 +109,7 @@ export default function JobBack({
         onClick={onBack}
         className="self-start pt-1 text-sm font-medium text-neutral-500 hover:text-neutral-900"
       >
-        ← Back to the job
+        ← Back to the role
       </button>
     </div>
   );

@@ -32,7 +32,21 @@ type Source = {
   // the filter calls main, so filtering it returns an empty page. This only
   // affects the index scrape; article scrapes always keep the filter on.
   indexAllContent?: boolean;
+  // Some index pages label every link "More" and carry the real title only on
+  // the page itself. The slug is the best hint available; the processing pass
+  // rewrites the title from the page regardless.
+  titleFromSlug?: boolean;
 };
+
+// "a-practical-guide-for-secure-mcp-server-development" -> readable words.
+function slugToTitle(url: string): string {
+  const slug = url.replace(/\/+$/, "").split("/").pop() ?? "";
+  return slug
+    .split("-")
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
 
 const SOURCES: Source[] = [
   {
@@ -75,24 +89,28 @@ const SOURCES: Source[] = [
     depth: 10,
   },
   {
-    // The Learn AI feed. Hugging Face publishes its courses free and in the
-    // open, and robots.txt is a bare "Allow: /" with no crawl-delay. Every
-    // course here is about AI, so almost nothing gets rejected.
+    // The AI Sec Edu feed. OWASP's Gen AI Security Project publishes the LLM
+    // Top 10, agentic security guides, red teaming guidance and incident
+    // response playbooks, all free, from a nonprofit. Hugging Face was here
+    // first and was dropped: its courses teach you to build AI, not to secure
+    // it, so every card failed the point of the feed.
     //
-    // The index is a JavaScript grid, so it needs indexAllContent. The course
-    // pages themselves are ordinary documentation and scrape normally.
-    name: "Hugging Face",
-    indexUrl: "https://huggingface.co/learn",
-    icon: "https://www.google.com/s2/favicons?domain=huggingface.co&sz=64",
-    // The grid writes [**Title** \ description](url) with the description on
-    // a continuation line, so the gap between title and url has to be allowed
-    // to run a little.
+    // robots.txt is an empty Disallow, which allows everything, and sets no
+    // crawl-delay. The index is JavaScript, so it needs indexAllContent.
+    name: "OWASP Gen AI Security",
+    indexUrl: "https://genai.owasp.org/resources/",
+    icon: "https://www.google.com/s2/favicons?domain=genai.owasp.org&sz=64",
+    // Every card's link says "More", so there is no title to capture here.
+    // The slug carries it instead, and the model rewrites it properly from
+    // the page anyway.
     linkPattern:
-      /\[\*\*([^*\]]{3,80})\*\*[\s\S]{0,300}?\]\((https:\/\/huggingface\.co\/learn\/[a-z0-9-]+)\)/g,
+      /\[[^\]]{1,40}\]\((https:\/\/genai\.owasp\.org\/resource\/[a-z0-9-]+\/)\)/g,
     delayMs: 5000,
-    depth: 12,
+    depth: 20,
     kind: "course",
     indexAllContent: true,
+    urlFirst: true,
+    titleFromSlug: true,
   },
 ];
 
@@ -115,17 +133,21 @@ function parseIndex(
   markdown: string,
   pattern: RegExp,
   urlFirst = false,
+  titleFromSlug = false,
 ): Alert[] {
   const alerts: Alert[] = [];
   const seen = new Set<string>();
 
   for (const match of markdown.matchAll(pattern)) {
     const [, first, second] = match;
-    const title = urlFirst ? second : first;
     const url = urlFirst ? first : second;
+    const title = titleFromSlug ? slugToTitle(url) : urlFirst ? second : first;
     // Some IC3 announcements are published as PDFs. Firecrawl can parse those
     // but they are slow and the layout is noisy, so skip them.
     if (url.toLowerCase().endsWith(".pdf")) continue;
+    // OWASP publishes translations of its guides under percent-encoded slugs.
+    // They are the same document, and a slug-derived title would be unusable.
+    if (url.includes("%")) continue;
     if (seen.has(url)) continue;
     seen.add(url);
     alerts.push({ title: title.trim(), url });
@@ -170,6 +192,7 @@ export const crawlSources = internalAction({
           index.markdown ?? "",
           source.linkPattern,
           source.urlFirst,
+          source.titleFromSlug,
         ).slice(0, args.limit ?? source.depth);
       } catch (error) {
         console.error(`failed to scrape index ${source.indexUrl}`, error);

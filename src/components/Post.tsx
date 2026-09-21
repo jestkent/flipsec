@@ -10,7 +10,7 @@ import TacticArt from "./TacticArt";
 type Story = Omit<Doc<"stories">, "rawText">;
 
 // The one place colour carries meaning, per PLAN.md section 16. The last four
-// are the other two feeds: a course level, and where a job can be done.
+// are the other two feeds: how hard a guide is, and that a role is open.
 const TACTIC_STYLE: Record<string, string> = {
   deepfake: "bg-violet-50 text-violet-700",
   voice: "bg-amber-50 text-amber-700",
@@ -20,7 +20,7 @@ const TACTIC_STYLE: Record<string, string> = {
   beginner: "bg-emerald-50 text-emerald-700",
   intermediate: "bg-indigo-50 text-indigo-700",
   advanced: "bg-rose-50 text-rose-700",
-  remote: "bg-cyan-50 text-cyan-700",
+  hiring: "bg-cyan-50 text-cyan-700",
 };
 
 // What the flip promises, per feed. The card says what is behind it rather
@@ -33,8 +33,8 @@ const FLIP_LABEL: Record<string, string> = {
 
 const BACK_LABEL: Record<string, string> = {
   scam: "Back to the story",
-  course: "Back to the course",
-  job: "Back to the job",
+  course: "Back to the guide",
+  job: "Back to the role",
 };
 
 function timeAgo(ms: number | undefined): string {

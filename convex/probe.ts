@@ -17,6 +17,9 @@ export const probeSource = internalAction({
     all: v.optional(v.boolean()),
     waitMs: v.optional(v.number()),
     grep: v.optional(v.string()),
+    // Print the link list rather than the markdown. An index whose rows are
+    // not links in the markdown can still expose its targets here.
+    showLinks: v.optional(v.boolean()),
   },
   handler: async (_ctx, args) => {
     const apiKey = process.env.FIRECRAWL_API_KEY;
@@ -38,7 +41,13 @@ export const probeSource = internalAction({
 
     // With the filter off a page can be tens of thousands of characters of
     // navigation. grep shows only the lines that matter for a link pattern.
-    if (args.grep) {
+    if (args.showLinks) {
+      const shown = args.grep
+        ? links.filter((l) => l.includes(args.grep!))
+        : links;
+      console.log(`--- ${shown.length} links ---`);
+      console.log(shown.slice(0, 60).join("\n").slice(0, args.chars ?? 2500));
+    } else if (args.grep) {
       const hits = markdown
         .split("\n")
         .filter((line) => line.toLowerCase().includes(args.grep!.toLowerCase()));

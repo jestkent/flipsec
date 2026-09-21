@@ -50,8 +50,9 @@ function readerId(): string {
 // An empty tab says what is coming, never that there is nothing here.
 const EMPTY: Record<string, string> = {
   scam: "The next batch of alerts lands within six hours. Check back then.",
-  course: "New free AI courses land here as they are published. Check back soon.",
-  job: "New remote AI jobs land here as they are posted. Check back soon.",
+  course:
+    "New free guides to AI security land here as they are published. Check back soon.",
+  job: "New jobs where AI and security meet land here as they are posted. Check back soon.",
 };
 
 export default function Feed({ kind = "scam" }: { kind?: string }) {

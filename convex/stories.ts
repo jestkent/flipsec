@@ -527,6 +527,41 @@ export const clearFailed = internalMutation({
   },
 });
 
+// Retires every published card from one source. Used when a source is
+// dropped: the Hugging Face courses and the Remote OK jobs were on topic for
+// "AI" and off topic for "AI security", so they had to leave the feed rather
+// than sit there contradicting the tab they are under.
+//
+// Deletes rather than marks failed, so the url is freed and a later change of
+// mind can crawl the source again.
+export const dropSource = internalMutation({
+  args: { source: v.string(), kind: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const published = await ctx.db
+      .query("stories")
+      .withIndex("by_status", (q) => q.eq("status", "published"))
+      .take(500);
+
+    const target = published.filter(
+      (story) =>
+        story.source === args.source &&
+        (args.kind === undefined || (story.kind ?? "scam") === args.kind),
+    );
+
+    for (const story of target) {
+      const drill = await ctx.db
+        .query("drills")
+        .withIndex("by_story", (q) => q.eq("storyId", story._id))
+        .unique();
+      if (drill !== null) await ctx.db.delete(drill._id);
+      await ctx.db.delete(story._id);
+    }
+
+    console.log(`dropSource ${args.source}: removed ${target.length}`);
+    return { removed: target.length };
+  },
+});
+
 export const unpublish = internalMutation({
   args: { storyId: v.id("stories") },
   handler: async (ctx, args) => {
