@@ -106,6 +106,11 @@ Testing it has three traps, all of which cost an evening once:
   row points at a subscriber id that no longer exists. Always reply to the
   newest drill.
 
+**Recording a demo?** PLAN.md section 12 is the script and **12a is the
+pre-flight**. Read 12a first: it lists the four ways the email loop fails on
+camera, which Learn card to pick for the language shot, and why filming a live
+crawl does not work.
+
 ## Still open, on purpose
 
 - **Security headers.** No CSP, HSTS or frame protection. Cannot be set from

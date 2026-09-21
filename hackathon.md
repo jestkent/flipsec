@@ -1203,3 +1203,33 @@ and the Voice section says readers are not marked or graded. A job listing has
 no right answer to test. One quiz, on the feed where getting it right means
 something.
 
+### 2026-09-21 - a demo script for the app that exists
+
+The demo script in PLAN section 12 was written before most of what is now
+worth demonstrating. It predated the email loop closing, the eleven languages,
+hash routing and the interactive lessons, and one of its beats - filming a
+crawl running live, rows appearing in the feed - turned out to be impractical
+rather than merely ambitious. Crawls are six-hourly and most runs save nothing,
+because saveRawStory drops everything already seen. One run this afternoon
+found 60 items and saved zero. Waiting on camera for a live insert is waiting
+for something that usually does not happen.
+
+Rewritten against what the app actually does, with the email loop moved to the
+centre because it is now the strongest thing here and it is the product
+working rather than the plumbing being narrated: reply in your own words, the
+grade arrives in the same thread, then ask a follow-up question and Ask FlipSec
+answers in that same thread.
+
+The more useful half is new. Section 12a is a pre-flight, and every item in it
+cost a working session to learn: pickTodaysDrill is deterministic so a second
+test drill the same day is silently dropped; a drill sent before a reset can no
+longer be replied to; a Gmail +alias cannot complete the loop; a cold mailbox
+may put the first message in spam, which on camera reads as a broken product
+rather than an unbought domain. Plus which Learn card to pick for the language
+shot - not one of the top four, they are the authored lessons and their backs
+are English by design - and to check OS-level reduced motion before recording,
+because it turns the flip into a cross-fade and removes the best visual in the
+product.
+
+A demo script that does not say what breaks is half a script. This one says.
+

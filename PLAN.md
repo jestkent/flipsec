@@ -394,19 +394,123 @@ Run `/hackathon` in Claude Code after each work session so `hackathon.md` stays 
 
 ## 12. Demo video script
 
-Three minutes, mostly screen. Talk less, click more.
+Rewritten 2026-09-21 against the app as it actually is. The earlier version
+predated the email loop closing, the eleven languages, hash routing and the
+interactive lessons, and one of its beats — filming a crawl running live —
+turned out to be impractical. Read section 12a first; several of these shots
+fail on camera if the preparation is skipped.
 
-**0:00 to 0:20** The hook. "Last week someone lost money to a voice clone of their daughter. Most people still think bad grammar is how you spot a scam." Feed loads behind the line.
+Three minutes, mostly screen. Talk less, click more. Every timing below is a
+ceiling, not a target.
 
-**0:20 to 1:00** The flip. Scroll the feed so it reads like a feed. Open a real post. Flip it. Answer wrong on purpose and show the explanation. The whole product lands inside the first minute.
+**0:00–0:20 — the hook.** Say it over the feed already loading.
 
-**1:00 to 1:40** Where content comes from. Convex dashboard, a crawl running, rows appearing, a new post sliding into the feed live with no refresh. This is the Convex depth moment.
+> "A grandmother in Georgia lost nearly eight hundred thousand dollars to a
+> voice she recognised. Most of us were taught that bad spelling is how you
+> spot a fake. That stopped being true."
 
-**1:40 to 2:20** The email loop. Drill arrives in a real inbox, reply with an answer, feedback arrives back in the inbox.
+**0:20–1:05 — the flip, which is the product.** Scroll AI Sec News so it reads
+as a feed. Open one card. Flip it with the round badge. Answer the drill
+**wrong on purpose** and let the explanation land — getting it wrong is the
+lesson, and saying so on camera is worth more than a clean answer.
 
-**2:20 to 2:50** Who it is for. One honest sentence about teaching Internet Safety to middle schoolers and why the reading level matters.
+> "Every card flips. The front is what happened. The back is the part nobody
+> tells you, built from that story."
 
-**2:50 to 3:00** URL on screen.
+**1:05–1:35 — eleven languages, one click.** Still on the same card, change
+the language selector to Español. The headline, the summary, the lesson, the
+quiz and every label change together.
+
+> "Not a translate button on a page. The whole card, cached, so nobody waits
+> for a model."
+
+Say the honest part: the interactive lessons are still English and the card
+says so in the reader's own language.
+
+**1:35–2:20 — the email loop, which is the strongest thing here.** Cut to the
+inbox with the drill already delivered. Reply in your own words. The grade
+arrives **in the same thread**, seconds later. Then reply again with a real
+question — "why do scammers use urgency?" — and Ask FlipSec answers in that
+same thread.
+
+> "It grades what you wrote, not a multiple-choice click. And once you have
+> answered, the thread is just… open. Ask it anything."
+
+This is the Convex + AgentMail + OpenAI beat, and it is worth more than a
+dashboard tour because it is the product working rather than the plumbing
+being described.
+
+**2:20–2:40 — built on Convex, shown not narrated.** The dashboard with the
+`stories`, `attempts` and `sentDrills` tables, then in a terminal:
+
+```
+npx convex run health:status --prod
+```
+
+> "Three crawlers on a schedule, and every run records what it actually
+> found — because a crawl that quietly stops matching looks exactly like a
+> quiet day."
+
+**2:40–2:55 — who it is for.** One honest sentence, no slogan.
+
+> "This is written for the people these scams take the most from. Every card
+> reads at a seventh-grade level, every control works from a keyboard, and
+> the whole thing is screen-reader labelled — because the person most likely
+> to get that phone call is the person the usual advice was never written
+> for."
+
+**2:55–3:00 — the URL on screen**, held still long enough to read.
+
+### What to cut first if it runs long
+
+The dashboard beat. The email loop and the flip carry the submission; the
+plumbing is in the repo for anyone who wants it.
+
+---
+
+## 12a. Pre-flight for the demo, and what breaks on camera
+
+Every item here cost a working session to learn. None of it is obvious.
+
+**The email loop needs a fresh drill and a warm mailbox.**
+
+1. `pickTodaysDrill` is deterministic, so every test drill sent on one day is
+   the SAME drill, and one-graded-answer-per-reader-per-drill silently drops a
+   second reply from the same address. Reset first:
+   `npx convex run subscribers:forget "{email:'...'}" --prod`, which deletes
+   the subscriber and their attempts, then send a new one.
+2. Reply to the **newest** drill only. A drill sent before a reset points at a
+   subscriber id that no longer exists, and that reply is correctly refused.
+3. Use a mailbox that has already received FlipSec mail. SPF, DKIM and DMARC
+   are unverified, so a cold inbox may put the first message in spam — on
+   camera that reads as a broken product rather than a DNS record nobody has
+   bought a domain for yet.
+4. A Gmail `+alias` cannot complete the loop. Gmail replies from the bare
+   address and the ownership check correctly refuses it. Use a separate
+   mailbox.
+
+**The feed.** Check it is 8 / 17 / 10, or whatever the crawls have made it, and
+that `health:status` is green, before recording:
+
+```
+for k in scam course job; do npx convex run stories:listPublished "{kind:'$k'}" --prod | grep -c '"_id"'; done
+```
+
+**Language.** Pick a **crawled** Learn card, not one of the top four. The four
+authored lessons are the newest cards in that feed, so they sit at the top, and
+their backs are English by design. Card 9 or 13 translates in full.
+
+**Do not film a crawl running.** Crawls are six-hourly and most runs save
+nothing, because `saveRawStory` drops everything already seen — one recent run
+found 60 items and saved zero. Waiting for a live insert on camera is waiting
+for something that usually does not happen. Show `health:status` instead, which
+reports what the last run found.
+
+**Reduced motion.** If the recording machine has it on at the OS level, the
+flip becomes a cross-fade and the single best visual in the product is gone.
+Check before recording.
+
+---
 
 ## 13. Social post draft
 
@@ -1222,6 +1326,64 @@ both heights, which also stops a card permalink landing under the chrome.
 
 On an app whose accessibility is the differentiator, shipping a convenience
 that breaks keyboard focus would have cost more than it bought.
+
+---
+
+## 32. Shipped fix: what the other two subscriptions were for
+
+The question was a product one — the news drill is the part you can reply to,
+so what does subscribing to Learn or Jobs actually get you? Reading the send
+path to answer it turned up a defect worth more than the question.
+
+`pickTodaysCard` did `take(1)` and returned the newest card of that kind, with
+no memory of anything. A drill rotates per reader through `lastDrillId`. These
+two did not rotate at all, so every Learn and Jobs subscriber received the
+**same card every morning** until the crawler published a newer one — and most
+crawls publish nothing, because `saveRawStory` drops what it has already seen.
+One afternoon run found 60 items and saved zero. "Until a newer one" is
+routinely days.
+
+That is not a thin feature. It is a daily email that repeats itself, which is
+how a sender earns spam complaints, on a domain whose deliverability is
+already the weakest thing in the system. Strictly worse than not offering the
+subscription.
+
+### The fix changed shape while it was being written
+
+The first plan was to mirror the drill: store `lastCourseId` and `lastJobId`
+per subscriber and pick the first card that is not the last one sent. Writing
+it showed the flaw — one stored id can only ever **alternate between two
+cards**. It would have turned one repeating card into two.
+
+Rotating on a day index instead (`day % length`) walks the whole feed, needs
+no schema change at all, gives every subscriber the same card on the same day,
+and makes a rerun of one day's send pick the same card, which the per-day
+idempotency key already assumed. Seventeen guides now take seventeen days to
+come round instead of one guide arriving seventeen times.
+
+Worth noticing: the simpler fix was also the better one, and it was only
+visible after starting the more complicated one.
+
+### The design half
+
+News was a loop and the other two were broadcast. That stopped being true in
+section 30: any reply which is not a drill answer now reaches Ask FlipSec. So
+those readers could already hold a conversation, and nothing in the mail told
+them, because only the drill section ever asked for a reply. Both sections now
+invite one. A code comment stating their replies were logged and dropped was
+corrected — it had been true that morning.
+
+### Deliberately not built
+
+A quiz for Learn or Jobs. Redundant in form and weaker in substance: the news
+drill tests a **skill** against a real incident — here is what happened to
+somebody, which part should have warned them. A Learn quiz would test whether
+a reader read a guide, which is comprehension, and the Voice section says
+readers are not marked, graded or set homework. A job listing has no right
+answer to test at all.
+
+One quiz, on the one feed where getting it right means something. This is
+recorded in CLAUDE.md so it is not proposed again.
 
 ---
 
