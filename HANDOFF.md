@@ -43,15 +43,37 @@ npm run build           # tsc -b && vite build. Must pass before any commit.
 npm run lint            # oxlint. 6 warnings is the expected baseline.
 ```
 
-Deploying to production is two commands, in this order:
+Deploying to production is three steps, and the middle one is the trap:
 
 ```bash
-npx convex deploy --yes
-npx @convex-dev/static-hosting deploy --skip-convex
+npx convex deploy --yes                       # resolves to prod on its own
+
+printf 'VITE_CONVEX_URL=https://hallowed-nightingale-322.convex.cloud\n' > .env.production.local
+rm -rf dist && npm run build
+grep -c "127.0.0.1" dist/assets/*.js          # MUST be 0 before you upload
+rm .env.production.local
+
+CONVEX_DEPLOYMENT=prod:hallowed-nightingale-322 \
+  npx @convex-dev/static-hosting deploy --skip-convex --skip-build
 ```
 
-The second needs `--skip-convex` or it prompts, and a prompt in a
-non-interactive shell fails the deploy.
+**`main.tsx` bakes `VITE_CONVEX_URL` into the bundle at build time**, and
+`.env.local` points it at `127.0.0.1:3210`. A plain `npm run build` therefore
+produces a bundle that reaches no backend at all, and uploading it puts a
+permanently blank site on the live URL. `.env.production.local` beats
+`.env.local` in production mode and is gitignored by `*.local`; delete it
+afterwards so local builds stay local. Grep the bundle every time — it is one
+command and it is the only proof.
+
+`npx convex deploy` ignores `CONVEX_DEPLOYMENT` and resolves to the project's
+prod. **The static-hosting CLI does not** — it has no `--prod` flag, so with a
+local deployment configured it would upload to the wrong place and look like it
+worked. Name the target in the environment, and check the output says
+"Deploying to production environment" before believing it.
+
+`--skip-convex` avoids a prompt that fails a non-interactive shell.
+`--skip-build` keeps the bundle you just verified instead of silently
+rebuilding an unverified one.
 
 ## Where things stand
 

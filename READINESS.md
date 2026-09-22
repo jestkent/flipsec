@@ -3,6 +3,29 @@
 This is the current status summary. Dated entries in AUDIT.md, PLAN.md and
 hackathon.md remain historical evidence, not deployment manifests.
 
+## DEPLOYED — 2026-09-21
+
+Commit `37c91ed`, branch `readiness-followup`, is live on
+`hallowed-nightingale-322`. The sections below that say "not deployed" describe
+the state before this rollout and are kept for their reasoning, not their
+status.
+
+- Backend: `npx convex deploy` added `browserSessions.by_tokenHash` and
+  `stories.by_kind_source`. No indexes deleted, schema validation passed.
+- Frontend: bundle `index-CmD4s1vT.js`, built against
+  `https://hallowed-nightingale-322.convex.cloud` and verified to contain no
+  `127.0.0.1` reference before upload. The live page serves that bundle.
+- Verified after rollout: feeds read **8 news, 17 learn, 10 jobs** — unchanged
+  from the pre-deploy baseline, so nothing regressed. `browserSessions:create`
+  returns a token and expiry on prod.
+
+Still true after deploying: **job retirement has not run yet.** It takes effect
+on the next successful Greenhouse crawl, within six hours. Do not claim any
+listing was rechecked until a crawl has completed. Every reader's pre-existing
+Ask FlipSec conversation is now unreachable, by design, and older open tabs
+fail closed for chat until reloaded. Cold-mailbox signup and the user study
+remain unobserved.
+
 ## What is established
 
 - Baseline reviewed: commit `1095ebc`; the working tree was clean before this
