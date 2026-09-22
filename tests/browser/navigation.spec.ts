@@ -37,13 +37,14 @@ test("a published card link survives refresh and keeps its content", async ({ pa
   test.skip(!process.env.FLIPSEC_TEST_STORY_ID, "Set FLIPSEC_TEST_STORY_ID to the imported local permalink fixture; see RELIABILITY.md.");
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
+  // The card no longer prints its own link, so this checks the ROUTE rather
+  // than a control: a shared URL still opens exactly one card and still
+  // survives a refresh. That is the part a shared link depends on.
   await page.goto(`/#/feed/course/story/${process.env.FLIPSEC_TEST_STORY_ID}`);
   await expect(page.getByRole("article")).toHaveCount(1);
-  const link = page.getByRole("link", { name: "Link to this card", exact: true });
-  await expect(link).toBeVisible();
-  await expect(link).toHaveAttribute("href", `#/feed/course/story/${process.env.FLIPSEC_TEST_STORY_ID}`);
-  await link.click();
+  await expect(page.getByRole("article")).toContainText("Permalink verification card");
   await page.reload();
+  await expect(page.getByRole("article")).toHaveCount(1);
   await expect(page.getByRole("article")).toContainText("Permalink verification card");
   expect(errors).toEqual([]);
 });

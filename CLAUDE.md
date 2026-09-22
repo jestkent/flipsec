@@ -153,6 +153,17 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
   confirm page repeats it for the daily email. This is a mitigation, not a
   fix. The sending-domain authentication configuration remains unverified;
   do not diagnose missing DNS records from a message going to spam.
+- **Confirming sends the first card immediately, and `welcomeSentAt` is what
+  makes it once.** Confirming used to be answered with nothing until 14:00
+  UTC, so a reader who signed up in the morning waited a day to see what they
+  had agreed to. `confirm` is NOT once-per-reader -- the link lives in a
+  mailbox for ever and every POST re-runs the mutation -- so the stamp is
+  decided and written in the SAME transaction that schedules the send, exactly
+  as `confirmSentAt` is for the confirmation itself. Without it, re-opening
+  your own link mails you another card each time. `sendWelcome` re-checks
+  consent at send time so an unsubscribe in between wins, calls `markSent` so
+  the daily send picks a DIFFERENT card and the first one is repliable, and
+  never rethrows.
 - **`subscribers.pending` absent means CONFIRMED.** Anyone can type any
   address into the sign-up box, so a sign-up now records an unconfirmed row and
   mails that address a link; nothing is sent until the link is pressed, which
@@ -663,6 +674,13 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
   card by accident; and the text link at the end of the reading, for a reader
   who has finished and is already down there. They briefly carried the same
   words, one under the other, which is not two affordances but one mistake.
+- **A card does not print its own URL.** The front carried a "Link to this
+  card" anchor beside Read aloud. Hash routing still resolves
+  `/#/feed/<kind>/story/<id>` and a card link still survives a refresh --
+  what went is the control, not the route. It was restating what the address
+  bar already showed the moment a card was open, while spending a line of the
+  card and a stop in the tab order. The browser test now asserts the ROUTE
+  rather than the anchor, which is the part a shared link actually depends on.
 - A header action must offer something the navigation does not. A "Start
   reading" button sat beside a "Feeds" link and both went to the same view,
   so the reader had to work out which was real. The primary call to action

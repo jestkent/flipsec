@@ -11,7 +11,6 @@ import ReadAloudButton from "./ReadAloudButton";
 import { demoKey, findDemo } from "./demoRegistry";
 import { languageInfo, useLanguage } from "../localization";
 import { readerId } from "../reader";
-import { routeHash } from "../navigation";
 
 type Story = Omit<Doc<"stories">, "rawText">;
 
@@ -519,11 +518,14 @@ export default function Post({
                 {tactic}
               </Badge>
 
+              {/* The card front printed its own permalink next to Read aloud.
+                  Hash routing still resolves /#/feed/<kind>/story/<id>, and the
+                  browser address bar already holds it once a card is open, so
+                  the control was restating what the URL bar says while taking
+                  a line of the card and a stop in the tab order. Removed, not
+                  the routing. */}
               <div className="flex flex-wrap items-center gap-3">
                 <ReadAloudButton targetRef={frontRef} label={t("readCard")} />
-                <a className="inline-flex min-h-11 items-center text-base underline" href={routeHash({ view: "feed", kind: story.kind ?? "scam", storyId: story._id })}>
-                  {t("cardLink")}
-                </a>
               </div>
 
               <footer className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-1">

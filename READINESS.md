@@ -57,6 +57,29 @@ Ask FlipSec conversation is now unreachable, by design, and older open tabs
 fail closed for chat until reloaded. Cold-mailbox signup and the user study
 remain unobserved.
 
+## NOT YET DEPLOYED — two changes after `c222b58`
+
+Production is on `c222b58`. Two changes are committed, tested and pushed, and
+are NOT live:
+
+1. **The first card on confirming** (`ad6598f`). Backend only: `schema.ts`,
+   `subscribers.ts`, `email.ts` and the confirm page copy in `http.ts`.
+   Deploys with `npx convex deploy --yes`. Schema change is one optional
+   field, so existing rows keep validating; dev accepted it with no index
+   changes.
+2. **The card front no longer prints its own permalink.** Frontend only, so it
+   needs the bundle rebuilt against the production URL and uploaded, per the
+   three-step recipe in HANDOFF.md. Hash routing is untouched and the browser
+   test now asserts the route rather than the anchor.
+
+Deploying only the first is safe on its own. Deploying only the second is also
+safe on its own. They are independent.
+
+Verification before either went in: **31 tests pass**, build and `tsc -b`
+pass, lint is 0 errors and the 6 expected warnings, and the browser suite is
+**5 of 5 with nothing skipped** with the permalink fixture imported into dev
+and removed afterwards.
+
 ## What is established
 
 - Baseline reviewed: commit `1095ebc`; the working tree was clean before this

@@ -172,9 +172,10 @@ crawl does not work.
   delivered carries reply-to headers for the OLD inbox, so replies to that
   mail would land somewhere nothing is reading them. Do it when no reply is
   in flight, not against a deadline. It looks unpolished; it breaks nothing.
-- **SEO and HTTP routing.** Hash links now support view/card sharing and
-  browser history locally. The app still has one indexable shell, and unknown
-  server paths retain the hosting response behaviour.
+- **SEO and HTTP routing.** Hash links still support view/card sharing and
+  browser history; the card front no longer prints its own link, because the
+  address bar already shows it. The app still has one indexable shell, and
+  unknown server paths retain the hosting response behaviour.
 - **`List-Unsubscribe` header.** Needs AgentMail's API to be checked first.
 - **Language scope.** Current local Home/signup cover all 11 languages; the
   four practice topics have shorter localized alternatives. About, Privacy,
