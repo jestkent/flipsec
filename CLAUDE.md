@@ -400,12 +400,20 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
 
 ## UI
 
-- **The sign-up box comes AFTER the third card, never before the first.** A
-  reader who opened a feed used to meet an email capture before a single
-  story. That is the pattern people have been trained to distrust, and on an
-  app about not being manipulated it was the wrong first impression. A feed
-  shorter than three cards gets one at the end; a single-card permalink gets
-  none, because there is no feed there to earn it.
+- **The sign-up box comes FIRST in the feed, above the first card.** It sat
+  after the third card for a long time, on the reasoning that an email capture
+  before a single story is the pattern people are trained to distrust. Two
+  things changed the trade. Confirming now sends the first card immediately,
+  so signing up is not a promise of mail tomorrow, it is the fastest way to
+  see what the feed does. And buried after three cards it was simply hard to
+  find -- the project owner could not locate it on their own site. A
+  single-card permalink still gets none, because there is no feed there.
+- **Opening the site lands on AI Sec News, not the hero.** An empty hash
+  parses to `{ view: "feed", kind: "scam" }`. The feed is what the product
+  is; the hero explains it to somebody who has not seen it, which is a page
+  you read once. Home is still a real view at `#/home`, reached from the
+  logo, and `missing` still falls back to home because a bad link needs the
+  recovery page rather than a feed that silently ignores it.
 - **The hero does not repeat the logo.** The header shows the lockup already;
   a hero that opens with the same artwork spends its best space saying the
   name twice and delays the sentence that explains what the site is. The

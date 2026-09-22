@@ -5,7 +5,15 @@ export type Route = { view: View; kind: string; storyId?: string; missing?: bool
 
 export function parseRoute(hash: string): Route {
   const parts = hash.replace(/^#\/?/, "").split("/").filter(Boolean);
-  if (!parts.length || (parts.length === 1 && parts[0] === "home")) return { view: "home", kind: "scam" };
+  // Opening the site with no hash lands on AI Sec News, not the hero. The
+  // feed is what the product IS; the hero explained it to somebody who had
+  // not seen it yet, which is a page you read once. Home is still a real
+  // view at #/home, reached from the logo.
+  //
+  // `missing` below still falls back to home, because that path needs the
+  // recovery page rather than a feed that silently ignores a bad link.
+  if (!parts.length) return { view: "feed", kind: "scam" };
+  if (parts.length === 1 && parts[0] === "home") return { view: "home", kind: "scam" };
   if (["tools", "about", "privacy"].includes(parts[0]) && parts.length === 1) return { view: parts[0] as View, kind: "scam" };
   if (parts[0] === "feed" && ["scam", "course", "job"].includes(parts[1]) &&
     (parts.length === 2 || (parts.length === 4 && parts[2] === "story" && /^[a-zA-Z0-9]+$/.test(parts[3])))) {

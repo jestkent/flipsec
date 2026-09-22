@@ -14,5 +14,9 @@ test("unknown and malformed links have a missing-page state", () => {
   for (const hash of ["#/feed/unknown", "#/feed/scam/story/%ZZ", "#/tools/extra", "#/unknown"]) {
     expect(parseRoute(hash).missing).toBe(true);
   }
-  expect(parseRoute("")).toEqual({ view: "home", kind: "scam" });
+  // No hash is not a missing page: it is somebody opening the site, and that
+  // lands on the news feed. Home is still a real view, reached at #/home.
+  expect(parseRoute("")).toEqual({ view: "feed", kind: "scam" });
+  expect(parseRoute("#/home")).toEqual({ view: "home", kind: "scam" });
+  expect(parseRoute("")).not.toHaveProperty("missing");
 });
