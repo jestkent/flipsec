@@ -3,26 +3,41 @@
 This is the current status summary. Dated entries in AUDIT.md, PLAN.md and
 hackathon.md remain historical evidence, not deployment manifests.
 
-## DEPLOYED — 2026-09-21, and a SPLIT state since 2026-09-22
+## DEPLOYED — `c222b58`, backend and frontend, 2026-09-22T03:45Z
 
-**Production backend is on `c222b58`. Production frontend is still on
-`37c91ed`.** This is deliberate and safe, not a half-finished rollout: the
-only backend change in `c222b58` is `listPublished` flooring its limit, and
-every caller in the shipped bundle passes an integer already. Verified on prod
-after the backend push: feeds read 8 news, 17 learn, 10 jobs, unchanged, and
-`{ limit: 2.7 }` now returns 2 rows where it used to throw.
+Both halves are on `hallowed-nightingale-322`. `37c91ed` was the original
+rollout of this branch on 2026-09-21; the sections below that say "not
+deployed" describe the state before it and are kept for their reasoning, not
+their status.
 
-What is NOT yet on production is the `src/App.tsx` title fix, so the live home
-page still titles itself `FlipSec.ai | FlipSec.ai`. It needs the frontend half
-of the recipe in HANDOFF.md — build against the production URL, grep FOR the
-production host, upload with the target named. Bundle `index-CkEEeBw5.js`
-builds clean from `c222b58` and has been verified to name the production host
-once, with no localhost or dev reference. **Record the upload here when it
-happens.**
+- Backend: `npx convex deploy` reported no indexes deleted and schema
+  validation complete. `{ limit: 2.7 }` on `stories:listPublished` returns 2
+  rows on prod where it used to throw "Arg 1 `n` to `take` must be a
+  non-negative integer".
+- Frontend: bundle `index-CkEEeBw5.js` with `index-C0ksmxpu.css`, built
+  against `https://hallowed-nightingale-322.convex.cloud`. Verified BEFORE
+  upload to name that host once and to contain no `127.0.0.1` and no
+  `scintillating-antelope-309`; verified AFTER upload to be byte-identical to
+  the local file. The upload named the production environment in its own
+  output before it was believed.
+- Verified on the RENDERED live page, not just the served bytes: home titles
+  itself `FlipSec.ai` (it was `FlipSec.ai | FlipSec.ai`), a card flips with
+  exactly one face `inert` + `aria-hidden` and focus handed to the visible
+  face, Left/Right and Home/End drive the feed tabs, all three feeds render
+  8 / 17 / 10 cards, Spanish translates the card body and sets
+  `<html lang="es">`, and there is no horizontal scroll at 320px. Zero console
+  errors. The two 4xx are external and benign: an FTC `og:image` that 403s
+  and falls back to `TacticArt` through `onError`, and a Chrome-initiated
+  favicon lookup — the declared favicon serves 200.
 
-Commit `37c91ed` was the original rollout of this branch. The sections below
-that say "not deployed" describe the state before that rollout and are kept
-for their reasoning, not their status.
+Still true after deploying: **job retirement has not run yet.** As of
+2026-09-22T03:52Z the last `crawl jobs` run is 2026-09-21T22:55:24Z, BEFORE
+this code existed, and no published job row carries a `jobCheckedAt`. The next
+run is due 2026-09-22T04:55Z. Do not claim any listing was rechecked until a
+run after that timestamp appears in `health:status`. `send daily drill` still
+reads "no run recorded" and that is expected, not a fault: it fires at 14:00
+UTC and health recording only landed at 2026-09-21T19:45Z, after the last
+firing.
 
 - Backend: `npx convex deploy` added `browserSessions.by_tokenHash` and
   `stories.by_kind_source`. No indexes deleted, schema validation passed.
