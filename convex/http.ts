@@ -433,7 +433,7 @@ const confirmHandler = httpAction(async (ctx, request) => {
   // be looking for it tomorrow. Say it once, here, where it is useful.
   return message(
     "You are on the list",
-    "The first email arrives tomorrow morning, carrying the feeds you picked in one message. If it is not in your inbox, look in spam or junk and mark it as not spam. Every email has an unsubscribe link at the foot.",
+    "Your first card is on its way now. After that it arrives each morning, carrying the feeds you picked in one message. If it is not in your inbox, look in spam or junk and mark it as not spam. Every email has an unsubscribe link at the foot.",
   );
 });
 

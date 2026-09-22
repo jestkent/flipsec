@@ -177,7 +177,34 @@ export const confirm = internalMutation({
       // moment of consent is the right place to say which.
       kinds: cleanKinds(args.kinds ?? row.pendingKinds ?? row.kinds),
     });
+
+    // Confirming is the strongest signal of intent a reader ever gives us,
+    // and until now it was answered with nothing at all until 14:00 UTC --
+    // up to a day of silence right after somebody asked to hear from us.
+    //
+    // Decided and stamped in the SAME transaction as the send it authorises,
+    // the way `confirmSentAt` already is. `confirm` is not once-per-reader:
+    // the link sits in their mailbox for ever and every POST re-runs this.
+    // Checking then writing later would mail a card per press.
+    if (row.welcomeSentAt === undefined) {
+      await ctx.db.patch(row._id, { welcomeSentAt: Date.now() });
+      await ctx.scheduler.runAfter(0, internal.email.sendWelcome, { subscriberId: row._id });
+    }
     return true;
+  },
+});
+
+// The address and feeds for the first card. Returns null for a row that is
+// not actually entitled to mail, so a scheduled send cannot outlive the
+// consent that authorised it -- an unsubscribe between the schedule and the
+// send has to win.
+export const forWelcome = internalQuery({
+  args: { subscriberId: v.id("subscribers") },
+  returns: v.union(v.null(), v.object({ email: v.string(), kinds: v.array(v.string()) })),
+  handler: async (ctx, args) => {
+    const row = await ctx.db.get(args.subscriberId);
+    if (row === null || row.pending === true || !row.active) return null;
+    return { email: row.email, kinds: cleanKinds(row.kinds) };
   },
 });
 

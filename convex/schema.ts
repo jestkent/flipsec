@@ -169,6 +169,12 @@ export default defineSchema({
     // When the confirmation was last sent, so signing up from a second tab
     // does not mail a second copy of a message already sitting in the inbox.
     confirmSentAt: v.optional(v.number()),
+    // When the first card was sent, the moment they confirmed. Its only job
+    // is to make that send happen ONCE. The confirm link lives in a mailbox
+    // for ever and every POST of it re-runs `confirm`, so without this a
+    // reader re-opening their own link mails themselves another card each
+    // time -- amplification through the very form double opt-in protects.
+    welcomeSentAt: v.optional(v.number()),
     // Which drill went out last, so an emailed reply can be graded against
     // the right question without the reader quoting anything back.
     lastDrillId: v.optional(v.id("drills")),

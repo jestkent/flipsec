@@ -436,6 +436,81 @@ export const sendDailyDrill = internalAction({
 // from our inbox to any address a caller named, which is an open relay and
 // would burn the sending reputation the daily drill depends on. It is called
 // from the CLI only.
+// The first card, sent the moment a reader confirms.
+//
+// Confirming used to be answered with nothing until 14:00 UTC, so somebody
+// who signed up at nine in the morning waited a day to see what they had
+// agreed to. The cron is a rhythm, not a gate.
+//
+// `markSent` at the end is what stops this being a duplicate: it stamps
+// `lastDrillId`, and the daily send picks the newest drill the reader has
+// NOT already had. It also writes the `sentDrills` row, so this card is
+// repliable and gradeable exactly like a daily one.
+//
+// Never rethrows. The slot was already stamped in the confirming
+// transaction, so a throw here cannot win a retry -- it would only turn one
+// lost card into a failed scheduled function. Tomorrow morning covers it.
+export const sendWelcome = internalAction({
+  args: { subscriberId: v.id("subscribers") },
+  returns: v.null(),
+  handler: async (ctx, args): Promise<null> => {
+    const reader = await ctx.runQuery(internal.subscribers.forWelcome, {
+      subscriberId: args.subscriberId,
+    });
+    // Unsubscribed, or removed, between confirming and this running. Consent
+    // is checked at the moment of sending, not the moment of scheduling.
+    if (reader === null) return null;
+
+    const wants = reader.kinds;
+    const sections: string[] = [];
+
+    const drill = wants.includes("scam")
+      ? await ctx.runQuery(internal.subscribers.pickTodaysDrill, {})
+      : null;
+    if (drill !== null) sections.push(drillSection(drill));
+
+    if (wants.includes("course")) {
+      const courses: Card[] = await ctx.runQuery(internal.subscribers.listCards, { kind: "course" });
+      if (courses.length > 0) sections.push(courseSection(courses[0]));
+    }
+    if (wants.includes("job")) {
+      const jobs: Card[] = await ctx.runQuery(internal.subscribers.listCards, { kind: "job" });
+      if (jobs.length > 0) sections.push(jobSection(jobs[0]));
+    }
+
+    if (sections.length === 0) {
+      console.warn("welcome: nothing available to send");
+      return null;
+    }
+
+    // Only the drill can be replied to, so it sets the subject when present.
+    const subject = drill !== null
+      ? "Your first card - spot the scam"
+      : "Your first card from FlipSec.ai";
+
+    try {
+      const token = await unsubscribeToken(reader.email);
+      const delivered = await sendMessage(
+        reader.email,
+        subject,
+        dailyEmail(sections, `${SITE}/api/unsubscribe?e=${encodeURIComponent(reader.email)}&t=${token}`),
+        `welcome-${args.subscriberId}`,
+      );
+      if (drill !== null) {
+        await ctx.runMutation(internal.subscribers.markSent, {
+          subscriberId: args.subscriberId,
+          drillId: drill.drillId,
+          storyId: drill.storyId,
+          messageId: delivered.message_id,
+        });
+      }
+    } catch (error) {
+      console.error("welcome send failed", error);
+    }
+    return null;
+  },
+});
+
 export const sendTestDrill = internalAction({
   args: { email: v.string() },
   handler: async (ctx, args): Promise<{ ok: boolean; detail: string }> => {

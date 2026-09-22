@@ -294,3 +294,42 @@ test("listPublished survives a fractional, non-finite or absurd limit", async ()
   await expect(count(1e9)).resolves.toBe(3);
   await expect(count()).resolves.toBe(3);
 });
+
+// Confirming used to be answered with nothing until 14:00 UTC. It now sends
+// the first card immediately — and the guard matters more than the feature.
+// `confirm` is not once-per-reader: the link sits in a mailbox for ever and
+// every POST of it re-runs the mutation, so a reader re-opening their own
+// link would mail themselves another card each time. The stamp is written in
+// the same transaction that schedules the send, the way confirmSentAt is.
+test("confirming sends the first card once, however many times the link is pressed", async () => {
+  const t = makeTest();
+  const { subscriberId } = await seed(t, "welcome@example.invalid");
+  await t.run((ctx) => ctx.db.patch(subscriberId, { pending: true }));
+
+  const welcomes = async () =>
+    (await t.run((ctx) => ctx.db.system.query("_scheduled_functions").collect()))
+      .filter((job) => job.name.includes("sendWelcome"));
+
+  await t.mutation(internal.subscribers.confirm, { email: "welcome@example.invalid", kinds: ["scam"] });
+  expect(await welcomes()).toHaveLength(1);
+  const stamped = await t.run((ctx) => ctx.db.get(subscriberId));
+  expect(typeof stamped?.welcomeSentAt).toBe("number");
+
+  // The reader presses the same link twice more.
+  await t.mutation(internal.subscribers.confirm, { email: "welcome@example.invalid", kinds: ["scam"] });
+  await t.mutation(internal.subscribers.confirm, { email: "welcome@example.invalid", kinds: ["scam"] });
+  expect(await welcomes()).toHaveLength(1);
+});
+
+// Consent is checked when the card is sent, not when it was scheduled. An
+// unsubscribe in between has to win, or a scheduled send outlives the
+// permission that authorised it.
+test("an unsubscribe between confirming and sending cancels the first card", async () => {
+  const t = makeTest();
+  const { subscriberId } = await seed(t, "gone@example.invalid");
+  expect(await t.query(internal.subscribers.forWelcome, { subscriberId })).toMatchObject({
+    email: "gone@example.invalid", kinds: ["scam"],
+  });
+  await t.mutation(internal.subscribers.deactivate, { email: "gone@example.invalid" });
+  expect(await t.query(internal.subscribers.forWelcome, { subscriberId })).toBeNull();
+});
