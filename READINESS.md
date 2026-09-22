@@ -3,12 +3,26 @@
 This is the current status summary. Dated entries in AUDIT.md, PLAN.md and
 hackathon.md remain historical evidence, not deployment manifests.
 
-## DEPLOYED — 2026-09-21
+## DEPLOYED — 2026-09-21, and a SPLIT state since 2026-09-22
 
-Commit `37c91ed`, branch `readiness-followup`, is live on
-`hallowed-nightingale-322`. The sections below that say "not deployed" describe
-the state before this rollout and are kept for their reasoning, not their
-status.
+**Production backend is on `c222b58`. Production frontend is still on
+`37c91ed`.** This is deliberate and safe, not a half-finished rollout: the
+only backend change in `c222b58` is `listPublished` flooring its limit, and
+every caller in the shipped bundle passes an integer already. Verified on prod
+after the backend push: feeds read 8 news, 17 learn, 10 jobs, unchanged, and
+`{ limit: 2.7 }` now returns 2 rows where it used to throw.
+
+What is NOT yet on production is the `src/App.tsx` title fix, so the live home
+page still titles itself `FlipSec.ai | FlipSec.ai`. It needs the frontend half
+of the recipe in HANDOFF.md — build against the production URL, grep FOR the
+production host, upload with the target named. Bundle `index-CkEEeBw5.js`
+builds clean from `c222b58` and has been verified to name the production host
+once, with no localhost or dev reference. **Record the upload here when it
+happens.**
+
+Commit `37c91ed` was the original rollout of this branch. The sections below
+that say "not deployed" describe the state before that rollout and are kept
+for their reasoning, not their status.
 
 - Backend: `npx convex deploy` added `browserSessions.by_tokenHash` and
   `stories.by_kind_source`. No indexes deleted, schema validation passed.
