@@ -5,7 +5,7 @@
 - **What it does:** Three feeds of AI security - real incidents, free guides, and jobs where AI and security meet - where every card flips to a plain-language explanation built from that exact item. Ask FlipSec is a conversational AI safety guide for suspicious content, recovery, privacy and AI questions, and a daily email carries one card per feed a reader picked.
 - **Live app:** https://hallowed-nightingale-322.convex.site
 - **Repo:** https://github.com/jestkent/flipsec
-- **Demo video:** not recorded yet
+- **Demo video:** https://drive.google.com/file/d/1byjNGjWP-QUyAN25EDYCD2uycPLs_dkB/view
 - **Frontend:** Convex static hosting
 - **Convex deployment:** https://hallowed-nightingale-322.convex.cloud
 - **Components:** @convex-dev/static-hosting, @convex-dev/agent
@@ -13,7 +13,16 @@
 - **Auth:** server-issued anonymous browser sessions in the current local follow-up; no OAuth accounts. Mailbox confirmation controls email consent.
 - **AI models:** gpt-4o-mini, gpt-4o-mini-tts
 - **Started:** 2026-09-20T17:35:41Z
-- **Last updated:** 2026-09-21 (readiness follow-up; see READINESS.md)
+- **Last updated:** 2026-09-22T06:53:37Z
+
+Social copy aligned to the official judging criteria is prepared in
+`SOCIAL_POSTS.md`. It includes separate LinkedIn and X versions, all four
+required sponsor tags, the live URL, the public repository and a direct request
+for readers to try a card. The AgentMail copy names the full two-way feature:
+a reply can be graded as an exercise or treated as a follow-up safety question,
+with the AI response delivered in the same email thread. It has now been posted
+on both LinkedIn and X, and both post URLs are attached to the Vibe Apps
+submission as evidence.
 
 ## Current status
 
@@ -1299,3 +1308,96 @@ card-fixture test is skipped. No real mail or paid model calls were used in thes
 tests. USER_TESTING.md is ready for three human sessions and a fresh-mailbox check;
 its results are empty because those observations have not happened. No production
 deployment was performed in this follow-up. READINESS.md states the exact limits.
+
+### 2026-09-22 - c222b58
+
+Stress-tested the deployed app and found two real faults. `stories.listPublished`
+clamped its caller-supplied `limit` for size but not for type, so `{ limit: 2.7 }`
+reached `.take()` and threw a server error on the one public query all three feeds
+are built on; it is floored now, and a non-finite value falls back to the default
+rather than being clamped into a still-invalid number. The home view built its
+document title as "FlipSec.ai | FlipSec.ai", announcing the brand twice to a screen
+reader on the first page a reader lands on.
+
+Also corrected the deploy recipe. Its proof step grepped the built bundle for
+`127.0.0.1` and required 0, which only proves anything on a machine linked to a
+local backend; measured on a machine linked to a hosted dev deployment it returned
+0 for a bundle pointing at the dev backend, waving through exactly what it exists
+to catch. It greps FOR the production host now and requires 1
+(`convex/stories.ts`, `src/App.tsx`, `HANDOFF.md`).
+
+### 2026-09-22 - 7ddbf1d
+
+Rolled that commit to production, backend and frontend. Established the
+source-to-production parity READINESS.md had listed as unverified: building the
+tree against the production Convex URL reproduces the served bundle and stylesheet
+byte for byte, and the served bundle names the production host once with no
+localhost or dev reference.
+
+Verified on the rendered live page rather than on the served bytes, which are
+different claims: the card flip with exactly one face `inert` and `aria-hidden`
+and focus handed to the visible face, feed tabs answering Left/Right and Home/End,
+Spanish translating the card body and setting `<html lang>`, and no horizontal
+scroll at 320px.
+
+### 2026-09-22 - ad6598f
+
+Confirming a subscription now sends the first card immediately instead of leaving
+the reader waiting for the 14:00 UTC cron. Signing up is no longer a promise of
+mail tomorrow; it is the fastest way to see what the feed does.
+
+The guard is the work. `confirm` is not once-per-reader -- the link lives in a
+mailbox and every POST re-runs the mutation -- so `welcomeSentAt` is decided and
+stamped in the same transaction that schedules the send, the way `confirmSentAt`
+already was for the confirmation itself. `sendWelcome` re-checks consent at send
+time so an unsubscribe between scheduling and sending wins, and calls `markSent`
+so the daily send picks a different card and the first one stays repliable and
+gradeable. Convex features: schema, mutations, actions, scheduled functions
+(`convex/subscribers.ts`, `convex/email.ts`, `convex/schema.ts`).
+
+### 2026-09-22 - 99e7934, 21a1bed
+
+Three interface changes, all from looking at the live site. The card front no
+longer prints its own permalink: hash routing still resolves and a shared link
+still survives a refresh, so the browser test now asserts the route rather than
+the control, which is the part a shared link depends on. Opening the site lands on
+the AI Sec News feed instead of the hero.
+
+The sign-up box moved above the first card. It had been placed after the third
+card deliberately, on the reasoning that an email capture before a single story is
+a pattern people are trained to distrust. Two things changed that trade: confirming
+now returns a card immediately, and the box was hard enough to find that the
+project owner could not locate it on their own site (`src/components/Post.tsx`,
+`src/navigation.ts`, `src/components/Feed.tsx`).
+
+### 2026-09-22 - 7eacd32
+
+Two bugs found by replying to a real drill on the production deployment and getting
+nothing back.
+
+`subscribers.forget` deleted attempts by address only, but an emailed attempt is
+keyed `subscriber.userId ?? from`, and a reader who signs up through the website
+carries a browser reader id as that userId. Every attempt from a website sign-up
+therefore survived the reset while the function still reported success. Because
+`pickTodaysDrill` is deterministic, one survivor is enough: the next answer to the
+same day's drill hits one-graded-answer-per-reader-per-drill, is treated as a
+question instead, and never comes back graded. That is the reset the demo
+pre-flight tells you to run, quietly doing half its job.
+
+Separately, `answerByEmail` returned with no mail and no log for a reply under two
+characters, so a one-letter answer to a multiple-choice drill got silence. It now
+replies asking for a few more words, and spends no model call to do it
+(`convex/subscribers.ts`, `convex/assistant.ts`).
+
+### 2026-09-22 - working tree
+
+Submitted to Vibe Apps at https://vibeapps.dev/s/flipsecai with the live URL, the
+public repository, a demo video, and LinkedIn and X posts linked as evidence.
+Event registration confirmed. The demo video link was checked from a browser with
+no Google session so that a reader who is not the owner can actually play it.
+
+Thirty-three regression tests pass, the browser suite passes five of five with the
+card-permalink fixture imported into the dev deployment and removed afterwards, and
+the production build, backend typecheck and lint are clean at the six expected
+warnings. No user study has been run, so this log carries no engagement,
+effectiveness or learning numbers.
