@@ -13,8 +13,10 @@ status.
 - Backend: `npx convex deploy` added `browserSessions.by_tokenHash` and
   `stories.by_kind_source`. No indexes deleted, schema validation passed.
 - Frontend: bundle `index-CmD4s1vT.js`, built against
-  `https://hallowed-nightingale-322.convex.cloud` and verified to contain no
-  `127.0.0.1` reference before upload. The live page serves that bundle.
+  `https://hallowed-nightingale-322.convex.cloud` and verified to name that
+  host before upload. The live page serves that bundle, byte-identical to a
+  local rebuild. Grep FOR the prod host, not against `127.0.0.1`: see the
+  recipe in HANDOFF.md for why the negative check proves nothing.
 - Verified after rollout: feeds read **8 news, 17 learn, 10 jobs** — unchanged
   from the pre-deploy baseline, so nothing regressed. `browserSessions:create`
   returns a token and expiry on prod.
@@ -34,13 +36,18 @@ remain unobserved.
   threaded follow-up on September 21. This session did not repeat that exchange.
   The earlier suspected missing delivery was diagnosed as incorrect threading;
   do not present it as proof of SPF/DKIM/DMARC failure.
-- Exact parity between today's source and production has not been independently
-  established in this session. A public fetch failure from a review tool is not
-  evidence of an outage.
+- Exact parity between source and production IS established, 2026-09-21:
+  building `37c91ed` against the production Convex URL reproduces the served
+  `index-CmD4s1vT.js` and `index-C0ksmxpu.css` byte for byte (bundle sha256
+  `ef7c7b76fbcc3c612ab14cd87937c08a0212ce7298b45578fc51a81dd21d4129`). The
+  live bundle names the production host once and contains no localhost or dev
+  reference. A public fetch failure from a review tool is not evidence of an
+  outage.
 
 ## This follow-up: implemented locally, not deployed to production
 
-This follow-up remains uncommitted in the working tree.
+Committed as `37c91ed` and deployed; see the DEPLOYED section above. The
+numbered points below are the reasoning, which has not changed.
 
 1. **Consistent status.** The other documents point here and no longer describe
    the earlier email round trip as unproven or the earlier work as uncommitted.
@@ -102,13 +109,17 @@ test requires its local fixture). The new browser checks cover all 11
 home/signup languages at 320px and all four Spanish practice topics.
 Automated mail/model calls are mocked.
 
-**The browser suite needs `npx convex dev` running against
-`local-kent_agan-flipsec`, with published stories in it.** Playwright starts
-the Vite dev server but not the backend. Without it the feed never resolves,
-the sign-up box never renders — it sits after the third card — and the
-language test fails on English with "element(s) not found" for the email
-label. That failure means the backend is down, not that the page regressed.
-Reproduced on 2026-09-21: **3 passed, 1 failed, 1 skipped** with no backend.
+**The browser suite needs a reachable dev backend holding published stories.**
+Against a LOCAL backend (`local-kent_agan-flipsec`) that means `npx convex
+dev` running in a second terminal: Playwright starts the Vite dev server but
+not the backend, and without it the feed never resolves, the sign-up box never
+renders — it sits after the third card — and the language test fails on
+English with "element(s) not found" for the email label. That failure means
+the backend is down, not that the page regressed. Reproduced on 2026-09-21:
+**3 passed, 1 failed, 1 skipped** with no backend. Against a HOSTED dev
+deployment no second terminal is needed — `npx convex dev --once` to sync,
+then **4 passed, 1 skipped**, confirmed 2026-09-21 on
+`scintillating-antelope-309`.
 Production build and backend typecheck pass. Lint reports no errors and the six
 existing warnings. These checks do not certify linguistic accuracy, live delivery,
 or user outcomes.

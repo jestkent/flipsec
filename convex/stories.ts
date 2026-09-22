@@ -315,15 +315,24 @@ export const listPublished = query({
     // before. Every scam row carries kind = "scam" via backfillKind.
     const kind = args.kind ?? "scam";
 
+    // Clamped, and floored. limit is caller supplied on a public query: an
+    // unbounded one lets anyone force a maximum-size read in a loop, and a
+    // FRACTIONAL one used to reach `take` untouched and throw
+    // "Arg 1 `n` to `take` must be a non-negative integer" — a 500 on the
+    // one query the whole feed depends on, from `{ limit: 2.7 }`. NaN and
+    // Infinity arrive the same way, because the client encodes float64
+    // rather than JSON, so anything not finite falls back to the default
+    // instead of being clamped into a still-invalid number.
+    const requested = Number.isFinite(args.limit) ? Math.floor(args.limit!) : 30;
+    const limit = Math.min(Math.max(requested, 1), 100);
+
     const stories = await ctx.db
       .query("stories")
       .withIndex("by_kind_published", (q) =>
         q.eq("kind", kind).eq("status", "published"),
       )
       .order("desc")
-      // Clamped. limit is caller supplied on a public query, and an
-      // unbounded one lets anyone force a maximum-size read in a loop.
-      .take(Math.min(Math.max(args.limit ?? 30, 1), 100));
+      .take(limit);
 
     // rawText is never sent to a client. It is cleared on publish, but this
     // strips it explicitly so the rule does not depend on that.

@@ -60,8 +60,11 @@ export default function App() {
   }, [view, route.storyId, route.missing]);
 
   useEffect(() => {
-    const page = view === "feed" ? localizedFeedName : view === "tools" ? "Ask FlipSec" : view === "about" ? t("about") : view === "privacy" ? "Privacy" : "FlipSec.ai";
-    document.title = `${page} | FlipSec.ai`;
+    // Home is the brand on its own. Falling through to a "FlipSec.ai" page
+    // name gave it the title "FlipSec.ai | FlipSec.ai", which a screen reader
+    // announces twice on the first page a reader lands on.
+    const page = view === "feed" ? localizedFeedName : view === "tools" ? "Ask FlipSec" : view === "about" ? t("about") : view === "privacy" ? "Privacy" : null;
+    document.title = page ? `${page} | FlipSec.ai` : "FlipSec.ai";
   }, [localizedFeedName, t, view]);
 
   function navigate(next: View, nextKind?: string) {

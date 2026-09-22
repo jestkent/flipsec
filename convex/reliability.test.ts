@@ -263,3 +263,34 @@ test("a lost send response reuses the provider result without another email", as
   expect(delivered).toBe(1);
   expect(await t.run((ctx) => ctx.db.get(attemptId))).toMatchObject({ deliveryStatus: "sent" });
 });
+
+// `{ limit: 2.7 }` used to reach `take` untouched and throw "Arg 1 `n` to
+// `take` must be a non-negative integer" — a server error on the one public
+// query every feed is built on, from a caller-supplied number the clamp was
+// written specifically to tame. The clamp bounded the size and forgot the
+// type. NaN and Infinity get here the same way, because the Convex client
+// encodes float64 rather than JSON.
+test("listPublished survives a fractional, non-finite or absurd limit", async () => {
+  const t = makeTest();
+  await t.run(async (ctx) => {
+    for (let i = 0; i < 3; i++) {
+      await ctx.db.insert("stories", {
+        url: `https://example.invalid/clamp-${i}`, title: `Card ${i}`, source: "Test",
+        kind: "scam", status: "published", crawledAt: Date.now() + i,
+        summary: "A summary.", redFlags: ["urgency"],
+      });
+    }
+  });
+
+  const count = async (limit?: number) =>
+    (await t.query(api.stories.listPublished, { kind: "scam", ...(limit === undefined ? {} : { limit }) })).length;
+
+  await expect(count(2.7)).resolves.toBe(2);
+  await expect(count(1.2)).resolves.toBe(1);
+  await expect(count(Number.NaN)).resolves.toBe(3);
+  await expect(count(Number.POSITIVE_INFINITY)).resolves.toBe(3);
+  await expect(count(-4)).resolves.toBe(1);
+  await expect(count(0)).resolves.toBe(1);
+  await expect(count(1e9)).resolves.toBe(3);
+  await expect(count()).resolves.toBe(3);
+});

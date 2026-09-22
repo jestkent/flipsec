@@ -5,20 +5,24 @@
 Read [READINESS.md](READINESS.md) first and inspect git status/diff. The prior
 reliability changes are committed; the latest baseline reviewed was `1095ebc`.
 This follow-up adds anonymous sessions, job availability reconciliation,
-localized onboarding and shorter non-English practice. It is verified locally
-and has not been deployed to production in this session.
+localized onboarding and shorter non-English practice. It is committed as
+`37c91ed` and IS deployed to production — see the DEPLOYED section at the top
+of READINESS.md.
 
 The existing production email evidence is in AUDIT section 5b. Do not confuse
-that with the still-pending cold-mailbox signup or with proof of deployed parity.
-The local target is local-kent_agan-flipsec. Do not deploy the local dist to
-production. Run tests, browser checks, build, backend typecheck and lint.
+that with the still-pending cold-mailbox signup. Do not deploy a dev-built dist
+to production. Run tests, browser checks, build, backend typecheck and lint.
 
 `npm test`, `npm run build` and `npm run lint` need no backend. **`npm run
-test:browser` does:** start `npx convex dev` first and make sure the local
-deployment has published stories. Playwright starts Vite but not Convex, so
-without it the feed never loads, the sign-up box after the third card never
-renders, and the language test fails on English looking for the email label.
-That is the backend being down, not a regression. See READINESS.md.
+test:browser` needs a reachable dev backend holding published stories**, and
+what that costs depends on the machine. Linked to a LOCAL backend
+(`local-<team>-flipsec`), start `npx convex dev` in a second terminal first:
+Playwright starts Vite but not Convex, so without it the feed never loads, the
+sign-up box after the third card never renders, and the language test fails on
+English looking for the email label. That is the backend being down, not a
+regression. Linked to a HOSTED dev deployment, nothing extra is needed — run
+`npx convex dev --once` to sync functions and the suite passes on its own.
+Confirmed both ways; see READINESS.md.
 
 ## Setup
 
@@ -50,7 +54,7 @@ npx convex deploy --yes                       # resolves to prod on its own
 
 printf 'VITE_CONVEX_URL=https://hallowed-nightingale-322.convex.cloud\n' > .env.production.local
 rm -rf dist && npm run build
-grep -c "127.0.0.1" dist/assets/*.js          # MUST be 0 before you upload
+grep -c "hallowed-nightingale-322" dist/assets/*.js   # MUST be 1 before upload
 rm .env.production.local
 
 CONVEX_DEPLOYMENT=prod:hallowed-nightingale-322 \
@@ -58,12 +62,22 @@ CONVEX_DEPLOYMENT=prod:hallowed-nightingale-322 \
 ```
 
 **`main.tsx` bakes `VITE_CONVEX_URL` into the bundle at build time**, and
-`.env.local` points it at `127.0.0.1:3210`. A plain `npm run build` therefore
-produces a bundle that reaches no backend at all, and uploading it puts a
-permanently blank site on the live URL. `.env.production.local` beats
-`.env.local` in production mode and is gitignored by `*.local`; delete it
-afterwards so local builds stay local. Grep the bundle every time — it is one
-command and it is the only proof.
+`.env.local` points it at whatever deployment THIS machine is linked to — a
+local backend on one, a hosted dev deployment on another. A plain
+`npm run build` therefore produces a bundle that reaches the wrong backend,
+and uploading it puts a blank or broken site on the live URL.
+`.env.production.local` beats `.env.local` in production mode and is
+gitignored by `*.local`; delete it afterwards so local builds stay local.
+
+**Grep FOR the production host, never against `127.0.0.1`.** This check used
+to read `grep -c "127.0.0.1"` must be 0, which only proves anything on a
+machine linked to a LOCAL backend. On a machine linked to a hosted dev
+deployment it returns 0 for a bundle pointing at
+`scintillating-antelope-309.convex.cloud`, so it waved through exactly the
+bundle it exists to catch. Measured on such a machine, 21 September 2026. A
+positive check cannot pass for the wrong reason: the prod host is in the
+bundle or it is not. Grep every time — it is one command and it is the only
+proof.
 
 `npx convex deploy` ignores `CONVEX_DEPLOYMENT` and resolves to the project's
 prod. **The static-hosting CLI does not** — it has no `--prod` flag, so with a
