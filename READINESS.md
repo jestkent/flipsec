@@ -57,28 +57,25 @@ Ask FlipSec conversation is now unreachable, by design, and older open tabs
 fail closed for chat until reloaded. Cold-mailbox signup and the user study
 remain unobserved.
 
-## NOT YET DEPLOYED — two changes after `c222b58`
+## DEPLOYED — `99e7934`, backend and frontend, 2026-09-22T05:10Z
 
-Production is on `c222b58`. Two changes are committed, tested and pushed, and
-are NOT live:
+Everything on this branch is live on `hallowed-nightingale-322`.
 
-1. **The first card on confirming** (`ad6598f`). Backend only: `schema.ts`,
-   `subscribers.ts`, `email.ts` and the confirm page copy in `http.ts`.
-   Deploys with `npx convex deploy --yes`. Schema change is one optional
-   field, so existing rows keep validating; dev accepted it with no index
-   changes.
-2. **The card front no longer prints its own permalink.** Frontend only, so it
-   needs the bundle rebuilt against the production URL and uploaded, per the
-   three-step recipe in HANDOFF.md. Hash routing is untouched and the browser
-   test now asserts the route rather than the anchor.
+1. **The first card on confirming** (`ad6598f`). Backend. `npx convex deploy`
+   reported schema validation complete and no indexes deleted.
+   `email.js:sendWelcome` is present in the production function spec.
+2. **The card front no longer prints its own permalink** (`99e7934`).
+   Frontend, bundle `index-DVByZwSf.js`. Verified before upload to name the
+   production host once with no localhost or dev reference, and after upload
+   to be byte-identical to the local file.
 
-Deploying only the first is safe on its own. Deploying only the second is also
-safe on its own. They are independent.
-
-Verification before either went in: **31 tests pass**, build and `tsc -b`
-pass, lint is 0 errors and the 6 expected warnings, and the browser suite is
-**5 of 5 with nothing skipped** with the permalink fixture imported into dev
-and removed afterwards.
+Re-verified on the rendered live page after both: home titles itself
+`FlipSec.ai`, a card flips with exactly one face `inert` + `aria-hidden` and
+focus handed to the visible face, the feed tabs answer Left/Right and
+Home/End, all three feeds render 8 / 17 / 10 cards, Spanish translates the
+card body and sets `<html lang="es">`, and there is no horizontal scroll at
+320px. Zero console errors. The `cardLink` string is still inside the bundle
+as an unused dictionary entry; no control renders it.
 
 ## What is established
 
