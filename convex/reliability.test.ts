@@ -333,3 +333,24 @@ test("an unsubscribe between confirming and sending cancels the first card", asy
   await t.mutation(internal.subscribers.deactivate, { email: "gone@example.invalid" });
   expect(await t.query(internal.subscribers.forWelcome, { subscriberId })).toBeNull();
 });
+
+// An emailed attempt is keyed `subscriber.userId ?? from`, and a website
+// sign-up carries a browser reader id as its userId. Deleting attempts by
+// address alone therefore missed every attempt belonging to a website
+// sign-up, while still reporting `removed: true` -- the reset the demo
+// pre-flight depends on, doing half its job quietly.
+test("forget removes attempts keyed by the browser id, not only by the address", async () => {
+  const t = makeTest();
+  const { subscriberId, drillId } = await seed(t, "forget@example.invalid");
+  // What signing up ON THE SITE looks like: a browser reader id on the row.
+  await t.run((ctx) => ctx.db.patch(subscriberId, { userId: "browser-reader-uuid" }));
+  await t.run(async (ctx) => {
+    await ctx.db.insert("attempts", { userId: "browser-reader-uuid", drillId, answer: "A", correct: true, source: "email", createdAt: Date.now() });
+    await ctx.db.insert("attempts", { userId: "forget@example.invalid", drillId, answer: "B", correct: false, source: "email", createdAt: Date.now() });
+  });
+
+  expect(await t.mutation(internal.subscribers.forget, { email: "forget@example.invalid" }))
+    .toMatchObject({ removed: true, attempts: 2 });
+  expect(await t.run((ctx) => ctx.db.query("attempts").collect())).toEqual([]);
+  expect(await t.run((ctx) => ctx.db.get(subscriberId))).toBeNull();
+});

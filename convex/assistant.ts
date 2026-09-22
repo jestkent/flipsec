@@ -152,7 +152,21 @@ export const answerByEmail = internalAction({
   returns: v.null(),
   handler: async (ctx, args): Promise<null> => {
     const question = args.question.trim();
-    if (question.length < 2) return null;
+    // A reply too short to be a question used to return here with no mail and
+    // no log, so the reader heard nothing at all. On a product whose daily
+    // mail says "reply and I will tell you how you did", silence is the one
+    // answer it must never give -- and "A" is exactly what somebody sends
+    // back to a multiple-choice drill. Say something instead. The emailAsk
+    // slot was already reserved by saveReply, and this path spends no model
+    // call, so the nudge is cheaper than the answer it replaces.
+    if (question.length < 2) {
+      await ctx.scheduler.runAfter(0, internal.email.sendAssistantReply, {
+        to: args.to,
+        answer: "I could not tell what you meant from that one. If you were answering the drill, write your answer in a few words -- something like \"the urgency\" or \"it asked me to click a link\". If you have a question, send it the same way and I will answer it.",
+        replyToMessageId: args.replyToMessageId,
+      });
+      return null;
+    }
 
     const userId = `email:${args.to}`;
     let threadId: string | undefined = args.threadId;

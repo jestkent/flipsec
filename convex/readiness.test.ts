@@ -131,3 +131,31 @@ test("fresh signup follows its generated mail link and only POST enables deliver
     expect.objectContaining({ email: "new-reader@example.invalid", kinds: ["scam"] }),
   ]);
 });
+
+// "A" is exactly what somebody sends back to a multiple-choice drill. It used
+// to return with no mail and no log, so a reader who did what the daily email
+// told them to do heard nothing at all. Silence is the one answer this
+// product must never give.
+test("an emailed reply too short to answer gets a reply rather than silence", async () => {
+  const t = backend();
+  const subscriberId = await t.run((ctx) =>
+    ctx.db.insert("subscribers", { email: "short@example.invalid", active: true, kinds: ["scam"] }),
+  );
+
+  await t.action(internal.assistant.answerByEmail, {
+    subscriberId,
+    to: "short@example.invalid",
+    question: "A",
+    replyToMessageId: "<drill-1@example.invalid>",
+  });
+
+  const scheduled = await t.run((ctx) => ctx.db.system.query("_scheduled_functions").collect());
+  const replies = scheduled.filter((job) => job.name.includes("sendAssistantReply"));
+  expect(replies).toHaveLength(1);
+  expect(replies[0].args[0]).toMatchObject({
+    to: "short@example.invalid",
+    replyToMessageId: "<drill-1@example.invalid>",
+  });
+  // No thread was created, so no model call was made for a one-letter reply.
+  expect(await t.run((ctx) => ctx.db.query("assistantThreads").collect())).toEqual([]);
+});

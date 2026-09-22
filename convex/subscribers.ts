@@ -429,6 +429,18 @@ export const ensure = internalMutation({
 
 // Removes an address entirely, along with anything it answered. Used when
 // someone asks to be taken off, or when the wrong address was added.
+//
+// An emailed attempt is keyed `subscriber.userId ?? from`, and a reader who
+// signed up ON THE SITE has a userId: their browser reader id. So deleting
+// attempts by address alone missed every attempt belonging to a website
+// sign-up, and this function quietly did half its job while reporting
+// success. `pickTodaysDrill` is deterministic, so the survivor was enough to
+// make the next answer to the same day's drill hit
+// one-graded-answer-per-reader-per-drill, be treated as a question instead,
+// and never come back graded. That is the reset the demo pre-flight depends
+// on, so it failing silently cost an evening.
+//
+// Both keys now, deduped, because a row can carry either.
 export const forget = internalMutation({
   args: { email: v.string() },
   handler: async (ctx, args) => {
@@ -440,14 +452,18 @@ export const forget = internalMutation({
 
     if (subscriber === null) return { removed: false, attempts: 0 };
 
-    const attempts = await ctx.db
-      .query("attempts")
-      .withIndex("by_user", (q) => q.eq("userId", email))
-      .take(200);
-
-    for (const attempt of attempts) await ctx.db.delete(attempt._id);
+    const keys = [...new Set([email, subscriber.userId].filter((key): key is string => Boolean(key)))];
+    let removed = 0;
+    for (const key of keys) {
+      const attempts = await ctx.db
+        .query("attempts")
+        .withIndex("by_user", (q) => q.eq("userId", key))
+        .take(200);
+      for (const attempt of attempts) await ctx.db.delete(attempt._id);
+      removed += attempts.length;
+    }
     await ctx.db.delete(subscriber._id);
 
-    return { removed: true, attempts: attempts.length };
+    return { removed: true, attempts: removed };
   },
 });
