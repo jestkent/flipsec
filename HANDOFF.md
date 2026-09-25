@@ -93,15 +93,21 @@ rebuilding an unverified one.
 
 Live: <https://hallowed-nightingale-322.convex.site>
 
-Feeds at last check: **8 news, 17 learn, 10 jobs**. Check them after every
-deploy — it is the fastest signal that something broke:
+Feeds at last check (2026-09-25): **9 news, 17 learn, 8 jobs**. Check them
+after every deploy — it is the fastest signal that something broke:
 
 ```bash
 for k in scam course job; do npx convex run stories:listPublished "{\"kind\":\"$k\"}" --prod | grep -c '"_id"'; done
 ```
 
 Crons run every six hours and publish new cards on their own, so these numbers
-move without anybody touching the code. That is normal.
+move without anybody touching the code. That is normal. Jobs can also go DOWN,
+which is also normal: a role missing from a complete employer snapshot is
+retired and leaves the feed. Two did between 09-22 and 09-25.
+
+**News and Learn are frozen while the Firecrawl plan is out of credits** -- see
+the OPERATIONAL STATUS section at the top of READINESS.md. Published cards keep
+working; only new ones stop.
 
 ## Read these, in this order
 

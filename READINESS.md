@@ -1,7 +1,48 @@
-# Current hackathon readiness — 2026-09-21
+# Current hackathon readiness — 2026-09-25
 
 This is the current status summary. Dated entries in AUDIT.md, PLAN.md and
 hackathon.md remain historical evidence, not deployment manifests.
+
+## OPERATIONAL STATUS — observed 2026-09-25T03:40Z
+
+Checked against the production deployment, not inferred from the code.
+
+**Working.**
+
+- **The daily email sends.** Three consecutive mornings at 14:00:54 UTC --
+  2026-09-22, 09-23 and 09-24 -- each recorded `sent 2, failed 0, of 2 active`
+  with `ok: true`. Two distinct drills went out across that period, so the
+  `lastDrillId` rotation works and readers are not receiving one card forever.
+- **Job retirement has run.** See the correction below: this supersedes every
+  earlier "has not run yet" in this file.
+- **Translation on write holds.** All ten non-English languages report zero
+  untranslated cards, including a news card published after 2026-09-22.
+- **The site is healthy.** Seventeen rendered-page checks pass: the flip with
+  one face `inert` and `aria-hidden`, focus handoff, tab keyboard handling,
+  all three feeds populating, Spanish translating the card body, and no
+  horizontal scroll at 320px.
+
+**Broken, and it is billing rather than code.**
+
+- **Firecrawl credits are exhausted.** Every index scrape returns HTTP 402
+  `Insufficient credits` -- AI Incident Database, IC3, FTC and OWASP alike.
+  It degraded across three runs: `found 30, scraped 14, failed 16` at
+  2026-09-24T06:56Z, then `found 0` at 12:56Z, 18:56Z and 2026-09-25T00:56Z.
+  `health:status` reports `ok: false` and the logs carry
+  `CRON UNHEALTHY crawl sources`, which is the alerting working rather than a
+  second fault.
+  **What it breaks:** no NEW News or Learn cards. **What it does not break:**
+  the published cards stay readable, the daily email keeps sending them, and
+  Jobs is unaffected because it uses the Greenhouse JSON API rather than
+  Firecrawl. The fix is to top up or upgrade the Firecrawl plan; until then
+  the cron keeps failing every six hours, correctly and loudly.
+  A crawl that reports `found 0, scraped 0, failed 0` cannot be told from a
+  genuinely quiet index without reading the log -- `failed 0` is counted over
+  items that were never found. Check the logs for a 402 before assuming the
+  sources went quiet.
+
+**Feed counts on 2026-09-25:** 9 news, 17 learn, 8 jobs. Jobs fell from 10
+because two roles closed and were retired, which is the feature working.
 
 ## DEPLOYED — `c222b58`, backend and frontend, 2026-09-22T03:45Z
 
@@ -30,14 +71,13 @@ their status.
   and falls back to `TacticArt` through `onError`, and a Chrome-initiated
   favicon lookup — the declared favicon serves 200.
 
-Still true after deploying: **job retirement has not run yet.** As of
-2026-09-22T03:52Z the last `crawl jobs` run is 2026-09-21T22:55:24Z, BEFORE
-this code existed, and no published job row carries a `jobCheckedAt`. The next
-run is due 2026-09-22T04:55Z. Do not claim any listing was rechecked until a
-run after that timestamp appears in `health:status`. `send daily drill` still
-reads "no run recorded" and that is expected, not a fault: it fires at 14:00
-UTC and health recording only landed at 2026-09-21T19:45Z, after the last
-firing.
+**Superseded on 2026-09-25 -- see OPERATIONAL STATUS above.** What follows was
+true when written and is kept for its reasoning. At 2026-09-22T03:52Z the last
+`crawl jobs` run was 2026-09-21T22:55:24Z, BEFORE this code existed, and no
+published job row carried a `jobCheckedAt`, so no listing had been rechecked.
+`send daily drill` read "no run recorded", which was expected rather than a
+fault: it fires at 14:00 UTC and health recording only landed at
+2026-09-21T19:45Z, after the last firing. Both have since run.
 
 - Backend: `npx convex deploy` added `browserSessions.by_tokenHash` and
   `stories.by_kind_source`. No indexes deleted, schema validation passed.
@@ -50,12 +90,16 @@ firing.
   from the pre-deploy baseline, so nothing regressed. `browserSessions:create`
   returns a token and expiry on prod.
 
-Still true after deploying: **job retirement has not run yet.** It takes effect
-on the next successful Greenhouse crawl, within six hours. Do not claim any
-listing was rechecked until a crawl has completed. Every reader's pre-existing
-Ask FlipSec conversation is now unreachable, by design, and older open tabs
-fail closed for chat until reloaded. Cold-mailbox signup and the user study
-remain unobserved.
+**Job retirement HAS now run, verified 2026-09-25.** All eight published jobs
+carry a `jobCheckedAt` from the 2026-09-24T22:55Z crawl, and the feed fell
+from ten to eight because two roles closed on the employer's own board and
+left the feed through their status alone. The sentence this replaces said it
+had not run yet, which was true until the first successful Greenhouse crawl
+after the rollout.
+
+Every reader's pre-existing Ask FlipSec conversation is unreachable, by
+design, and older open tabs fail closed for chat until reloaded. Cold-mailbox
+signup and the user study remain unobserved.
 
 ## DEPLOYED — `99e7934`, backend and frontend, 2026-09-22T05:10Z
 

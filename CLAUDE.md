@@ -223,6 +223,18 @@ Firecrawl, AgentMail. **Live:** <https://hallowed-nightingale-322.convex.site>
   never their report text), FBI IC3, FTC, OWASP Gen AI Security Project (edu),
   company Greenhouse boards (jobs). Honour each robots.txt and its crawl-delay.
   CISA will not crawl, its index is JavaScript-rendered.
+- **A crawl that reports `found 0, scraped 0, failed 0` is not a quiet day.**
+  `failed` counts items that were found, so when the INDEX fetch itself fails
+  there is nothing to fail and all three numbers read zero -- identical to a
+  source that genuinely published nothing. Observed on 2026-09-24 when the
+  Firecrawl plan ran out of credits: every index returned HTTP 402
+  `Insufficient credits`, and the run degraded from `found 30, scraped 14,
+  failed 16` to `found 0` across three six-hourly runs. `health:status` said
+  `ok: false` and the log said `CRON UNHEALTHY crawl sources`, which is why
+  that alerting exists -- but the detail string alone would not have told
+  anybody. **Read the logs for a 402 or a network error before concluding the
+  sources went quiet.** Jobs keep running through this, because Greenhouse is
+  a JSON API and not Firecrawl.
 - Jobs are the one source that is not Firecrawl. Generalist remote boards were
   measured first and dropped: across about 340 listings from ten queries, four
   mentioned both AI and security and all four were false positives, because

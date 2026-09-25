@@ -13,7 +13,7 @@
 - **Auth:** server-issued anonymous browser sessions in the current local follow-up; no OAuth accounts. Mailbox confirmation controls email consent.
 - **AI models:** gpt-4o-mini, gpt-4o-mini-tts
 - **Started:** 2026-09-20T17:35:41Z
-- **Last updated:** 2026-09-22T06:53:37Z
+- **Last updated:** 2026-09-25T03:40:00Z
 
 Social copy aligned to the official judging criteria is prepared in
 `SOCIAL_POSTS.md`. It includes separate LinkedIn and X versions, all four
@@ -1401,3 +1401,31 @@ card-permalink fixture imported into the dev deployment and removed afterwards, 
 the production build, backend typecheck and lint are clean at the six expected
 warnings. No user study has been run, so this log carries no engagement,
 effectiveness or learning numbers.
+
+### 2026-09-25 - working tree
+
+Checked the deployed app three days after submission rather than assuming it
+still worked.
+
+The daily email sends. Three consecutive mornings at 14:00:54 UTC recorded
+`sent 2, failed 0, of 2 active`, and two distinct drills went out across the
+period, so the per-reader rotation is working rather than mailing one card
+forever. Job retirement has now run: all eight published jobs carry a
+`jobCheckedAt` from the latest crawl, and the feed fell from ten to eight
+because two roles closed on the employer board and left through their status
+alone. Every non-English language still reports zero untranslated cards,
+including one published after the rollout, so translation on write holds.
+Seventeen rendered-page checks pass on the live site.
+
+The news and guide crawler is down, and it is billing rather than code. Every
+Firecrawl index scrape returns HTTP 402 `Insufficient credits`, degrading from
+`found 30, scraped 14, failed 16` to `found 0` across three runs. Published
+cards stay readable and the daily email keeps sending them; Jobs is unaffected
+because it uses the Greenhouse JSON API. `health:status` reports `ok: false`
+and the log carries `CRON UNHEALTHY crawl sources` -- the alerting caught it,
+which is the whole reason a crawl records what it found
+(`convex/crawl.ts`, `convex/health.ts`).
+
+Worth writing down: `found 0, scraped 0, failed 0` cannot be told from a quiet
+index without reading the log, because `failed` only counts items that were
+found. CLAUDE.md now says so.
